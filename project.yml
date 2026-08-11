@@ -1,0 +1,97 @@
+name: Wrathspeed
+options:
+  bundleIdPrefix: com.wrathspeed
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "26.0"
+    watchOS: "26.0"
+  xcodeVersion: "26.0"
+  generateEmptyDirectories: true
+packages:
+  WrathspeedCore:
+    path: WrathspeedCore
+settings:
+  base:
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Wrathspeed:
+    type: application
+    platform: iOS
+    sources:
+      - Wrathspeed
+      - Session
+      - Shared
+    dependencies:
+      - package: WrathspeedCore
+      - target: WrathspeedWatch
+        embed: true
+      - target: WrathspeedWidgets
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app
+        PRODUCT_NAME: Wrathspeed
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_ENTITLEMENTS: Wrathspeed/Wrathspeed.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: Wrathspeed
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_NSHealthShareUsageDescription: Wrathspeed reads heart rate and workout data to coach your runs.
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: Wrathspeed saves completed runs and strength sessions to Apple Health.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs.
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs while the phone is locked or in your pocket.
+        INFOPLIST_FILE: Wrathspeed/Info.plist
+    entitlements:
+      path: Wrathspeed/Wrathspeed.entitlements
+  WrathspeedWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - WrathspeedWatch
+      - Session
+    dependencies:
+      - package: WrathspeedCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.watchkitapp
+        PRODUCT_NAME: Wrathspeed Watch
+        TARGETED_DEVICE_FAMILY: "4"
+        CODE_SIGN_ENTITLEMENTS: WrathspeedWatch/WrathspeedWatch.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: Wrathspeed
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.wrathspeed.app
+        INFOPLIST_KEY_NSHealthShareUsageDescription: Wrathspeed reads heart rate and workout data to coach your runs.
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: Wrathspeed saves completed runs and strength sessions to Apple Health.
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs.
+        INFOPLIST_FILE: WrathspeedWatch/Info.plist
+    entitlements:
+      path: WrathspeedWatch/WrathspeedWatch.entitlements
+  WrathspeedWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - WrathspeedWidgets
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.widgets
+        PRODUCT_NAME: WrathspeedWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_FILE: WrathspeedWidgets/Info.plist
+        SKIP_INSTALL: YES
+    entitlements:
+      path: WrathspeedWidgets/WrathspeedWidgets.entitlements
+schemes:
+  Wrathspeed:
+    build:
+      targets:
+        Wrathspeed: all
+        WrathspeedWatch: all
+        WrathspeedWidgets: all
+    run:
+      config: Debug
+      executable: Wrathspeed

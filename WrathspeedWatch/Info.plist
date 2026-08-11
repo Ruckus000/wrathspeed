@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.wrathspeed.app</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Wrathspeed reads heart rate and workout data to coach your runs.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Wrathspeed saves completed runs to Apple Health.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Wrathspeed uses your location to track outdoor runs.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>

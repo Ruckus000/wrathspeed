@@ -1,0 +1,184 @@
+{
+  "exercises": [
+    {
+      "id": "bw-squat",
+      "name": "Bodyweight squat",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.strengthtraining.traditional",
+      "defaultReps": 12,
+      "cue": "Sit back, knees track over toes, stand tall."
+    },
+    {
+      "id": "split-squat",
+      "name": "Split squat",
+      "focus": ["legsCore"],
+      "equipment": ["bodyweight", "dumbbell"],
+      "symbolName": "figure.step.training",
+      "defaultReps": 8,
+      "cue": "Short stance, drop the back knee, keep the front heel down."
+    },
+    {
+      "id": "reverse-lunge",
+      "name": "Reverse lunge",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["bodyweight", "dumbbell"],
+      "symbolName": "figure.walk",
+      "defaultReps": 8,
+      "cue": "Step back, both knees near 90 degrees, push through the front foot."
+    },
+    {
+      "id": "glute-bridge",
+      "name": "Glute bridge",
+      "focus": ["legsCore"],
+      "equipment": ["bodyweight", "bench"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 12,
+      "cue": "Ribs down, squeeze glutes at the top, don't overarch."
+    },
+    {
+      "id": "single-leg-bridge",
+      "name": "Single-leg glute bridge",
+      "focus": ["legsCore"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 8,
+      "cue": "One foot planted, hips square, pause at the top."
+    },
+    {
+      "id": "calf-raise",
+      "name": "Calf raise",
+      "focus": ["legsCore"],
+      "equipment": ["bodyweight", "box"],
+      "symbolName": "figure.stairs",
+      "defaultReps": 12,
+      "cue": "Slow lower, full range, equal work left and right."
+    },
+    {
+      "id": "side-plank",
+      "name": "Side plank",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 8,
+      "cue": "Hips stacked, body in a straight line, breathe."
+    },
+    {
+      "id": "dead-bug",
+      "name": "Dead bug",
+      "focus": ["legsCore"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 8,
+      "cue": "Low back stays heavy on the floor as opposite arm and leg move."
+    },
+    {
+      "id": "bird-dog",
+      "name": "Bird dog",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 8,
+      "cue": "Reach long, keep hips level, pause, switch."
+    },
+    {
+      "id": "push-up",
+      "name": "Push-up",
+      "focus": ["upper", "fullBody"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.strengthtraining.traditional",
+      "defaultReps": 8,
+      "cue": "Body plank-stiff, elbows ~45 degrees, chest to a fist off the floor."
+    },
+    {
+      "id": "band-row",
+      "name": "Band row",
+      "focus": ["upper", "fullBody"],
+      "equipment": ["stretchBand"],
+      "symbolName": "figure.strengthtraining.functional",
+      "defaultReps": 12,
+      "cue": "Pull elbows back, squeeze shoulder blades, don't shrug."
+    },
+    {
+      "id": "db-row",
+      "name": "Dumbbell row",
+      "focus": ["upper", "fullBody"],
+      "equipment": ["dumbbell"],
+      "symbolName": "dumbbell.fill",
+      "defaultReps": 10,
+      "cue": "Hinge, back flat, pull the weight to the hip."
+    },
+    {
+      "id": "goblet-squat",
+      "name": "Goblet squat",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["dumbbell", "kettlebell"],
+      "symbolName": "dumbbell.fill",
+      "defaultReps": 10,
+      "cue": "Hold the weight at the chest, sit between the heels."
+    },
+    {
+      "id": "rdl",
+      "name": "Romanian deadlift",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["dumbbell", "kettlebell", "barbell"],
+      "symbolName": "figure.strengthtraining.traditional",
+      "defaultReps": 8,
+      "cue": "Soft knees, push hips back, feel the hamstrings, stand tall."
+    },
+    {
+      "id": "step-up",
+      "name": "Step-up",
+      "focus": ["legsCore"],
+      "equipment": ["box", "dumbbell"],
+      "symbolName": "figure.step.training",
+      "defaultReps": 8,
+      "cue": "Whole foot on the box, drive up, control the lower."
+    },
+    {
+      "id": "hip-thrust",
+      "name": "Hip thrust",
+      "focus": ["legsCore"],
+      "equipment": ["bench", "barbell"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 10,
+      "cue": "Upper back on the bench, chin tucked, squeeze at lockout."
+    },
+    {
+      "id": "pull-up",
+      "name": "Pull-up or hang hold",
+      "focus": ["upper"],
+      "equipment": ["pullUpBar"],
+      "symbolName": "figure.climbing",
+      "defaultReps": 5,
+      "cue": "Shoulders down and back. Use a hang if pull-ups are not ready."
+    },
+    {
+      "id": "swiss-crunch",
+      "name": "Swiss ball crunch",
+      "focus": ["legsCore"],
+      "equipment": ["swissBall"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 12,
+      "cue": "Hips stay still, curl the ribs toward the pelvis."
+    },
+    {
+      "id": "farmer-carry",
+      "name": "Farmer carry",
+      "focus": ["fullBody", "upper"],
+      "equipment": ["dumbbell", "kettlebell"],
+      "symbolName": "dumbbell.fill",
+      "defaultReps": 8,
+      "cue": "Tall posture, ribs stacked, walk slow and even."
+    },
+    {
+      "id": "plank",
+      "name": "Front plank",
+      "focus": ["legsCore", "fullBody"],
+      "equipment": ["bodyweight"],
+      "symbolName": "figure.core.training",
+      "defaultReps": 8,
+      "cue": "Squeeze glutes, push the floor away, breathe."
+    }
+  ]
+}
