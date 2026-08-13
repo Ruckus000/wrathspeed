@@ -12,12 +12,7 @@ let package = Package(
         .library(name: "WrathspeedCore", targets: ["WrathspeedCore"]),
     ],
     targets: [
-        .target(
-            name: "WrathspeedCore",
-            resources: [
-                .process("Resources"),
-            ]
-        ),
+        .target(name: "WrathspeedCore"),
         .testTarget(
             name: "WrathspeedCoreTests",
             dependencies: ["WrathspeedCore"]

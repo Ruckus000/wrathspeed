@@ -23,6 +23,34 @@
          </BuildActionEntry>
          <BuildActionEntry
             buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DC0458F9A6C1853DD4AADBF3"
+               BuildableName = "WrathspeedTests.xctest"
+               BlueprintName = "WrathspeedTests"
+               ReferencedContainer = "container:Wrathspeed.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "71DBD101872C847E5E2AB066"
+               BuildableName = "WrathspeedUITests.xctest"
+               BlueprintName = "WrathspeedUITests"
+               ReferencedContainer = "container:Wrathspeed.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
             buildForRunning = "YES"
             buildForProfiling = "YES"
             buildForArchiving = "YES"
@@ -67,7 +95,31 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DC0458F9A6C1853DD4AADBF3"
+               BuildableName = "WrathspeedTests.xctest"
+               BlueprintName = "WrathspeedTests"
+               ReferencedContainer = "container:Wrathspeed.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "71DBD101872C847E5E2AB066"
+               BuildableName = "WrathspeedUITests.xctest"
+               BlueprintName = "WrathspeedUITests"
+               ReferencedContainer = "container:Wrathspeed.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
