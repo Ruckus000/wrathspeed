@@ -355,7 +355,8 @@ public struct WorkoutSplit: Codable, Equatable, Sendable {
     }
 }
 
-public struct WorkoutResult: Codable, Equatable, Sendable {
+public struct WorkoutResult: Codable, Equatable, Sendable, Identifiable {
+    public var id: UUID { workoutID }
     public var workoutID: UUID
     public var startedAt: Date
     public var duration: TimeInterval
@@ -366,6 +367,12 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
     public var healthKitUUID: UUID?
     public var route: [RoutePoint]?
     public var splits: [WorkoutSplit]?
+    public var source: WorkoutSource
+    public var matchInfo: WorkoutMatchInfo
+    public var energyKilocalories: Double?
+    public var cadenceAverage: Double?
+    public var isUnavailableInHealth: Bool
+    public var healthSync: HealthSyncMetadata
 
     public init(
         workoutID: UUID,
@@ -377,7 +384,13 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         location: RunLocation,
         healthKitUUID: UUID? = nil,
         route: [RoutePoint]? = nil,
-        splits: [WorkoutSplit]? = nil
+        splits: [WorkoutSplit]? = nil,
+        source: WorkoutSource = .wrathspeedPhone,
+        matchInfo: WorkoutMatchInfo = WorkoutMatchInfo(),
+        energyKilocalories: Double? = nil,
+        cadenceAverage: Double? = nil,
+        isUnavailableInHealth: Bool = false,
+        healthSync: HealthSyncMetadata = HealthSyncMetadata()
     ) {
         self.workoutID = workoutID
         self.startedAt = startedAt
@@ -389,6 +402,41 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         self.healthKitUUID = healthKitUUID
         self.route = route
         self.splits = splits
+        self.source = source
+        self.matchInfo = matchInfo
+        self.energyKilocalories = energyKilocalories
+        self.cadenceAverage = cadenceAverage
+        self.isUnavailableInHealth = isUnavailableInHealth
+        self.healthSync = healthSync
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case workoutID, startedAt, duration, distanceMeters, averagePaceSecPerKm, heartRateAverage
+        case location, healthKitUUID, route, splits, source, matchInfo, energyKilocalories
+        case cadenceAverage, isUnavailableInHealth, healthSync
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        workoutID = try values.decode(UUID.self, forKey: .workoutID)
+        startedAt = try values.decode(Date.self, forKey: .startedAt)
+        duration = try values.decode(TimeInterval.self, forKey: .duration)
+        distanceMeters = try values.decode(Double.self, forKey: .distanceMeters)
+        averagePaceSecPerKm = try values.decodeIfPresent(Double.self, forKey: .averagePaceSecPerKm)
+        heartRateAverage = try values.decodeIfPresent(Double.self, forKey: .heartRateAverage)
+        location = try values.decode(RunLocation.self, forKey: .location)
+        healthKitUUID = try values.decodeIfPresent(UUID.self, forKey: .healthKitUUID)
+        route = try values.decodeIfPresent([RoutePoint].self, forKey: .route)
+        splits = try values.decodeIfPresent([WorkoutSplit].self, forKey: .splits)
+        source = try values.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .wrathspeedPhone
+        matchInfo = try values.decodeIfPresent(WorkoutMatchInfo.self, forKey: .matchInfo) ?? WorkoutMatchInfo()
+        energyKilocalories = try values.decodeIfPresent(Double.self, forKey: .energyKilocalories)
+        cadenceAverage = try values.decodeIfPresent(Double.self, forKey: .cadenceAverage)
+        isUnavailableInHealth = try values.decodeIfPresent(Bool.self, forKey: .isUnavailableInHealth) ?? false
+        healthSync = try values.decodeIfPresent(HealthSyncMetadata.self, forKey: .healthSync) ?? HealthSyncMetadata(
+            state: healthKitUUID == nil ? .notRequired : .synced,
+            healthKitUUID: healthKitUUID
+        )
     }
 }
 

@@ -513,3 +513,26 @@ public struct PendingHealthOp: Codable, Equatable, Sendable, Identifiable {
 public enum PersistenceSchema {
     public static let currentVersion = 1
 }
+
+public extension WorkoutSource {
+    var displayName: String {
+        switch self {
+        case .wrathspeedPhone: "Wrathspeed Phone"
+        case .wrathspeedWatch: "Wrathspeed Watch"
+        case .appleHealth: "Apple Health"
+        case .instant: "Instant"
+        }
+    }
+}
+
+public extension HealthSyncState {
+    var title: String {
+        switch self {
+        case .notRequired: "Not required"
+        case .pending: "Pending"
+        case .synced: "Synced"
+        case .failed: "Failed"
+        }
+    }
+}
+

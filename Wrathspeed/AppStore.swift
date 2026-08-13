@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UIKit
 import WrathspeedCore
 
 @MainActor
@@ -25,6 +26,8 @@ final class AppStore {
     var mobilityPrefs = initialState.mobilityPrefs
     var onboardingDraft: OnboardingDraft?
     var showHealthPermissionPrimer = false
+    var healthImportDenied = false
+    var healthImportInProgress = false
     var toastMessage: String?
     var celebration: CelebrationPayload?
     var selectedTab: AppTab = .today
@@ -32,6 +35,8 @@ final class AppStore {
     private let workoutCoordinator = WorkoutSessionCoordinator()
     private let strengthCatalogLoader: () throws -> StrengthCatalog
     private var repository: AppStateRepository?
+    private var modelContext: ModelContext?
+    private var healthImporter: any HealthImporting = LiveHealthImportService()
     private var didAttach = false
     private var toastTask: Task<Void, Never>?
 
@@ -75,8 +80,10 @@ final class AppStore {
 
     var streak: Int { streakCount() }
 
-    func attach(context: ModelContext, resetStore: Bool = UITestingSupport.shouldResetStore) {
+    func attach(context: ModelContext, resetStore: Bool = UITestingSupport.shouldResetStore, healthImporter: (any HealthImporting)? = nil) {
         repository = AppStateRepository(context: context)
+        modelContext = context
+        if let healthImporter { self.healthImporter = healthImporter }
         guard !didAttach else { return }
         didAttach = true
         if resetStore {
@@ -102,6 +109,9 @@ final class AppStore {
         }
         applyPersistedState(state)
         finishAttach()
+        if hasOnboarded {
+            Task { await importHealthWorkouts() }
+        }
     }
 
     func generateOnboardingDraft(from inputs: OnboardingInputs) throws -> OnboardingDraft {
@@ -242,12 +252,64 @@ final class AppStore {
 
     func record(_ result: WorkoutResult) {
         if results.contains(where: { existing in
-            if let uuid = result.healthKitUUID, uuid == existing.healthKitUUID { return true }
+            if let uuid = result.healthKitUUID, let existingUUID = existing.healthKitUUID, uuid == existingUUID { return true }
             return existing.workoutID == result.workoutID && existing.startedAt == result.startedAt
         }) { return }
         let previousVDOT = profile?.vdot
-        results.insert(result, at: 0)
-        updateWorkout(result.workoutID) { workout in
+        var stored = result
+        if stored.healthSync.state == .notRequired, stored.healthKitUUID != nil {
+            stored.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: stored.healthKitUUID)
+        }
+        results.insert(stored, at: 0)
+        if stored.matchInfo.state == .matched, let scheduledID = stored.matchInfo.scheduledWorkoutID {
+            updateWorkout(scheduledID) { workout in
+                var copy = workout
+                copy.status = .completed
+                copy.result = stored
+                return copy
+            }
+        } else if plan?.workouts.contains(where: { $0.id == result.workoutID || $0.blueprint.id == result.workoutID }) == true {
+            updateWorkout(result.workoutID) { workout in
+                var copy = workout
+                copy.status = .completed
+                copy.result = stored
+                return copy
+            }
+        }
+        evaluateAdaptation()
+        persist()
+        celebration = makeCelebration(for: stored, previousVDOT: previousVDOT)
+    }
+
+    func importHealthWorkouts() async {
+        guard hasOnboarded else { return }
+        healthImportInProgress = true
+        defer { healthImportInProgress = false }
+        let since = importWindowStart()
+        do {
+            try await healthImporter.requestAuthorization()
+            let imports = try await healthImporter.importWorkouts(since: since, existing: results)
+            results = HealthImportMerge.merge(existing: results, imports: imports)
+            applyMatchSuggestions()
+            if let context = modelContext {
+                try HealthImportAnchorStore.save(Data(since.timeIntervalSince1970.description.utf8), to: context)
+            }
+            persist()
+            healthImportDenied = false
+        } catch {
+            healthImportDenied = healthImporter.authorizationDenied
+            if !healthImportDenied {
+                errorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    func confirmHealthMatch(for resultID: UUID, scheduledWorkoutID: UUID) {
+        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
+        var result = results[index]
+        result.matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: scheduledWorkoutID)
+        results[index] = result
+        updateWorkout(scheduledWorkoutID) { workout in
             var copy = workout
             copy.status = .completed
             copy.result = result
@@ -255,7 +317,76 @@ final class AppStore {
         }
         evaluateAdaptation()
         persist()
-        celebration = makeCelebration(for: result, previousVDOT: previousVDOT)
+        showToast("RUN LINKED TO PLAN")
+    }
+
+    func rejectHealthMatch(for resultID: UUID, suggestedWorkoutID: UUID) {
+        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
+        var result = results[index]
+        var rejected = result.matchInfo.rejectedWorkoutIDs
+        if !rejected.contains(suggestedWorkoutID) { rejected.append(suggestedWorkoutID) }
+        result.matchInfo = WorkoutMatchInfo(state: .ignored, rejectedWorkoutIDs: rejected)
+        results[index] = result
+        applyMatchSuggestions(for: resultID)
+        persist()
+    }
+
+    func keepHealthUnmatched(for resultID: UUID) {
+        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
+        results[index].matchInfo.state = .unmatched
+        persist()
+    }
+
+    func unmatchHealthResult(_ resultID: UUID) {
+        guard let index = results.firstIndex(where: { $0.workoutID == resultID }),
+              let scheduledID = results[index].matchInfo.scheduledWorkoutID else { return }
+        var result = results[index]
+        result.matchInfo = WorkoutMatchInfo(state: .unmatched)
+        results[index] = result
+        updateWorkout(scheduledID) { workout in
+            var copy = workout
+            if copy.status == .completed, copy.result?.workoutID == resultID {
+                copy.status = .scheduled
+                copy.result = nil
+            }
+            return copy
+        }
+        persist()
+    }
+
+    func openHealthSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private func importWindowStart() -> Date {
+        let cal = Calendar.current
+        let ninetyDays = cal.date(byAdding: .day, value: -90, to: Date()) ?? Date()
+        if let planStart = plan?.workouts.map(\.date).min() {
+            return max(ninetyDays, cal.startOfDay(for: planStart))
+        }
+        return ninetyDays
+    }
+
+    private func applyMatchSuggestions(for resultID: UUID? = nil) {
+        let targets = resultID.map { id in results.filter { $0.workoutID == id } } ?? results
+        for index in results.indices {
+            guard targets.contains(where: { $0.workoutID == results[index].workoutID }) else { continue }
+            let result = results[index]
+            guard result.source == .appleHealth, result.matchInfo.state != .matched else { continue }
+            let rejected = Set(result.matchInfo.rejectedWorkoutIDs)
+            if let suggestion = WorkoutMatcher.bestSuggestion(for: result, plan: plan, rejectedIDs: rejected) {
+                results[index].matchInfo.state = .suggested
+                results[index].matchInfo.suggestedWorkoutID = suggestion
+            } else if result.matchInfo.state != .ignored {
+                results[index].matchInfo.state = .unmatched
+                results[index].matchInfo.suggestedWorkoutID = nil
+            }
+        }
+    }
+
+    func alternateMatchCandidates(for result: WorkoutResult) -> [WorkoutMatchCandidate] {
+        WorkoutMatcher.candidates(for: result, plan: plan)
     }
 
     func start(_ blueprint: WorkoutBlueprint) async {

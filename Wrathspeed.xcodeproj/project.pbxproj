@@ -14,6 +14,7 @@
 		12A002EF37E40F0F26B67708 /* WorkoutSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */; };
 		138F26696BE9235FEB46397B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 83B4CFD364D565BED88102B0 /* Assets.xcassets */; };
 		13F239F140195D7F95446699 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */; };
+		16583A59E8DED8D348D6C0D3 /* HealthImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7DD725680061E437C6B105 /* HealthImportService.swift */; };
 		1D610A28057F2C45E39A3200 /* StrengthPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */; };
 		2295D09DA4B9A08AC38705E8 /* SessionSyncMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */; };
 		26BBAA1750C8B78057950701 /* WrathspeedWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */; };
@@ -174,6 +175,7 @@
 		B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthCatalogLoader.swift; sourceTree = "<group>"; };
 		B70406BC14F70DD90DDD3BBD /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		B7BF97D90EBF2D7DDF615DE4 /* HealthPermissionPrimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissionPrimerView.swift; sourceTree = "<group>"; };
+		BD7DD725680061E437C6B105 /* HealthImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportService.swift; sourceTree = "<group>"; };
 		C15C3868B4CD63B285917AFB /* WSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSComponents.swift; sourceTree = "<group>"; };
 		C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionCoordinator.swift; sourceTree = "<group>"; };
 		C3D775A70F9B51D2BE1C6F1E /* WrathspeedCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WrathspeedCore; path = WrathspeedCore; sourceTree = SOURCE_ROOT; };
@@ -292,6 +294,7 @@
 				5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */,
 				83B4CFD364D565BED88102B0 /* Assets.xcassets */,
 				E483C98F5D35228B28E66CCB /* CelebrationView.swift */,
+				BD7DD725680061E437C6B105 /* HealthImportService.swift */,
 				B7BF97D90EBF2D7DDF615DE4 /* HealthPermissionPrimerView.swift */,
 				66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */,
 				2C2F88EFC2EB5D541B9AA700 /* Info.plist */,
@@ -639,6 +642,7 @@
 				DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */,
 				D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */,
 				9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */,
+				16583A59E8DED8D348D6C0D3 /* HealthImportService.swift in Sources */,
 				B82B586796C7106F20987146 /* HealthPermissionPrimerView.swift in Sources */,
 				34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */,
 				385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */,

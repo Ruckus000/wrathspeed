@@ -28,6 +28,7 @@ final class AppSettingsEntity {
     var dataDensityRaw: String
     var cueStyleRaw: String
     var mobilityPrefsData: Data?
+    var healthImportAnchorData: Data?
     var updatedAt: Date
 
     init(
