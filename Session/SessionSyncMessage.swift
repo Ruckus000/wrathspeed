@@ -14,6 +14,7 @@ struct SessionSyncMessage: Codable, Equatable, Sendable {
     var elapsed: TimeInterval
     var distanceMeters: Double
     var paceSecPerKm: Double?
+    var heartRate: Double?
     var stepIndex: Int
     var stepName: String
     var isPaused: Bool
@@ -27,6 +28,9 @@ struct SessionSyncMessage: Codable, Equatable, Sendable {
     }
 }
 
-struct WatchStartRequest: Codable, Sendable {
+struct WatchStartRequest: Codable, Sendable, Identifiable, Hashable {
     var blueprint: WorkoutBlueprint
+    var vdot: Double?
+
+    var id: UUID { blueprint.id }
 }

@@ -14,8 +14,10 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
     }
 
     var upcoming: UpcomingWorkoutsPayload?
-    var pendingStart: WorkoutBlueprint?
+    var pendingStartRequest: WatchStartRequest?
     var latestResult: WorkoutResult?
+    var onResult: ((WorkoutResult) -> Void)?
+    private var lastPlanContext: [String: Any]?
 
     override init() {
         super.init()
@@ -25,19 +27,28 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
     }
 
     func pushUpcoming(_ payload: UpcomingWorkoutsPayload) {
-        guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
         if let data = try? JSONEncoder().encode(payload) {
-            try? WCSession.default.updateApplicationContext(["upcoming": data])
+            lastPlanContext = ["upcoming": data]
+            publishPlanContextIfPossible()
         }
     }
 
-    func requestStart(_ blueprint: WorkoutBlueprint) {
+    private func publishPlanContextIfPossible() {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated, let lastPlanContext else { return }
+        try? WCSession.default.updateApplicationContext(lastPlanContext)
+    }
+
+    func requestStart(_ blueprint: WorkoutBlueprint, vdot: Double?) {
         guard WCSession.isSupported() else { return }
-        if let data = try? JSONEncoder().encode(WatchStartRequest(blueprint: blueprint)) {
-            WCSession.default.transferUserInfo(["start": data])
-            try? WCSession.default.updateApplicationContext(
-                WCSession.default.receivedApplicationContext.merging(["start": data]) { _, new in new }
-            )
+        if let data = try? JSONEncoder().encode(WatchStartRequest(blueprint: blueprint, vdot: vdot)) {
+            let payload = ["start": data]
+            if WCSession.default.isReachable {
+                WCSession.default.sendMessage(payload, replyHandler: nil) { _ in
+                    WCSession.default.transferUserInfo(payload)
+                }
+            } else {
+                WCSession.default.transferUserInfo(payload)
+            }
         }
     }
 
@@ -46,7 +57,9 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
         WCSession.default.transferUserInfo(["result": data])
     }
 
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        Task { @MainActor in self.publishPlanContextIfPossible() }
+    }
 
     #if os(iOS)
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
@@ -63,20 +76,35 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
                 upcoming = try? JSONDecoder().decode(UpcomingWorkoutsPayload.self, from: upcomingData)
             }
             if let startData {
-                pendingStart = try? JSONDecoder().decode(WatchStartRequest.self, from: startData).blueprint
+                if let start = try? JSONDecoder().decode(WatchStartRequest.self, from: startData) {
+                    pendingStartRequest = start
+                }
             }
         }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
-        let startData = userInfo["start"] as? Data
-        let resultData = userInfo["result"] as? Data
+        receive(userInfo)
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        receive(message)
+    }
+
+    nonisolated private func receive(_ payload: [String: Any]) {
+        let startData = payload["start"] as? Data
+        let resultData = payload["result"] as? Data
         Task { @MainActor in
             if let startData {
-                pendingStart = try? JSONDecoder().decode(WatchStartRequest.self, from: startData).blueprint
+                if let start = try? JSONDecoder().decode(WatchStartRequest.self, from: startData) {
+                    pendingStartRequest = start
+                }
             }
             if let resultData {
-                latestResult = try? JSONDecoder().decode(WorkoutResult.self, from: resultData)
+                if let result = try? JSONDecoder().decode(WorkoutResult.self, from: resultData) {
+                    latestResult = result
+                    onResult?(result)
+                }
             }
         }
     }
