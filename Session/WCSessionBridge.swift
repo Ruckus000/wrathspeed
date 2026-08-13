@@ -15,6 +15,7 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
 
     var upcoming: UpcomingWorkoutsPayload?
     var pendingStartRequest: WatchStartRequest?
+    var pendingStart: WorkoutBlueprint? { pendingStartRequest?.blueprint }
     var latestResult: WorkoutResult?
     var onResult: ((WorkoutResult) -> Void)?
     private var lastPlanContext: [String: Any]?
