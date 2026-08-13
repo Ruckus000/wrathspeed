@@ -1,8 +1,8 @@
 import Foundation
 import WrathspeedCore
 
-enum InstantWorkoutBuilder {
-    static func build(_ request: InstantWorkoutRequest, date: Date = Date()) throws -> WorkoutBlueprint {
+public enum InstantWorkoutBuilder {
+    public static func build(_ request: InstantWorkoutRequest, date: Date = Date()) throws -> WorkoutBlueprint {
         switch request.kind {
         case .easy, .freeRun:
             let meters = request.distanceMeters ?? 5_000
@@ -81,8 +81,8 @@ enum InstantWorkoutBuilder {
     }
 }
 
-enum InstantWorkoutValidation {
-    static func validate(_ request: InstantWorkoutRequest) throws {
+public enum InstantWorkoutValidation {
+    public static func validate(_ request: InstantWorkoutRequest) throws {
         if let meters = request.distanceMeters {
             guard meters.isFinite, meters > 0, meters < 100_000 else {
                 throw NSError(domain: "InstantWorkoutValidation", code: 1, userInfo: [NSLocalizedDescriptionKey: "Distance must be between zero and 100 km."])
