@@ -1,5 +1,4 @@
 import Foundation
-import WrathspeedCore
 
 public enum InstantWorkoutBuilder {
     public static func build(_ request: InstantWorkoutRequest, date: Date = Date()) throws -> WorkoutBlueprint {

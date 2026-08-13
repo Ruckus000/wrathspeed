@@ -4,11 +4,18 @@ public struct LiveMetrics: Equatable, Sendable {
     public var elapsed: TimeInterval
     public var distanceMeters: Double
     public var currentPaceSecPerKm: Double?
+    public var heartRate: Double?
 
-    public init(elapsed: TimeInterval, distanceMeters: Double, currentPaceSecPerKm: Double? = nil) {
+    public init(
+        elapsed: TimeInterval,
+        distanceMeters: Double,
+        currentPaceSecPerKm: Double? = nil,
+        heartRate: Double? = nil
+    ) {
         self.elapsed = elapsed
         self.distanceMeters = distanceMeters
         self.currentPaceSecPerKm = currentPaceSecPerKm
+        self.heartRate = heartRate
     }
 }
 
@@ -24,13 +31,15 @@ public struct WorkoutStepper: Equatable, Sendable {
     public var stepStartElapsed: TimeInterval
     public var stepStartDistance: Double
     public var isComplete: Bool
+    public var manualTreadmill: Bool
 
-    public init(blueprint: WorkoutBlueprint) {
+    public init(blueprint: WorkoutBlueprint, manualTreadmill: Bool = false) {
         self.blueprint = blueprint
         self.stepIndex = 0
         self.stepStartElapsed = 0
         self.stepStartDistance = 0
         self.isComplete = blueprint.steps.isEmpty
+        self.manualTreadmill = manualTreadmill
     }
 
     public var currentStep: WorkoutStep? {
@@ -76,6 +85,12 @@ public struct WorkoutStepper: Equatable, Sendable {
     }
 
     private func targetReached(step: WorkoutStep, metrics: LiveMetrics) -> Bool {
+        if manualTreadmill {
+            switch step.target {
+            case .duration: break
+            case .distance: return false
+            }
+        }
         switch step.target {
         case .distance(let meters):
             return (metrics.distanceMeters - stepStartDistance) >= meters
