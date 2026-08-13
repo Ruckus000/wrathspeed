@@ -24,6 +24,20 @@ struct PlanView: View {
                         .padding(.top, 8)
                         .accessibilityLabel("Undo last plan change")
                 }
+                NavigationLink {
+                    if let profile = store.profile {
+                        ManagePlanView(profile: profile)
+                    }
+                } label: {
+                    Text("MANAGE PLAN")
+                        .font(WSFont.ui(12, weight: .heavy))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.text50)
+                }
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Manage plan schedule")
                 weekCalendar
                 WSProgressBar(progress: weekProgress)
                     .padding(.horizontal, WSSpace.gutter)
@@ -328,7 +342,7 @@ struct WorkoutDetailSheet: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let workout: ScheduledWorkout
-    @State private var liveBlueprint: WorkoutBlueprint?
+    @State private var showMoveSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -362,17 +376,13 @@ struct WorkoutDetailSheet: View {
             .padding(.top, 16)
             if workout.status == .scheduled || workout.status == .convertedToEasy {
                 WSPrimaryButton(title: "START", height: 56, fontSize: 20) {
-                    liveBlueprint = workout.blueprint
+                    store.presentPreflight(blueprint: workout.blueprint)
                 }
                 .padding(.top, 18)
+                .accessibilityLabel("Start workout")
             }
             HStack(spacing: 10) {
-                outline("MOVE +1 DAY") {
-                    if let next = Calendar.current.date(byAdding: .day, value: 1, to: workout.date) {
-                        store.move(workout, to: next)
-                        dismiss()
-                    }
-                }
+                outline("MOVE DATE") { showMoveSheet = true }
                 Button("SKIP") {
                     store.skip(workout)
                     dismiss()
@@ -401,8 +411,8 @@ struct WorkoutDetailSheet: View {
         .background(WSColor.bgSheet.ignoresSafeArea())
         .presentationDetents([.medium, .large])
         .presentationBackground(WSColor.bgSheet)
-        .fullScreenCover(item: $liveBlueprint) { blueprint in
-            LiveRunView(blueprint: blueprint)
+        .sheet(isPresented: $showMoveSheet) {
+            WorkoutMoveDateSheet(workout: workout)
         }
     }
 

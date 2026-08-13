@@ -3,6 +3,12 @@ import SwiftData
 import UIKit
 import WrathspeedCore
 
+struct PreflightRequest: Identifiable, Equatable {
+    var id: UUID { blueprint.id }
+    let blueprint: WorkoutBlueprint
+    let source: WorkoutSource
+}
+
 @MainActor
 @Observable
 final class AppStore {
@@ -32,6 +38,12 @@ final class AppStore {
     var toastMessage: String?
     var celebration: CelebrationPayload?
     var selectedTab: AppTab = .today
+    var pendingRecoverySnapshot: ActiveSessionSnapshot?
+    var pendingPreflight: PreflightRequest?
+    var showWatchLaunchTimeout = false
+    var strengthResults: [StrengthSessionResult] = []
+    var mobilityResults: [MobilitySessionResult] = []
+    var pendingWorkoutSource: WorkoutSource = .wrathspeedPhone
 
     private let workoutCoordinator = WorkoutSessionCoordinator()
     private let strengthCatalogLoader: () throws -> StrengthCatalog
@@ -55,14 +67,14 @@ final class AppStore {
     var session: WorkoutSessionController { workoutCoordinator.session }
 
     var todaysRuns: [ScheduledWorkout] {
-        guard let plan else { return [] }
+        guard let plan = displayPlan else { return [] }
         return plan.workouts.filter {
             Calendar.current.isDateInToday($0.date) && ($0.status == .scheduled || $0.status == .convertedToEasy)
         }
     }
 
     var todaysCompletedRuns: [ScheduledWorkout] {
-        guard let plan else { return [] }
+        guard let plan = displayPlan else { return [] }
         return plan.workouts.filter {
             Calendar.current.isDateInToday($0.date) && $0.status == .completed
         }
@@ -73,13 +85,19 @@ final class AppStore {
     }
 
     var upcomingRuns: [ScheduledWorkout] {
-        guard let plan else { return [] }
+        guard let plan = displayPlan else { return [] }
         return plan.workouts
             .filter { ($0.status == .scheduled || $0.status == .convertedToEasy) && $0.date >= Calendar.current.startOfDay(for: Date()) }
             .sorted { $0.date < $1.date }
     }
 
     var streak: Int { streakCount() }
+
+    /// Base plan stored in persistence; overlay applied at read time.
+    var displayPlan: TrainingPlan? {
+        guard let plan else { return nil }
+        return PlanAdjustmentService.effectivePlan(plan, adjustment: n100)
+    }
 
     func attach(context: ModelContext, resetStore: Bool = UITestingSupport.shouldResetStore, healthImporter: (any HealthImporting)? = nil) {
         repository = AppStateRepository(context: context)
@@ -188,7 +206,7 @@ final class AppStore {
             let generated = try TrainingPlanService.regenerate(
                 request: request,
                 existingPlan: plan,
-                adjustment: n100,
+                adjustment: nil,
                 freezeMileageBaselineMeters: freezeMileage ? freezeMileageBaselineMeters : nil,
                 strengthPreferences: strengthPrefs,
                 strengthCatalog: catalog
@@ -271,13 +289,19 @@ final class AppStore {
     func applyNotFeeling100(_ adjustment: N100Adjustment) {
         guard recordPlanChange(kind: .adjustment, affected: [], description: "Not feeling 100%") else { return }
         n100 = adjustment
-        if var plan {
-            plan.workouts = NotFeeling100Rules.apply(workouts: plan.workouts, adjustment: adjustment, calendar: .current)
-            self.plan = plan
-        }
         persist()
         pushWatchWorkouts()
         showToast("PLAN ADJUSTED FOR \(adjustment.dayCount) DAYS · RETURN: \(adjustment.returnPace.title.uppercased())")
+        offerUndo()
+    }
+
+    func endNotFeeling100() {
+        guard n100 != nil else { return }
+        guard recordPlanChange(kind: .adjustment, affected: [], description: "Ended not feeling 100%") else { return }
+        n100 = nil
+        persist()
+        pushWatchWorkouts()
+        showToast("ADJUSTMENT ENDED")
         offerUndo()
     }
 
@@ -322,7 +346,7 @@ final class AppStore {
                 copy.result = stored
                 return copy
             }
-        } else if plan?.workouts.contains(where: { $0.id == result.workoutID || $0.blueprint.id == result.workoutID }) == true {
+        } else if result.source != .instant, plan?.workouts.contains(where: { $0.id == result.workoutID || $0.blueprint.id == result.workoutID }) == true {
             updateWorkout(result.workoutID) { workout in
                 var copy = workout
                 copy.status = .completed
@@ -340,15 +364,16 @@ final class AppStore {
         healthImportInProgress = true
         defer { healthImportInProgress = false }
         let since = importWindowStart()
+        let anchor = modelContext.flatMap { try? HealthImportAnchorStore.load(from: $0) }
         do {
             try await healthImporter.requestAuthorization()
-            let imports = try await healthImporter.importWorkouts(since: since, existing: results)
-            results = HealthImportMerge.merge(existing: results, imports: imports)
+            let importResult = try await healthImporter.importWorkouts(anchor: anchor, since: since)
+            results = HealthImportMerge.merge(existing: results, imports: importResult.workouts)
             applyMatchSuggestions()
-            if let context = modelContext {
-                try HealthImportAnchorStore.save(Data(since.timeIntervalSince1970.description.utf8), to: context)
-            }
             persist()
+            if let newAnchor = importResult.newAnchor, let context = modelContext {
+                try HealthImportAnchorStore.save(newAnchor, to: context)
+            }
             healthImportDenied = false
         } catch {
             healthImportDenied = healthImporter.authorizationDenied
@@ -443,7 +468,9 @@ final class AppStore {
         WorkoutMatcher.candidates(for: result, plan: plan)
     }
 
-    func start(_ blueprint: WorkoutBlueprint) async {
+    func start(_ blueprint: WorkoutBlueprint, source: WorkoutSource? = nil) async {
+        let resolvedSource = source ?? pendingWorkoutSource
+        pendingWorkoutSource = .wrathspeedPhone
         do {
             session.splitUnit = unit
             session.cueStyle = cueStyle
@@ -451,18 +478,92 @@ final class AppStore {
                 blueprint: blueprint,
                 vdot: profile?.vdot,
                 zones: zones,
-                cuesEnabled: cuesEnabled
+                cuesEnabled: cuesEnabled,
+                source: resolvedSource
             )
+            showWatchLaunchTimeout = workoutCoordinator.watchLaunchPhase == .timedOut
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func presentPreflight(blueprint: WorkoutBlueprint, source: WorkoutSource = .wrathspeedPhone) {
+        pendingPreflight = PreflightRequest(blueprint: blueprint, source: source)
+    }
+
+    func retryWatchLaunch() async {
+        showWatchLaunchTimeout = false
+        await workoutCoordinator.retryWatchLaunch()
+        showWatchLaunchTimeout = workoutCoordinator.watchLaunchPhase == .timedOut
+    }
+
+    func startOnPhoneAfterWatchTimeout() async {
+        showWatchLaunchTimeout = false
+        await workoutCoordinator.startOnPhoneAfterWatchTimeout()
+    }
+
+    func cancelWatchLaunch() {
+        showWatchLaunchTimeout = false
+        workoutCoordinator.cancelWatchLaunch()
+    }
+
+    func savePartialRecovery(from snapshot: ActiveSessionSnapshot) {
+        guard let blueprint = try? JSONDecoder().decode(WorkoutBlueprint.self, from: snapshot.blueprintData) else {
+            discardRecovery()
+            return
+        }
+        let pace = snapshot.distanceMeters > 0 ? (snapshot.elapsedSeconds / snapshot.distanceMeters) * 1_000 : nil
+        let result = WorkoutResult(
+            workoutID: blueprint.id,
+            startedAt: snapshot.startedAt ?? snapshot.updatedAt.addingTimeInterval(-snapshot.elapsedSeconds),
+            duration: snapshot.elapsedSeconds,
+            distanceMeters: snapshot.distanceMeters,
+            averagePaceSecPerKm: pace,
+            location: blueprint.location,
+            source: snapshot.source,
+            healthSync: snapshot.healthSync
+        )
+        record(result)
+        discardRecovery()
+        showToast("PARTIAL WORKOUT SAVED")
+    }
+
+    func discardRecovery() {
+        pendingRecoverySnapshot = nil
+        if let context = modelContext {
+            try? ActiveSessionStore.clear(from: context)
+        }
+    }
+
+    func recordStrengthResult(_ result: StrengthSessionResult) {
+        if let index = strengthResults.firstIndex(where: { $0.sessionID == result.sessionID && $0.startedAt == result.startedAt }) {
+            strengthResults[index] = result
+        } else {
+            strengthResults.insert(result, at: 0)
+        }
+        persistStrengthResult(result)
+    }
+
+    func recordMobilityResult(_ result: MobilitySessionResult) {
+        if let index = mobilityResults.firstIndex(where: { $0.sessionID == result.sessionID }) {
+            mobilityResults[index] = result
+        } else {
+            mobilityResults.insert(result, at: 0)
+        }
+    }
+
+    private func persistStrengthResult(_ result: StrengthSessionResult) {
+        guard let context = modelContext else { return }
+        guard let payload = try? VersionedPayload.encode(result) else { return }
+        context.insert(StrengthSessionResultEntity(id: result.id, sessionID: result.sessionID, payloadData: payload))
+        try? context.save()
     }
 
     func startInstant(request: InstantWorkoutRequest) async {
         do {
             try InstantWorkoutValidation.validate(request)
             let blueprint = try InstantWorkoutBuilder.build(request)
-            await start(blueprint)
+            presentPreflight(blueprint: blueprint, source: .instant)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -471,6 +572,42 @@ final class AppStore {
     func startInstant(kind: WorkoutKind, location: RunLocation) async {
         let request = InstantWorkoutRequest(kind: kind, location: location, distanceMeters: 5_000)
         await startInstant(request: request)
+    }
+
+    func managePlanSchedule(days: Set<Weekday>, daysPerWeek: Int, longRunDay: Weekday) throws -> PlanScheduleDiff {
+        guard let profile, let plan else { throw PlanInputError.invalidWeeklyMileage }
+        guard days.count >= 3 else { throw OnboardingValidationError.tooFewAvailableDays }
+        guard days.contains(longRunDay) else { throw OnboardingValidationError.longRunNotAvailable }
+
+        var previewProfile = profile
+        previewProfile.availableWeekdays = days.sorted()
+        previewProfile.daysPerWeek = daysPerWeek
+        previewProfile.longRunWeekday = longRunDay
+
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        let request = PlanRequest(goal: plan.goal, profile: previewProfile, startDate: Date(), calendar: calendar)
+        let catalog = try strengthCatalogLoader()
+        let generated = try TrainingPlanService.regenerate(
+            request: request,
+            existingPlan: plan,
+            adjustment: nil,
+            freezeMileageBaselineMeters: freezeMileage ? freezeMileageBaselineMeters : nil,
+            strengthPreferences: strengthPrefs,
+            strengthCatalog: catalog
+        )
+        return PlanAdjustmentService.diffFutureUnstarted(current: plan.workouts, proposed: generated.plan.workouts)
+    }
+
+    func applyManagePlanSchedule(days: Set<Weekday>, daysPerWeek: Int, longRunDay: Weekday) throws {
+        guard recordPlanChange(kind: .scheduleRegeneration, affected: [], description: "Updated schedule") else { return }
+        guard var profile else { return }
+        profile.availableWeekdays = days.sorted()
+        profile.daysPerWeek = daysPerWeek
+        profile.longRunWeekday = longRunDay
+        self.profile = profile
+        regeneratePlan(profile: profile)
+        offerUndo()
     }
 
     func updateStrengthPreferences(_ preferences: StrengthPreferences) {
@@ -568,11 +705,20 @@ final class AppStore {
     }
 
     func weekGroups() -> [(start: Date, workouts: [ScheduledWorkout])] {
-        guard let plan else { return [] }
+        guard let plan = displayPlan else { return [] }
         let groups = Dictionary(grouping: plan.workouts) {
             Calendar.current.dateInterval(of: .weekOfYear, for: $0.date)?.start ?? $0.date
         }
         return groups.keys.sorted().map { (start: $0, workouts: groups[$0]!.sorted { $0.date < $1.date }) }
+    }
+
+    func rollingFourWeekSummaries() -> [WeeklyLoadSummary] {
+        HistoryInsights.rollingFourWeekSummaries(plan: displayPlan, results: results)
+    }
+
+    func currentWeekSummary() -> WeeklyLoadSummary? {
+        guard let start = Calendar.current.dateInterval(of: .weekOfYear, for: Date())?.start else { return nil }
+        return HistoryInsights.weeklySummary(plan: displayPlan, results: results, weekStart: start)
     }
 
     func currentWeekIndex() -> (current: Int, total: Int) {
@@ -626,6 +772,10 @@ final class AppStore {
         pushWatchWorkouts()
         if let result = workoutCoordinator.consumeLatestResult() {
             record(result)
+        }
+        if let snapshot = try? modelContext.flatMap({ try ActiveSessionStore.load(from: $0) }),
+           snapshot.state != .saved {
+            pendingRecoverySnapshot = snapshot
         }
     }
 
