@@ -50,6 +50,11 @@ struct RootView: View {
                 .presentationDetents([.medium])
                 .presentationBackground(WSColor.bgSheet)
         }
+        .sheet(item: $store.pendingTreadmillDistance) { pending in
+            TreadmillDistanceSheet(pending: pending)
+                .presentationDetents([.medium, .large])
+                .presentationBackground(WSColor.bgSheet)
+        }
         .fullScreenCover(isPresented: liveWorkoutPresented) {
             if let blueprint = store.session.blueprint {
                 LiveRunView(blueprint: blueprint)

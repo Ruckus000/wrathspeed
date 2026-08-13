@@ -44,6 +44,7 @@ final class AppStore {
     var strengthResults: [StrengthSessionResult] = []
     var mobilityResults: [MobilitySessionResult] = []
     var pendingWorkoutSource: WorkoutSource = .wrathspeedPhone
+    var pendingTreadmillDistance: PendingTreadmillDistance?
 
     private let workoutCoordinator = WorkoutSessionCoordinator()
     private let strengthCatalogLoader: () throws -> StrengthCatalog
@@ -317,6 +318,42 @@ final class AppStore {
     func declineVDOTSuggestion() {
         pendingSuggestion = nil
         persist()
+    }
+
+    func confirmTreadmillDistance(_ displayDistance: Double) {
+        guard var pending = pendingTreadmillDistance else { return }
+        let meters = Units.meters(fromDisplay: displayDistance, unit: unit)
+        session.applyActualTreadmillDistance(meters)
+        pending.result.distanceMeters = meters
+        if pending.result.duration > 0, meters > 0 {
+            pending.result.averagePaceSecPerKm = (pending.result.duration / meters) * 1_000
+        }
+        pendingTreadmillDistance = nil
+        record(pending.result)
+    }
+
+    private func handleWorkoutResult(_ result: WorkoutResult) {
+        if var pending = pendingTreadmillDistance, pending.result.workoutID == result.workoutID {
+            if result.healthSync.state == .synced || result.healthSync.state == .failed {
+                pending.result.healthSync = result.healthSync
+                pending.result.healthKitUUID = result.healthKitUUID
+                pending.result.route = result.route
+                pending.result.splits = result.splits
+                pendingTreadmillDistance = pending
+            }
+            return
+        }
+        if result.location == .treadmill,
+           session.usesManualTreadmillDistance,
+           session.pendingActualTreadmillDistance == nil,
+           pendingTreadmillDistance == nil {
+            pendingTreadmillDistance = PendingTreadmillDistance(
+                result: result,
+                estimateMeters: result.distanceMeters
+            )
+            return
+        }
+        record(result)
     }
 
     func record(_ result: WorkoutResult) {
@@ -756,7 +793,7 @@ final class AppStore {
 
     private func finishAttach() {
         workoutCoordinator.configure(cuesEnabled: cuesEnabled, zones: zones, onResult: { [weak self] result in
-            self?.record(result)
+            self?.handleWorkoutResult(result)
         }, onFailure: { [weak self] error in
             self?.errorMessage = "Workout wasn't saved to Health: \(error.localizedDescription)"
         })
@@ -771,7 +808,7 @@ final class AppStore {
         workoutCoordinator.installMirroringHandler()
         pushWatchWorkouts()
         if let result = workoutCoordinator.consumeLatestResult() {
-            record(result)
+            handleWorkoutResult(result)
         }
         if let snapshot = try? modelContext.flatMap({ try ActiveSessionStore.load(from: $0) }),
            snapshot.state != .saved {

@@ -148,14 +148,18 @@ struct LiveRunView: View {
         let metrics = store.session.metrics
         switch metric {
         case .time: return WSFormat.duration(metrics.elapsed)
-        case .distance: return WSFormat.distanceValue(metrics.distanceMeters, unit: store.unit)
+        case .distance:
+            if store.session.usesManualTreadmillDistance {
+                return WSFormat.distanceValue(store.session.estimatedTreadmillDistanceMeters(), unit: store.unit)
+            }
+            return WSFormat.distanceValue(metrics.distanceMeters, unit: store.unit)
         case .heartRate: return metrics.heartRate.map { "\(Int($0.rounded()))" } ?? "—"
         }
     }
 
     private var transport: some View {
         HStack(spacing: 30) {
-            circle("LAP", size: 62) { store.session.skipStep() }
+            circle(store.session.usesManualTreadmillDistance ? "NEXT" : "LAP", size: 62) { store.session.skipStep() }
             Button {
                 store.session.isPaused ? store.session.resume() : store.session.pause()
             } label: {
