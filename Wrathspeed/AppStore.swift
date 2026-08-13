@@ -22,6 +22,9 @@ final class AppStore {
     var liveMetrics = initialState.liveMetrics
     var dataDensity = initialState.dataDensity
     var cueStyle = initialState.cueStyle
+    var mobilityPrefs = initialState.mobilityPrefs
+    var onboardingDraft: OnboardingDraft?
+    var showHealthPermissionPrimer = false
     var toastMessage: String?
     var celebration: CelebrationPayload?
     var selectedTab: AppTab = .today
@@ -99,6 +102,51 @@ final class AppStore {
         }
         applyPersistedState(state)
         finishAttach()
+    }
+
+    func generateOnboardingDraft(from inputs: OnboardingInputs) throws -> OnboardingDraft {
+        let catalog = try strengthCatalogLoader()
+        let draft = try OnboardingDraftBuilder.build(inputs: inputs, catalog: catalog)
+        onboardingDraft = draft
+        return draft
+    }
+
+    func confirmOnboarding(draft: OnboardingDraft) {
+        guard let repository else {
+            errorMessage = "Couldn’t save your plan yet."
+            return
+        }
+        profile = draft.plan.profile
+        strengthPrefs = draft.inputs.makeStrengthPreferences()
+        mobilityPrefs = draft.inputs.mobility
+        plan = draft.plan
+        strengthSessions = (try? strengthCatalogLoader()).flatMap { catalog in
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let planEnd = draft.plan.workouts.map(\.date).max() ?? today
+            let daysRemaining = max(0, calendar.dateComponents([.day], from: today, to: planEnd).day ?? 0)
+            let weekCount = max(1, Int(ceil(Double(daysRemaining + 1) / 7.0)))
+            return StrengthPlanner.schedule(
+                preferences: strengthPrefs,
+                startDate: today,
+                weekCount: weekCount,
+                calendar: calendar,
+                catalog: catalog
+            ).filter { $0.date <= planEnd }
+        } ?? []
+        onboardingDraft = nil
+        do {
+            hasOnboarded = true
+            try repository.save(currentPersistedState())
+            pushWatchWorkouts()
+            showHealthPermissionPrimer = true
+            showToast("PLAN READY — \(draft.plan.goal.weekCount) WEEKS")
+        } catch {
+            hasOnboarded = false
+            plan = nil
+            profile = nil
+            errorMessage = "Couldn’t save your plan: \(error.localizedDescription)"
+        }
     }
 
     func completeOnboarding(goal: TrainingGoal, profile: RunnerProfile, strength: StrengthPreferences) {
@@ -357,6 +405,7 @@ final class AppStore {
         liveMetrics = state.liveMetrics
         dataDensity = state.dataDensity
         cueStyle = state.cueStyle
+        mobilityPrefs = state.mobilityPrefs
         if let vdot = state.pendingVDOT, let reason = state.pendingVDOTReason {
             pendingSuggestion = VDOTSuggestion(newVDOT: vdot, reason: reason)
         } else {
@@ -496,28 +545,35 @@ final class AppStore {
         persist()
     }
 
+    func setForceSaveFailureForTesting(_ value: Bool) {
+        repository?.forceSaveFailure = value
+    }
+
+    private func currentPersistedState() -> PersistedState {
+        PersistedState(
+            hasOnboarded: hasOnboarded,
+            profile: profile,
+            plan: plan,
+            n100: n100,
+            strengthPrefs: strengthPrefs,
+            strengthSessions: strengthSessions,
+            cuesEnabled: cuesEnabled,
+            freezeMileage: freezeMileage,
+            freezeMileageBaselineMeters: freezeMileageBaselineMeters,
+            pendingVDOT: pendingSuggestion?.newVDOT,
+            pendingVDOTReason: pendingSuggestion?.reason,
+            results: results,
+            liveMetrics: liveMetrics,
+            dataDensity: dataDensity,
+            cueStyle: cueStyle,
+            mobilityPrefs: mobilityPrefs
+        )
+    }
+
     private func persist() {
         guard let repository else { return }
         do {
-            try repository.save(
-                PersistedState(
-                    hasOnboarded: hasOnboarded,
-                    profile: profile,
-                    plan: plan,
-                    n100: n100,
-                    strengthPrefs: strengthPrefs,
-                    strengthSessions: strengthSessions,
-                    cuesEnabled: cuesEnabled,
-                    freezeMileage: freezeMileage,
-                    freezeMileageBaselineMeters: freezeMileageBaselineMeters,
-                    pendingVDOT: pendingSuggestion?.newVDOT,
-                    pendingVDOTReason: pendingSuggestion?.reason,
-                    results: results,
-                    liveMetrics: liveMetrics,
-                    dataDensity: dataDensity,
-                    cueStyle: cueStyle
-                )
-            )
+            try repository.save(currentPersistedState())
         } catch {
             errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
         }

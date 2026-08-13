@@ -27,6 +27,7 @@ final class AppSettingsEntity {
     var liveMetricsData: Data
     var dataDensityRaw: String
     var cueStyleRaw: String
+    var mobilityPrefsData: Data?
     var updatedAt: Date
 
     init(
@@ -42,6 +43,7 @@ final class AppSettingsEntity {
         liveMetricsData: Data,
         dataDensityRaw: String,
         cueStyleRaw: String,
+        mobilityPrefsData: Data? = nil,
         updatedAt: Date = Date()
     ) {
         self.id = id
@@ -56,6 +58,7 @@ final class AppSettingsEntity {
         self.liveMetricsData = liveMetricsData
         self.dataDensityRaw = dataDensityRaw
         self.cueStyleRaw = cueStyleRaw
+        self.mobilityPrefsData = mobilityPrefsData
         self.updatedAt = updatedAt
     }
 }

@@ -46,7 +46,8 @@ enum PersistenceMigration {
             pendingVDOTReason: legacy.pendingVDOTReason,
             liveMetricsData: liveMetricsData,
             dataDensityRaw: legacy.dataDensity.rawValue,
-            cueStyleRaw: legacy.cueStyle.rawValue
+            cueStyleRaw: legacy.cueStyle.rawValue,
+            mobilityPrefsData: try VersionedPayload.encode(legacy.mobilityPrefs)
         )
         context.insert(settings)
 
@@ -197,6 +198,7 @@ enum VersionedPersistence {
         let liveMetrics = try VersionedPayload.decode(Set<LiveMetric>.self, from: settings.liveMetricsData)
         let dataDensity = DataDensity(rawValue: settings.dataDensityRaw) ?? .detailed
         let cueStyle = CueStyle(rawValue: settings.cueStyleRaw) ?? .standard
+        let mobilityPrefs = try settings.mobilityPrefsData.map { try VersionedPayload.decode(MobilityPreferences.self, from: $0) } ?? MobilityPreferences()
 
         let planEntity = try context.fetch(FetchDescriptor<TrainingPlanEntity>()).first(where: \.isActive)
         var plan: TrainingPlan?
@@ -248,7 +250,8 @@ enum VersionedPersistence {
             results: results,
             liveMetrics: liveMetrics,
             dataDensity: dataDensity,
-            cueStyle: cueStyle
+            cueStyle: cueStyle,
+            mobilityPrefs: mobilityPrefs
         )
     }
 
@@ -256,6 +259,7 @@ enum VersionedPersistence {
         let profileData = try state.profile.map { try VersionedPayload.encode($0) }
         let strengthPrefsData = try VersionedPayload.encode(state.strengthPrefs)
         let liveMetricsData = try VersionedPayload.encode(state.liveMetrics)
+        let mobilityPrefsData = try VersionedPayload.encode(state.mobilityPrefs)
 
         let settingsDescriptor = FetchDescriptor<AppSettingsEntity>()
         let settings: AppSettingsEntity
@@ -274,7 +278,8 @@ enum VersionedPersistence {
                 pendingVDOTReason: state.pendingVDOTReason,
                 liveMetricsData: liveMetricsData,
                 dataDensityRaw: state.dataDensity.rawValue,
-                cueStyleRaw: state.cueStyle.rawValue
+                cueStyleRaw: state.cueStyle.rawValue,
+                mobilityPrefsData: mobilityPrefsData
             )
             context.insert(settings)
         }
@@ -290,6 +295,7 @@ enum VersionedPersistence {
         settings.liveMetricsData = liveMetricsData
         settings.dataDensityRaw = state.dataDensity.rawValue
         settings.cueStyleRaw = state.cueStyle.rawValue
+        settings.mobilityPrefsData = mobilityPrefsData
         settings.updatedAt = Date()
 
         try syncPlan(state.plan, in: context)

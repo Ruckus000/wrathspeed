@@ -18,6 +18,7 @@ struct PersistedState: Codable {
     var liveMetrics: Set<LiveMetric>
     var dataDensity: DataDensity
     var cueStyle: CueStyle
+    var mobilityPrefs: MobilityPreferences
 
     static let initial = PersistedState(
         hasOnboarded: false,
@@ -34,11 +35,12 @@ struct PersistedState: Codable {
         results: [],
         liveMetrics: [.time, .distance, .heartRate],
         dataDensity: .detailed,
-        cueStyle: .standard
+        cueStyle: .standard,
+        mobilityPrefs: MobilityPreferences()
     )
 
     enum CodingKeys: String, CodingKey {
-        case hasOnboarded, profile, plan, n100, strengthPrefs, strengthSessions, cuesEnabled, freezeMileage, freezeMileageBaselineMeters, pendingVDOT, pendingVDOTReason, results, liveMetrics, dataDensity, cueStyle
+        case hasOnboarded, profile, plan, n100, strengthPrefs, strengthSessions, cuesEnabled, freezeMileage, freezeMileageBaselineMeters, pendingVDOT, pendingVDOTReason, results, liveMetrics, dataDensity, cueStyle, mobilityPrefs
     }
 
     init(
@@ -47,13 +49,15 @@ struct PersistedState: Codable {
         pendingVDOT: Double?, pendingVDOTReason: String?, results: [WorkoutResult],
         liveMetrics: Set<LiveMetric> = [.time, .distance, .heartRate],
         dataDensity: DataDensity = .detailed,
-        cueStyle: CueStyle = .standard
+        cueStyle: CueStyle = .standard,
+        mobilityPrefs: MobilityPreferences = MobilityPreferences()
     ) {
         self.hasOnboarded = hasOnboarded; self.profile = profile; self.plan = plan; self.n100 = n100
         self.strengthPrefs = strengthPrefs; self.strengthSessions = strengthSessions; self.cuesEnabled = cuesEnabled
         self.freezeMileage = freezeMileage; self.freezeMileageBaselineMeters = freezeMileageBaselineMeters
         self.pendingVDOT = pendingVDOT; self.pendingVDOTReason = pendingVDOTReason; self.results = results
         self.liveMetrics = liveMetrics; self.dataDensity = dataDensity; self.cueStyle = cueStyle
+        self.mobilityPrefs = mobilityPrefs
     }
 
     init(from decoder: Decoder) throws {
@@ -73,6 +77,7 @@ struct PersistedState: Codable {
         liveMetrics = try values.decodeIfPresent(Set<LiveMetric>.self, forKey: .liveMetrics) ?? [.time, .distance, .heartRate]
         dataDensity = try values.decodeIfPresent(DataDensity.self, forKey: .dataDensity) ?? .detailed
         cueStyle = try values.decodeIfPresent(CueStyle.self, forKey: .cueStyle) ?? .standard
+        mobilityPrefs = try values.decodeIfPresent(MobilityPreferences.self, forKey: .mobilityPrefs) ?? MobilityPreferences()
     }
 }
 
@@ -179,6 +184,7 @@ enum Persistence {
 final class AppStateRepository {
     private let context: ModelContext
     private(set) var migrationError: String?
+    var forceSaveFailure = false
 
     init(context: ModelContext) {
         self.context = context
@@ -200,6 +206,9 @@ final class AppStateRepository {
     }
 
     func save(_ state: PersistedState) throws {
+        if forceSaveFailure {
+            throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated save failure"])
+        }
         if try PersistenceMigration.hasMigrated(in: context) {
             try VersionedPersistence.save(state, to: context)
         } else {

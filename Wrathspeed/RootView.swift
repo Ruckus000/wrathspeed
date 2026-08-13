@@ -6,6 +6,7 @@ struct RootView: View {
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
+        @Bindable var store = store
         Group {
             if store.hasOnboarded {
                 MainTabView()
@@ -13,33 +14,48 @@ struct RootView: View {
                 OnboardingView()
             }
         }
+        .background(WSColor.bg.ignoresSafeArea())
         .onAppear { store.attach(context: modelContext) }
-        .alert("Something went wrong", isPresented: Binding(
-            get: { store.errorMessage != nil },
-            set: { if !$0 { store.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { store.errorMessage = nil }
-        } message: {
-            Text(store.errorMessage ?? "")
+        .overlay {
+            if let message = store.errorMessage {
+                WSAlert(message: message) { store.errorMessage = nil }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let toast = store.toastMessage {
+                WSToast(text: toast)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 110)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeOut(duration: WSMotion.sheet), value: store.toastMessage)
+        .fullScreenCover(item: $store.celebration) { payload in
+            CelebrationView(payload: payload)
+        }
+        .fullScreenCover(isPresented: $store.showHealthPermissionPrimer) {
+            HealthPermissionPrimerView()
         }
     }
 }
 
 struct MainTabView: View {
+    @Environment(AppStore.self) private var store
+
     var body: some View {
-        TabView {
-            Tab("Today", systemImage: "sun.max") {
-                TodayView()
+        @Bindable var store = store
+        VStack(spacing: 0) {
+            Group {
+                switch store.selectedTab {
+                case .today: TodayView()
+                case .plan: PlanView()
+                case .history: HistoryView()
+                case .settings: SettingsView()
+                }
             }
-            Tab("Plan", systemImage: "calendar") {
-                PlanView()
-            }
-            Tab("History", systemImage: "clock") {
-                HistoryView()
-            }
-            Tab("Settings", systemImage: "gear") {
-                SettingsView()
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            WSTabBar(selection: $store.selectedTab)
         }
+        .background(WSColor.bg.ignoresSafeArea())
     }
 }

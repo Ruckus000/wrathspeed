@@ -1,27 +1,5 @@
 import Foundation
 
-public struct PlanRequest: Equatable, Sendable {
-    public var goal: TrainingGoal
-    public var profile: RunnerProfile
-    public var startDate: Date
-    public var calendar: Calendar
-    public var location: RunLocation
-
-    public init(
-        goal: TrainingGoal,
-        profile: RunnerProfile,
-        startDate: Date,
-        calendar: Calendar = .current,
-        location: RunLocation = .outdoor
-    ) {
-        self.goal = goal
-        self.profile = profile
-        self.startDate = startDate
-        self.calendar = calendar
-        self.location = location
-    }
-}
-
 public enum PlanGenerator {
     public static let maxWeeks = 26
     public static let weeklyIncreaseCap = 0.10
@@ -32,6 +10,11 @@ public enum PlanGenerator {
             return BeginnerPlanGenerator.generate(request)
         }
         return generateRacePlan(request)
+    }
+
+    public static func generateValidated(_ request: PlanRequest) throws -> TrainingPlan {
+        try request.validate()
+        return generate(request)
     }
 
     public static func weekCount(for goal: TrainingGoal, startDate: Date, calendar: Calendar) -> Int {
@@ -64,7 +47,7 @@ public enum PlanGenerator {
         calendar.firstWeekday = 1
         let start = calendar.startOfDay(for: request.startDate)
         let weeks = weekCount(for: request.goal, startDate: start, calendar: calendar)
-        let weekdays = runWeekdays(daysPerWeek: request.profile.daysPerWeek, longRun: request.profile.longRunWeekday)
+        let weekdays = request.profile.resolvedRunWeekdays()
         let zones = PaceCalculator.zones(vdot: request.profile.vdot)
         let raceDistance = request.goal.kind.distanceMeters ?? 5_000
 
@@ -190,7 +173,7 @@ public enum PlanGenerator {
         return TrainingPlan(goal: request.goal, profile: request.profile, workouts: workouts)
     }
 
-    enum Phase {
+    public enum Phase: Sendable {
         case base, build, peak, taper
     }
 
@@ -198,7 +181,7 @@ public enum PlanGenerator {
         case easy, quality, tempo, long, rest
     }
 
-    static func phase(week: Int, total: Int) -> Phase {
+    public static func phase(week: Int, total: Int) -> Phase {
         let t = Double(week) / Double(max(total - 1, 1))
         if t >= 0.88 { return .taper }
         if t >= 0.70 { return .peak }
@@ -206,7 +189,36 @@ public enum PlanGenerator {
         return .base
     }
 
-    static func longRunCap(for kind: GoalKind) -> Double {
+    public static func isRecoveryWeek(weekIndex: Int, totalWeeks: Int) -> Bool {
+        weekIndex > 0 && (weekIndex + 1) % 4 == 0 && phase(week: weekIndex, total: totalWeeks) != .taper
+    }
+
+    public static func weekEyebrow(weekIndex: Int, totalWeeks: Int) -> String {
+        if weekIndex == totalWeeks - 1 { return "TAPER · RACE WEEK" }
+        if isRecoveryWeek(weekIndex: weekIndex, totalWeeks: totalWeeks) { return "RECOVERY WEEK" }
+        switch phase(week: weekIndex, total: totalWeeks) {
+        case .taper: return "TAPER · RACE WEEK"
+        case .peak: return "PEAK PHASE"
+        case .build: return "BUILD PHASE"
+        case .base: return "BASE PHASE"
+        }
+    }
+
+    public static func progressionRule(weekIndex: Int, totalWeeks: Int, kind: GoalKind) -> String {
+        if weekIndex == totalWeeks - 1 {
+            return "Race week. Quality sessions convert to easy. Taper volume is 55% of peak."
+        }
+        if phase(week: weekIndex, total: totalWeeks) == .taper {
+            return "Taper 75% then 55% of peak weekly volume so you arrive fresh."
+        }
+        if isRecoveryWeek(weekIndex: weekIndex, totalWeeks: totalWeeks) {
+            return "Every 4th week is a recovery week at 80% of the prior week's volume."
+        }
+        let capKm = Int(longRunCap(for: kind) / 1_000)
+        return "Weekly volume increases at most 10%. Long run is capped at 40% of weekly volume and \(capKm) km for this goal."
+    }
+
+    public static func longRunCap(for kind: GoalKind) -> Double {
         switch kind {
         case .fiveK: 12_000
         case .tenK: 16_000
@@ -363,29 +375,5 @@ enum WorkoutBuilder {
             plannedDistanceMeters: 1_000 + meters,
             usesPaceTargets: true
         )
-    }
-}
-
-public enum InstantWorkoutFactory {
-    public static func make(
-        kind: WorkoutKind,
-        location: RunLocation,
-        date: Date,
-        meters: Double? = nil
-    ) -> WorkoutBlueprint {
-        switch kind {
-        case .easy, .freeRun:
-            return WorkoutBuilder.easyRun(date: date, meters: meters ?? 5_000, location: location)
-        case .intervals:
-            return WorkoutBuilder.intervals(date: date, kind: .fiveK, phase: .build, location: location)
-        case .tempo:
-            return WorkoutBuilder.tempo(date: date, phase: .build, location: location)
-        case .longRun:
-            return WorkoutBuilder.longRun(date: date, meters: meters ?? 12_000, location: location, usesPace: true)
-        case .walkRun:
-            return BeginnerPlanGenerator.walkRun(date: date, runSeconds: 60, walkSeconds: 90, repeats: 8, location: location)
-        case .race, .strength:
-            return WorkoutBuilder.easyRun(date: date, meters: meters ?? 5_000, location: location)
-        }
     }
 }

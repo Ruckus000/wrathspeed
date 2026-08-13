@@ -65,6 +65,13 @@ public enum WorkoutKind: String, Codable, CaseIterable, Sendable {
         default: false
         }
     }
+
+    public var usesPaceTargetsByDefault: Bool {
+        switch self {
+        case .easy, .intervals, .tempo, .longRun, .race: true
+        default: false
+        }
+    }
 }
 
 public enum RunLocation: String, Codable, CaseIterable, Sendable {
@@ -149,6 +156,7 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
     public var unit: DistanceUnit
     public var recentRace: RaceResult?
     public var vdot: Double
+    public var availableWeekdays: [Weekday]?
 
     public init(
         ability: Ability,
@@ -158,7 +166,8 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
         longRunWeekday: Weekday,
         unit: DistanceUnit,
         recentRace: RaceResult? = nil,
-        vdot: Double? = nil
+        vdot: Double? = nil,
+        availableWeekdays: [Weekday]? = nil
     ) {
         self.ability = ability
         self.weeklyMileageMeters = weeklyMileageMeters ?? ability.defaultWeeklyMileageMeters
@@ -167,6 +176,7 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
         self.longRunWeekday = longRunWeekday
         self.unit = unit
         self.recentRace = recentRace
+        self.availableWeekdays = availableWeekdays
         if let vdot {
             self.vdot = vdot
         } else if let recentRace {
@@ -203,6 +213,25 @@ public extension Ability {
         case .advanced: 16_000
         case .elite: 24_000
         }
+    }
+}
+
+public extension RunnerProfile {
+    func resolvedRunWeekdays() -> [Weekday] {
+        if let availableWeekdays, !availableWeekdays.isEmpty {
+            return availableWeekdays.sorted()
+        }
+        return PlanGenerator.runWeekdays(daysPerWeek: daysPerWeek, longRun: longRunWeekday)
+    }
+}
+
+public struct MobilityPreferences: Codable, Equatable, Sendable {
+    public var enabled: Bool
+    public var sessionsPerWeek: Int
+
+    public init(enabled: Bool = false, sessionsPerWeek: Int = 2) {
+        self.enabled = enabled
+        self.sessionsPerWeek = min(3, max(1, sessionsPerWeek))
     }
 }
 
@@ -312,6 +341,20 @@ public struct ScheduledWorkout: Codable, Equatable, Sendable, Identifiable {
     public var date: Date { blueprint.date }
 }
 
+public struct WorkoutSplit: Codable, Equatable, Sendable {
+    public var index: Int
+    public var distanceMeters: Double
+    public var duration: TimeInterval
+    public var paceSecPerKm: Double
+
+    public init(index: Int, distanceMeters: Double, duration: TimeInterval, paceSecPerKm: Double) {
+        self.index = index
+        self.distanceMeters = distanceMeters
+        self.duration = duration
+        self.paceSecPerKm = paceSecPerKm
+    }
+}
+
 public struct WorkoutResult: Codable, Equatable, Sendable {
     public var workoutID: UUID
     public var startedAt: Date
@@ -321,6 +364,8 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
     public var heartRateAverage: Double?
     public var location: RunLocation
     public var healthKitUUID: UUID?
+    public var route: [RoutePoint]?
+    public var splits: [WorkoutSplit]?
 
     public init(
         workoutID: UUID,
@@ -330,7 +375,9 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         averagePaceSecPerKm: Double?,
         heartRateAverage: Double? = nil,
         location: RunLocation,
-        healthKitUUID: UUID? = nil
+        healthKitUUID: UUID? = nil,
+        route: [RoutePoint]? = nil,
+        splits: [WorkoutSplit]? = nil
     ) {
         self.workoutID = workoutID
         self.startedAt = startedAt
@@ -340,6 +387,20 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         self.heartRateAverage = heartRateAverage
         self.location = location
         self.healthKitUUID = healthKitUUID
+        self.route = route
+        self.splits = splits
+    }
+}
+
+public struct RoutePoint: Codable, Equatable, Sendable, Hashable {
+    public var latitude: Double
+    public var longitude: Double
+    public var timestamp: Date
+
+    public init(latitude: Double, longitude: Double, timestamp: Date) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = timestamp
     }
 }
 
@@ -349,22 +410,19 @@ public struct TrainingPlan: Codable, Equatable, Sendable, Identifiable {
     public var profile: RunnerProfile
     public var workouts: [ScheduledWorkout]
     public var generatedAt: Date
-    public var strengthWorkouts: [ScheduledWorkout]
 
     public init(
         id: UUID = UUID(),
         goal: TrainingGoal,
         profile: RunnerProfile,
         workouts: [ScheduledWorkout],
-        generatedAt: Date = Date(),
-        strengthWorkouts: [ScheduledWorkout] = []
+        generatedAt: Date = Date()
     ) {
         self.id = id
         self.goal = goal
         self.profile = profile
         self.workouts = workouts
         self.generatedAt = generatedAt
-        self.strengthWorkouts = strengthWorkouts
     }
 }
 

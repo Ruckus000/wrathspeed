@@ -69,8 +69,8 @@ public struct StrengthPreferences: Codable, Equatable, Sendable {
         self.ability = ability
         self.goal = goal
         self.durationMinutes = [30, 45, 60].contains(durationMinutes) ? durationMinutes : 30
-        self.sessionsPerWeek = min(4, max(1, sessionsPerWeek))
-        self.preferredDays = preferredDays
+        self.sessionsPerWeek = min(4, max(0, sessionsPerWeek))
+        self.preferredDays = preferredDays.isEmpty ? [.monday, .thursday] : preferredDays
         self.equipment = equipment.isEmpty ? [.bodyweight] : equipment
     }
 }
@@ -122,15 +122,6 @@ public struct StrengthCatalog: Codable, Equatable, Sendable {
 }
 
 public enum StrengthPlanner {
-    public static func loadCatalog(from bundle: Bundle? = nil) throws -> StrengthCatalog {
-        let bundle = bundle ?? Bundle.module
-        guard let url = bundle.url(forResource: "strength_catalog", withExtension: "json") else {
-            throw CocoaError(.fileNoSuchFile)
-        }
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(StrengthCatalog.self, from: data)
-    }
-
     public static func distribution(goal: StrengthGoal, sessionsPerWeek: Int) -> [StrengthFocus] {
         switch (goal, sessionsPerWeek) {
         case (.runningFocus, 1): [.legsCore]
@@ -151,6 +142,7 @@ public enum StrengthPlanner {
         calendar: Calendar,
         catalog: StrengthCatalog
     ) -> [StrengthSession] {
+        guard preferences.sessionsPerWeek > 0 else { return [] }
         let foci = distribution(goal: preferences.goal, sessionsPerWeek: preferences.sessionsPerWeek)
         let days = Array(preferences.preferredDays.prefix(preferences.sessionsPerWeek))
         let start = calendar.startOfDay(for: startDate)
