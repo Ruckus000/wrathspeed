@@ -418,11 +418,13 @@ struct OnboardingView: View {
                 validationMessage = error
                 return
             }
+            normalizeDraftInputs()
             step += 1
             return
         }
         if step == 5 {
             do {
+                normalizeDraftInputs()
                 try OnboardingValidator.validate(inputs)
                 building = true
                 withAnimation(.linear(duration: 1.2)) { buildProgress = 1 }
@@ -452,12 +454,20 @@ struct OnboardingView: View {
 
     private func validateCurrentStep() -> String? {
         switch step {
+        case 1:
+            normalizeDraftInputs()
         case 4:
             if inputs.availableDays.count < 3 { return OnboardingValidationError.tooFewAvailableDays.errorDescription }
             if !inputs.availableDays.contains(inputs.longRunDay) { return OnboardingValidationError.longRunNotAvailable.errorDescription }
         default: break
         }
         return nil
+    }
+
+    private func normalizeDraftInputs() {
+        if inputs.goalMode == .race && inputs.raceDate == nil {
+            inputs.raceDate = defaultRaceDate
+        }
     }
 
     private func firstWeekWorkouts(_ draft: OnboardingDraft) -> [ScheduledWorkout] {

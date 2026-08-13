@@ -21,7 +21,12 @@ final class HistoryEmptyStateUITests: XCTestCase {
         tapNext(times: 3, in: app)
         XCTAssertTrue(app.buttons["BUILD DRAFT →"].waitForExistence(timeout: 8))
         app.buttons["BUILD DRAFT →"].tap()
-        XCTAssertTrue(app.buttons["CONFIRM PLAN →"].waitForExistence(timeout: 30))
+
+        let buildingDone = NSPredicate(format: "exists == false")
+        let buildingExpectation = XCTNSPredicateExpectation(predicate: buildingDone, object: app.staticTexts["STAND BY"])
+        _ = XCTWaiter.wait(for: [buildingExpectation], timeout: 20)
+
+        XCTAssertTrue(app.buttons["CONFIRM PLAN →"].waitForExistence(timeout: 15))
         app.buttons["CONFIRM PLAN →"].tap()
         XCTAssertTrue(app.buttons["TODAY"].waitForExistence(timeout: 15))
         if app.buttons["NOT NOW"].waitForExistence(timeout: 3) {

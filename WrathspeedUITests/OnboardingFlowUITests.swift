@@ -26,8 +26,12 @@ final class OnboardingFlowUITests: XCTestCase {
         XCTAssertTrue(buildDraft.waitForExistence(timeout: 8), "Build draft button missing")
         buildDraft.tap()
 
+        let buildingDone = NSPredicate(format: "exists == false")
+        let buildingExpectation = XCTNSPredicateExpectation(predicate: buildingDone, object: app.staticTexts["STAND BY"])
+        _ = XCTWaiter.wait(for: [buildingExpectation], timeout: 20)
+
         let confirm = app.buttons["CONFIRM PLAN →"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 30), "Draft preview confirm button missing")
+        XCTAssertTrue(confirm.waitForExistence(timeout: 15), "Draft preview confirm button missing")
         confirm.tap()
 
         let today = app.buttons["TODAY"]
