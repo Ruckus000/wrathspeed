@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import UIKit
 import WrathspeedCore
 
 @MainActor
@@ -149,7 +150,14 @@ final class WorkoutSessionController: NSObject {
     private func beginCountdownThenStart(configuration: HKWorkoutConfiguration) async throws {
         sessionState = .countdown
         publishSnapshot()
-        try await Task.sleep(for: .seconds(3))
+        #if os(iOS)
+        let skipCountdown = UIAccessibility.isReduceMotionEnabled
+        #else
+        let skipCountdown = false
+        #endif
+        if !skipCountdown {
+            try await Task.sleep(for: .seconds(3))
+        }
         try await startPrimary(configuration: configuration)
     }
 
