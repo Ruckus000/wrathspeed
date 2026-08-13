@@ -1,19 +1,16 @@
 import Foundation
-import HealthKit
-import SwiftData
 import WrathspeedCore
 
-protocol HealthImporting: Sendable {
-    var authorizationDenied: Bool { get }
-    func requestAuthorization() async throws
-    func importWorkouts(since: Date, existing: [WorkoutResult]) async throws -> [ImportedHealthWorkout]
-}
+#if canImport(HealthKit)
+import HealthKit
 
-final class LiveHealthImportService: HealthImporting, @unchecked Sendable {
+public final class LiveHealthImportService: HealthImporting, @unchecked Sendable {
     private let healthStore = HKHealthStore()
-    private(set) var authorizationDenied = false
+    public private(set) var authorizationDenied = false
 
-    func requestAuthorization() async throws {
+    public init() {}
+
+    public func requestAuthorization() async throws {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         let read: Set<HKObjectType> = [
             HKObjectType.workoutType(),
@@ -31,27 +28,29 @@ final class LiveHealthImportService: HealthImporting, @unchecked Sendable {
         }
     }
 
-    func importWorkouts(since: Date, existing: [WorkoutResult]) async throws -> [ImportedHealthWorkout] {
-        guard HKHealthStore.isHealthDataAvailable() else { return [] }
-        let predicate = HKQuery.predicateForSamples(withStart: since, end: nil, options: .strictStartDate)
+    public func importWorkouts(anchor: Data?, since: Date) async throws -> HealthImportResult {
+        guard HKHealthStore.isHealthDataAvailable() else { return HealthImportResult(workouts: []) }
         let workoutType = HKObjectType.workoutType()
         let runningPredicate = HKQuery.predicateForWorkouts(with: .running)
-        let compound = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, runningPredicate])
+        let hkAnchor = anchor.flatMap { try? NSKeyedUnarchiver.unarchivedObject(ofClass: HKQueryAnchor.self, from: $0) }
 
         return try await withCheckedThrowingContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: workoutType,
-                predicate: compound,
-                limit: HKObjectQueryNoLimit,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
-            ) { _, samples, error in
+            let query = HKAnchoredObjectQuery(
+                type: workoutType,
+                predicate: runningPredicate,
+                anchor: hkAnchor,
+                limit: HKObjectQueryNoLimit
+            ) { _, samples, _, newAnchor, error in
                 if let error {
                     continuation.resume(throwing: error)
                     return
                 }
                 let workouts = (samples as? [HKWorkout]) ?? []
-                let imports = workouts.compactMap { Self.mapWorkout($0) }
-                continuation.resume(returning: imports)
+                let imports = workouts
+                    .filter { $0.startDate >= since }
+                    .compactMap(Self.mapWorkout)
+                let anchorData = newAnchor.flatMap { try? NSKeyedArchiver.archivedData(withRootObject: $0, requiringSecureCoding: true) }
+                continuation.resume(returning: HealthImportResult(workouts: imports, newAnchor: anchorData))
             }
             healthStore.execute(query)
         }
@@ -72,15 +71,4 @@ final class LiveHealthImportService: HealthImporting, @unchecked Sendable {
         )
     }
 }
-
-enum HealthImportAnchorStore {
-    static func load(from context: ModelContext) throws -> Data? {
-        try context.fetch(FetchDescriptor<AppSettingsEntity>()).first?.healthImportAnchorData
-    }
-
-    static func save(_ anchor: Data, to context: ModelContext) throws {
-        guard let settings = try context.fetch(FetchDescriptor<AppSettingsEntity>()).first else { return }
-        settings.healthImportAnchorData = anchor
-        try context.save()
-    }
-}
+#endif
