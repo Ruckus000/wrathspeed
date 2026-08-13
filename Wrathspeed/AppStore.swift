@@ -458,9 +458,19 @@ final class AppStore {
         }
     }
 
+    func startInstant(request: InstantWorkoutRequest) async {
+        do {
+            try InstantWorkoutValidation.validate(request)
+            let blueprint = try InstantWorkoutBuilder.build(request)
+            await start(blueprint)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func startInstant(kind: WorkoutKind, location: RunLocation) async {
-        let blueprint = InstantWorkoutFactory.make(kind: kind, location: location, date: Date())
-        await start(blueprint)
+        let request = InstantWorkoutRequest(kind: kind, location: location, distanceMeters: 5_000)
+        await startInstant(request: request)
     }
 
     func updateStrengthPreferences(_ preferences: StrengthPreferences) {
