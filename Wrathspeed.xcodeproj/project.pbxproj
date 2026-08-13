@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0098A0A8159A09D4F76F3FBA /* SpeechCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4235A006157B1E50F19552 /* SpeechCuePlayer.swift */; };
 		08409A21FF51BA98DF27603F /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70406BC14F70DD90DDD3BBD /* Persistence.swift */; };
+		0A5EDF0A3FE5D15B62110B95 /* WorkoutLiveActivityPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B97D389D507E23AC2326E7 /* WorkoutLiveActivityPresenter.swift */; };
 		0F021B1C195AE56DF61087DF /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
 		12A002EF37E40F0F26B67708 /* WorkoutSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */; };
 		138F26696BE9235FEB46397B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 83B4CFD364D565BED88102B0 /* Assets.xcassets */; };
@@ -16,30 +17,59 @@
 		1D610A28057F2C45E39A3200 /* StrengthPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */; };
 		2295D09DA4B9A08AC38705E8 /* SessionSyncMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */; };
 		26BBAA1750C8B78057950701 /* WrathspeedWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */; };
+		27FB4D2E4EE3ED64794B4F6B /* WorkoutSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */; };
+		2E5B3775E77AAEFC7216EF85 /* WorkoutRouteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */; };
 		2F1364AFE26CA9375735A694 /* SpeechCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4235A006157B1E50F19552 /* SpeechCuePlayer.swift */; };
+		303E7770CCB71075E7BDB175 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ACAF9D2CD26EBF982A6FF521 /* Anton-Regular.ttf */; };
 		30E9A3671D9420EB2EA75674 /* NotFeeling100View.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68DDE74F3F9C8CB706ACE82 /* NotFeeling100View.swift */; };
+		3400C63FB6538DF0B2DC8C79 /* strength_catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 50A5504FE777036C5125075E /* strength_catalog.json */; };
 		34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */; };
 		35A9D38A9CFD8F627089813F /* WrathspeedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */; };
 		385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */; };
+		39DC7827A28AC1C7A31A77BD /* WorkoutRouteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */; };
+		42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */; };
+		46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */; };
+		4CE2F27B00D079671AFC6E3B /* WSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15C3868B4CD63B285917AFB /* WSComponents.swift */; };
+		5556FA81D699935F03C32F92 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */; };
+		5674EA7501E0D1ACB1B57B34 /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		58D3E009B40C2F83CDB436C4 /* WorkoutSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */; };
+		5D96CACCCDC375A0D899A3A2 /* PersistenceMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B128DF18547015FD23B5C2 /* PersistenceMigration.swift */; };
+		605509E7B1013D6B37BB7150 /* UITestingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B109C99D068CDA5571F02ECC /* UITestingSupport.swift */; };
+		691401C0B8507A8CF70B2241 /* PersistedEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */; };
 		7040DC7A8C02EEEF45227D0F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEEA40C553246BE6668AC20 /* OnboardingView.swift */; };
 		85D23F74512F143A71B5E0B3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 959F85A1AB57F13A2062AF62 /* Assets.xcassets */; };
 		8B3795D4B54B98BF8F83A5DD /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = 33AE900BF55746D394E8E507 /* WrathspeedCore */; };
 		8BF2323C62BB034AAF05DF5E /* SessionSyncMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */; };
+		95A677621DD67D00C1E86AA5 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B02A26CA46AFDFD4AB6E4E7B /* Archivo-Variable.ttf */; };
+		96987FC1BA1FFB5594E6EB0F /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7E8377F163FF1EEAE64A2840 /* Archivo-Variable.ttf */; };
 		9853F0A8A996720767E6BEE1 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */; };
+		98B8C197F0F4356B42DAADCC /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
+		991C5E1FE8470358DC6DD1A4 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
 		9A57448FED50E18F7D79E249 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B54428B37BB9AF7065D03896 /* PrivacyInfo.xcprivacy */; };
 		9A909F6A29B02E45418643B4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E19C683D7C4D990ABC4FA2 /* RootView.swift */; };
+		9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03AE48A3DEECC9F2161D4BF /* CoachingCopy.swift */; };
+		9BEE3DCDF0014F0E3BB6DD6E /* CoachingMVPHardeningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883309AA5F44874069BA7F88 /* CoachingMVPHardeningTests.swift */; };
+		A22368527F75EF25E43DFE94 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */; };
+		A87C0CAA1BD1309D797E025E /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		B0504C1BCC111B02EE234E94 /* WrathspeedWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 204CDE73903492B877A70262 /* WrathspeedWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BE3DC257EA2AC519FE168C15 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */; };
 		BE4E7CAD827D8BFDF70A074A /* WrathspeedWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BF7B7D4590471BA709DB9BAD /* WrathspeedWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB921F1FAAD5039EBD71AD69 /* WrathspeedWatchApp.swift */; };
 		C3F10E2CA0F7A4A56925CFA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */; };
+		C5ABE30016A04262D243ADA9 /* StrengthCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */; };
 		C6F5EA8D16FF6B78EC7338B5 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */; };
 		CCEBBB65B933B63197D31E0D /* WatchTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FC8D270CE0AC2F405E6658 /* WatchTodayView.swift */; };
+		CE1B5220BB24B4351D560354 /* WorkoutLiveActivityPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B97D389D507E23AC2326E7 /* WorkoutLiveActivityPresenter.swift */; };
+		CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */; };
+		CFC8C89C1396CD14C3FDC1D7 /* WSFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D8057349F1E37AC208309 /* WSFormat.swift */; };
+		D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E483C98F5D35228B28E66CCB /* CelebrationView.swift */; };
+		D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */; };
 		DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */; };
 		DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
+		E4DA07A801DCFBBC4F5EB632 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
 		EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CFBF834821A2F1F2E98191 /* SettingsView.swift */; };
 		F5E192E2351C27896E4775FC /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = D4C95B978193A33B7CFAED9E /* WrathspeedCore */; };
+		FA6FF25A3D8C63BEA813A02B /* WorkoutSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +86,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = 0126CB372B9DD7367D8DBBCA;
 			remoteInfo = WrathspeedWatch;
+		};
+		698F07A7BDCFB767F7E9210D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0FBF55B50238D04F4CAEB657 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 237C48BB19F31E39DA1697EB;
+			remoteInfo = Wrathspeed;
+		};
+		D72F60213F48F37CCEDCA337 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0FBF55B50238D04F4CAEB657 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 237C48BB19F31E39DA1697EB;
+			remoteInfo = Wrathspeed;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -86,21 +130,32 @@
 
 /* Begin PBXFileReference section */
 		065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
+		0FED451768F4FC33153BFD72 /* WSTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSTheme.swift; sourceTree = "<group>"; };
 		15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedApp.swift; sourceTree = "<group>"; };
 		204CDE73903492B877A70262 /* WrathspeedWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WrathspeedWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C2F88EFC2EB5D541B9AA700 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		36B128DF18547015FD23B5C2 /* PersistenceMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceMigration.swift; sourceTree = "<group>"; };
 		3A4235A006157B1E50F19552 /* SpeechCuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechCuePlayer.swift; sourceTree = "<group>"; };
+		418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
+		43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowUITests.swift; sourceTree = "<group>"; };
+		4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceMigrationTests.swift; sourceTree = "<group>"; };
+		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
 		5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedWidgets.swift; sourceTree = "<group>"; };
+		6259BB5F724E4BB2BC498533 /* WrathspeedUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestingHarnessTests.swift; sourceTree = "<group>"; };
 		66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Wrathspeed.entitlements; sourceTree = "<group>"; };
 		74D4ADFAE3CDB660B9C53179 /* Wrathspeed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Wrathspeed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRunView.swift; sourceTree = "<group>"; };
+		7E8377F163FF1EEAE64A2840 /* Archivo-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo-Variable.ttf"; sourceTree = "<group>"; };
 		83B4CFD364D565BED88102B0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		883309AA5F44874069BA7F88 /* CoachingMVPHardeningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingMVPHardeningTests.swift; sourceTree = "<group>"; };
 		8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSyncMessage.swift; sourceTree = "<group>"; };
 		91E19C683D7C4D990ABC4FA2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
+		93B97D389D507E23AC2326E7 /* WorkoutLiveActivityPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityPresenter.swift; sourceTree = "<group>"; };
 		959F85A1AB57F13A2062AF62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9998696233F4B68DDD25435E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A3602198A391BDD9EEF397E2 /* WrathspeedWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WrathspeedWidgets.entitlements; sourceTree = "<group>"; };
@@ -108,17 +163,32 @@
 		A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WrathspeedWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB921F1FAAD5039EBD71AD69 /* WrathspeedWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedWatchApp.swift; sourceTree = "<group>"; };
 		AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthPlayerView.swift; sourceTree = "<group>"; };
+		ACAF9D2CD26EBF982A6FF521 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
+		B02A26CA46AFDFD4AB6E4E7B /* Archivo-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo-Variable.ttf"; sourceTree = "<group>"; };
+		B109C99D068CDA5571F02ECC /* UITestingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestingSupport.swift; sourceTree = "<group>"; };
+		B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStartResolver.swift; sourceTree = "<group>"; };
 		B2DF0D25B0DC354590407441 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		B54428B37BB9AF7065D03896 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthCatalogLoader.swift; sourceTree = "<group>"; };
 		B70406BC14F70DD90DDD3BBD /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		C15C3868B4CD63B285917AFB /* WSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSComponents.swift; sourceTree = "<group>"; };
+		C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionCoordinator.swift; sourceTree = "<group>"; };
 		C3D775A70F9B51D2BE1C6F1E /* WrathspeedCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WrathspeedCore; path = WrathspeedCore; sourceTree = SOURCE_ROOT; };
+		C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		CCEEA40C553246BE6668AC20 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRouteRecorder.swift; sourceTree = "<group>"; };
+		D03AE48A3DEECC9F2161D4BF /* CoachingCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingCopy.swift; sourceTree = "<group>"; };
 		D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionController.swift; sourceTree = "<group>"; };
 		D4CFBF834821A2F1F2E98191 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D68DDE74F3F9C8CB706ACE82 /* NotFeeling100View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotFeeling100View.swift; sourceTree = "<group>"; };
 		DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionBridge.swift; sourceTree = "<group>"; };
+		DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedEntities.swift; sourceTree = "<group>"; };
+		E483C98F5D35228B28E66CCB /* CelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
+		E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo-Variable.ttf"; sourceTree = "<group>"; };
 		F2FC8D270CE0AC2F405E6658 /* WatchTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTodayView.swift; sourceTree = "<group>"; };
+		F496DF678C9371178579F128 /* WrathspeedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		FF2D8057349F1E37AC208309 /* WSFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSFormat.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,21 +217,60 @@
 				9998696233F4B68DDD25435E /* Info.plist */,
 				A3602198A391BDD9EEF397E2 /* WrathspeedWidgets.entitlements */,
 				5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */,
+				85634AE67DA76FFF8822B256 /* Fonts */,
 			);
 			path = WrathspeedWidgets;
+			sourceTree = "<group>";
+		};
+		15C958C5EA951CD7A4C63700 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				0FED451768F4FC33153BFD72 /* WSTheme.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		1847D459F192077D2D51E5E4 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				ACAF9D2CD26EBF982A6FF521 /* Anton-Regular.ttf */,
+				E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		20D67C1353A6F3EA2710B390 /* WrathspeedTests */ = {
+			isa = PBXGroup;
+			children = (
+				883309AA5F44874069BA7F88 /* CoachingMVPHardeningTests.swift */,
+				4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */,
+				643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */,
+			);
+			path = WrathspeedTests;
 			sourceTree = "<group>";
 		};
 		21AD93E55CE0087C2915169B = {
 			isa = PBXGroup;
 			children = (
+				15C958C5EA951CD7A4C63700 /* Design */,
 				34B33B11564AFBF04C90B527 /* Packages */,
 				993E3D0579125E36C70B13C8 /* Session */,
 				76254A282DF67E2CD8ED4D8B /* Shared */,
 				4AD3F3FDE2512B4A4C4233C4 /* Wrathspeed */,
+				20D67C1353A6F3EA2710B390 /* WrathspeedTests */,
+				2D8CF8A522F8F7F11C14CA20 /* WrathspeedUITests */,
 				54D1766C462BCC4B62F55140 /* WrathspeedWatch */,
 				0C618F6C446CE6773D0C27AB /* WrathspeedWidgets */,
 				57A2B47270D325563BA3EE3C /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		2D8CF8A522F8F7F11C14CA20 /* WrathspeedUITests */ = {
+			isa = PBXGroup;
+			children = (
+				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
+			);
+			path = WrathspeedUITests;
 			sourceTree = "<group>";
 		};
 		34B33B11564AFBF04C90B527 /* Packages */ = {
@@ -177,22 +286,40 @@
 			children = (
 				5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */,
 				83B4CFD364D565BED88102B0 /* Assets.xcassets */,
+				E483C98F5D35228B28E66CCB /* CelebrationView.swift */,
 				66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */,
 				2C2F88EFC2EB5D541B9AA700 /* Info.plist */,
 				7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */,
 				D68DDE74F3F9C8CB706ACE82 /* NotFeeling100View.swift */,
 				CCEEA40C553246BE6668AC20 /* OnboardingView.swift */,
+				DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */,
 				B70406BC14F70DD90DDD3BBD /* Persistence.swift */,
+				36B128DF18547015FD23B5C2 /* PersistenceMigration.swift */,
 				92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */,
 				FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */,
 				91E19C683D7C4D990ABC4FA2 /* RootView.swift */,
 				D4CFBF834821A2F1F2E98191 /* SettingsView.swift */,
+				50A5504FE777036C5125075E /* strength_catalog.json */,
+				B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */,
 				AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */,
 				065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */,
+				B109C99D068CDA5571F02ECC /* UITestingSupport.swift */,
 				72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */,
 				15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */,
+				1847D459F192077D2D51E5E4 /* Fonts */,
+				4D8E3AF3F0E99F5F30FA5668 /* Theme */,
 			);
 			path = Wrathspeed;
+			sourceTree = "<group>";
+		};
+		4D8E3AF3F0E99F5F30FA5668 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				D03AE48A3DEECC9F2161D4BF /* CoachingCopy.swift */,
+				C15C3868B4CD63B285917AFB /* WSComponents.swift */,
+				FF2D8057349F1E37AC208309 /* WSFormat.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		54D1766C462BCC4B62F55140 /* WrathspeedWatch */ = {
@@ -204,6 +331,7 @@
 				F2FC8D270CE0AC2F405E6658 /* WatchTodayView.swift */,
 				A84A97B2BB3D926E3604B09D /* WrathspeedWatch.entitlements */,
 				AB921F1FAAD5039EBD71AD69 /* WrathspeedWatchApp.swift */,
+				8A32BCD67F6EDFFF72AFEDE7 /* Fonts */,
 			);
 			path = WrathspeedWatch;
 			sourceTree = "<group>";
@@ -212,6 +340,8 @@
 			isa = PBXGroup;
 			children = (
 				74D4ADFAE3CDB660B9C53179 /* Wrathspeed.app */,
+				F496DF678C9371178579F128 /* WrathspeedTests.xctest */,
+				6259BB5F724E4BB2BC498533 /* WrathspeedUITests.xctest */,
 				A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */,
 				204CDE73903492B877A70262 /* WrathspeedWidgets.appex */,
 			);
@@ -226,13 +356,35 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		85634AE67DA76FFF8822B256 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */,
+				B02A26CA46AFDFD4AB6E4E7B /* Archivo-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		8A32BCD67F6EDFFF72AFEDE7 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */,
+				7E8377F163FF1EEAE64A2840 /* Archivo-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
 		993E3D0579125E36C70B13C8 /* Session */ = {
 			isa = PBXGroup;
 			children = (
 				8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */,
 				3A4235A006157B1E50F19552 /* SpeechCuePlayer.swift */,
+				B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */,
 				DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */,
+				93B97D389D507E23AC2326E7 /* WorkoutLiveActivityPresenter.swift */,
+				CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */,
 				D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */,
+				C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */,
 			);
 			path = Session;
 			sourceTree = "<group>";
@@ -289,6 +441,7 @@
 			buildConfigurationList = BBF777EFE45D7B88B082CD3F /* Build configuration list for PBXNativeTarget "WrathspeedWidgets" */;
 			buildPhases = (
 				9ADD5682B0BBA41824E0BE7A /* Sources */,
+				7EF0471994A17942D8D38E2F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -300,6 +453,42 @@
 			productName = WrathspeedWidgets;
 			productReference = 204CDE73903492B877A70262 /* WrathspeedWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		71DBD101872C847E5E2AB066 /* WrathspeedUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 786C82E158F4AEA6EE79A211 /* Build configuration list for PBXNativeTarget "WrathspeedUITests" */;
+			buildPhases = (
+				2B6E40325D089D1CCCACB8AD /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0BD3595086EE3A94772426E2 /* PBXTargetDependency */,
+			);
+			name = WrathspeedUITests;
+			packageProductDependencies = (
+			);
+			productName = WrathspeedUITests;
+			productReference = 6259BB5F724E4BB2BC498533 /* WrathspeedUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		DC0458F9A6C1853DD4AADBF3 /* WrathspeedTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5BBD3F6873F3D8730938A826 /* Build configuration list for PBXNativeTarget "WrathspeedTests" */;
+			buildPhases = (
+				B4FE3F8BEA1F41018C29A80D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				855B2E82035C62B5D698B3A6 /* PBXTargetDependency */,
+			);
+			name = WrathspeedTests;
+			packageProductDependencies = (
+			);
+			productName = WrathspeedTests;
+			productReference = F496DF678C9371178579F128 /* WrathspeedTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -317,6 +506,13 @@
 						ProvisioningStyle = Automatic;
 					};
 					6875D54BBF5A89532BB6B62D = {
+						ProvisioningStyle = Automatic;
+					};
+					71DBD101872C847E5E2AB066 = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 237C48BB19F31E39DA1697EB;
+					};
+					DC0458F9A6C1853DD4AADBF3 = {
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -339,6 +535,8 @@
 			projectRoot = "";
 			targets = (
 				237C48BB19F31E39DA1697EB /* Wrathspeed */,
+				DC0458F9A6C1853DD4AADBF3 /* WrathspeedTests */,
+				71DBD101872C847E5E2AB066 /* WrathspeedUITests */,
 				0126CB372B9DD7367D8DBBCA /* WrathspeedWatch */,
 				6875D54BBF5A89532BB6B62D /* WrathspeedWidgets */,
 			);
@@ -346,12 +544,24 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7EF0471994A17942D8D38E2F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */,
+				95A677621DD67D00C1E86AA5 /* Archivo-Variable.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BEDC58008EB8A54C401D9F54 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				303E7770CCB71075E7BDB175 /* Anton-Regular.ttf in Resources */,
+				5556FA81D699935F03C32F92 /* Archivo-Variable.ttf in Resources */,
 				138F26696BE9235FEB46397B /* Assets.xcassets in Resources */,
 				C3F10E2CA0F7A4A56925CFA7 /* PrivacyInfo.xcprivacy in Resources */,
+				3400C63FB6538DF0B2DC8C79 /* strength_catalog.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -359,6 +569,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A22368527F75EF25E43DFE94 /* Anton-Regular.ttf in Resources */,
+				96987FC1BA1FFB5594E6EB0F /* Archivo-Variable.ttf in Resources */,
 				85D23F74512F143A71B5E0B3 /* Assets.xcassets in Resources */,
 				9A57448FED50E18F7D79E249 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -367,6 +579,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2B6E40325D089D1CCCACB8AD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8B444A168E7A212DF37875F8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -374,8 +594,13 @@
 				8BF2323C62BB034AAF05DF5E /* SessionSyncMessage.swift in Sources */,
 				0098A0A8159A09D4F76F3FBA /* SpeechCuePlayer.swift in Sources */,
 				DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */,
+				98B8C197F0F4356B42DAADCC /* WSTheme.swift in Sources */,
+				E4DA07A801DCFBBC4F5EB632 /* WatchStartResolver.swift in Sources */,
 				CCEBBB65B933B63197D31E0D /* WatchTodayView.swift in Sources */,
+				0A5EDF0A3FE5D15B62110B95 /* WorkoutLiveActivityPresenter.swift in Sources */,
+				2E5B3775E77AAEFC7216EF85 /* WorkoutRouteRecorder.swift in Sources */,
 				12A002EF37E40F0F26B67708 /* WorkoutSessionController.swift in Sources */,
+				27FB4D2E4EE3ED64794B4F6B /* WorkoutSessionCoordinator.swift in Sources */,
 				BF7B7D4590471BA709DB9BAD /* WrathspeedWatchApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -384,8 +609,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A87C0CAA1BD1309D797E025E /* WSTheme.swift in Sources */,
 				BE3DC257EA2AC519FE168C15 /* WorkoutActivityAttributes.swift in Sources */,
 				26BBAA1750C8B78057950701 /* WrathspeedWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B4FE3F8BEA1F41018C29A80D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9BEE3DCDF0014F0E3BB6DD6E /* CoachingMVPHardeningTests.swift in Sources */,
+				CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */,
+				42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,21 +630,34 @@
 			buildActionMask = 2147483647;
 			files = (
 				DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */,
+				D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */,
+				9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */,
 				34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */,
 				385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */,
 				30E9A3671D9420EB2EA75674 /* NotFeeling100View.swift in Sources */,
 				7040DC7A8C02EEEF45227D0F /* OnboardingView.swift in Sources */,
+				691401C0B8507A8CF70B2241 /* PersistedEntities.swift in Sources */,
 				08409A21FF51BA98DF27603F /* Persistence.swift in Sources */,
+				5D96CACCCDC375A0D899A3A2 /* PersistenceMigration.swift in Sources */,
 				9853F0A8A996720767E6BEE1 /* PlanView.swift in Sources */,
 				9A909F6A29B02E45418643B4 /* RootView.swift in Sources */,
 				2295D09DA4B9A08AC38705E8 /* SessionSyncMessage.swift in Sources */,
 				EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */,
 				2F1364AFE26CA9375735A694 /* SpeechCuePlayer.swift in Sources */,
+				C5ABE30016A04262D243ADA9 /* StrengthCatalogLoader.swift in Sources */,
 				1D610A28057F2C45E39A3200 /* StrengthPlayerView.swift in Sources */,
 				C6F5EA8D16FF6B78EC7338B5 /* TodayView.swift in Sources */,
+				605509E7B1013D6B37BB7150 /* UITestingSupport.swift in Sources */,
 				0F021B1C195AE56DF61087DF /* WCSessionBridge.swift in Sources */,
+				4CE2F27B00D079671AFC6E3B /* WSComponents.swift in Sources */,
+				CFC8C89C1396CD14C3FDC1D7 /* WSFormat.swift in Sources */,
+				5674EA7501E0D1ACB1B57B34 /* WSTheme.swift in Sources */,
+				991C5E1FE8470358DC6DD1A4 /* WatchStartResolver.swift in Sources */,
 				13F239F140195D7F95446699 /* WorkoutActivityAttributes.swift in Sources */,
+				CE1B5220BB24B4351D560354 /* WorkoutLiveActivityPresenter.swift in Sources */,
+				39DC7827A28AC1C7A31A77BD /* WorkoutRouteRecorder.swift in Sources */,
 				58D3E009B40C2F83CDB436C4 /* WorkoutSessionController.swift in Sources */,
+				FA6FF25A3D8C63BEA813A02B /* WorkoutSessionCoordinator.swift in Sources */,
 				35A9D38A9CFD8F627089813F /* WrathspeedApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -416,10 +665,20 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0BD3595086EE3A94772426E2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 237C48BB19F31E39DA1697EB /* Wrathspeed */;
+			targetProxy = 698F07A7BDCFB767F7E9210D /* PBXContainerItemProxy */;
+		};
 		434A6818E76B7C68729D4B66 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6875D54BBF5A89532BB6B62D /* WrathspeedWidgets */;
 			targetProxy = 4851AFA6B3AAA4A169A07498 /* PBXContainerItemProxy */;
+		};
+		855B2E82035C62B5D698B3A6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 237C48BB19F31E39DA1697EB /* Wrathspeed */;
+			targetProxy = D72F60213F48F37CCEDCA337 /* PBXContainerItemProxy */;
 		};
 		BDCF64A4645A7B235BC65561 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -466,6 +725,70 @@
 			};
 			name = Release;
 		};
+		131502CE3ADE86F4B39A665D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrathspeed.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wrathspeed.app/Wrathspeed";
+			};
+			name = Release;
+		};
+		55B27014E7A710A95D905882 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrathspeed.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Wrathspeed.app/Wrathspeed";
+			};
+			name = Debug;
+		};
+		66A7CAC692655E6594AF24A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrathspeed.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Wrathspeed;
+			};
+			name = Release;
+		};
+		6E48141E732B4B75FBEF0413 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.wrathspeed.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = Wrathspeed;
+			};
+			name = Debug;
+		};
 		8B37899C0EEF89900488BC31 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -476,7 +799,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Wrathspeed;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wrathspeed reads heart rate and workout data to coach your runs.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Wrathspeed saves completed runs and strength sessions to Apple Health.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Wrathspeed uses your location to track outdoor runs while the phone is locked or in your pocket.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Wrathspeed records your outdoor route while a workout is active, including when the screen is locked.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Wrathspeed uses your location to track outdoor runs.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -502,7 +825,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Wrathspeed;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wrathspeed reads heart rate and workout data to coach your runs.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Wrathspeed saves completed runs and strength sessions to Apple Health.";
-				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Wrathspeed uses your location to track outdoor runs while the phone is locked or in your pocket.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Wrathspeed records your outdoor route while a workout is active, including when the screen is locked.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Wrathspeed uses your location to track outdoor runs.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -694,6 +1017,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		5BBD3F6873F3D8730938A826 /* Build configuration list for PBXNativeTarget "WrathspeedTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				55B27014E7A710A95D905882 /* Debug */,
+				131502CE3ADE86F4B39A665D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		60DBC3BA5FD4655F316D572B /* Build configuration list for PBXNativeTarget "Wrathspeed" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -708,6 +1040,15 @@
 			buildConfigurations = (
 				902E272858DAED6B3661ED4E /* Debug */,
 				96679881261C7908331F12BF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		786C82E158F4AEA6EE79A211 /* Build configuration list for PBXNativeTarget "WrathspeedUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E48141E732B4B75FBEF0413 /* Debug */,
+				66A7CAC692655E6594AF24A2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
