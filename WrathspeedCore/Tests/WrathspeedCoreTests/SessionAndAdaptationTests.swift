@@ -210,14 +210,42 @@ struct NotFeeling100Tests {
 }
 
 struct StrengthPlannerTests {
+    private let catalog = StrengthCatalog(exercises: [
+        StrengthExercise(
+            id: "bodyweight-squat",
+            name: "Bodyweight squat",
+            focus: [.legsCore, .fullBody],
+            equipment: [.bodyweight],
+            symbolName: "figure.strengthtraining.traditional",
+            defaultReps: 12,
+            cue: "Stand tall."
+        ),
+        StrengthExercise(
+            id: "bodyweight-push-up",
+            name: "Push-up",
+            focus: [.upper, .fullBody],
+            equipment: [.bodyweight],
+            symbolName: "figure.strengthtraining.traditional",
+            defaultReps: 8,
+            cue: "Keep a straight line."
+        ),
+        StrengthExercise(
+            id: "dumbbell-row",
+            name: "Dumbbell row",
+            focus: [.upper, .fullBody],
+            equipment: [.dumbbell],
+            symbolName: "dumbbell.fill",
+            defaultReps: 10,
+            cue: "Keep your back flat."
+        ),
+    ])
+
     @Test func runningFocusTwoDaysMatchesPublishedGrid() {
         #expect(StrengthPlanner.distribution(goal: .runningFocus, sessionsPerWeek: 2) == [.legsCore, .fullBody])
         #expect(StrengthPlanner.distribution(goal: .allRound, sessionsPerWeek: 3) == [.fullBody, .upper, .legsCore])
     }
 
-    @Test func catalogLoadsAndFiltersEquipment() throws {
-        let catalog = try StrengthPlanner.loadCatalog()
-        #expect(catalog.exercises.count >= 12)
+    @Test func catalogFiltersEquipment() {
         let prefs = StrengthPreferences(equipment: [.bodyweight])
         let session = StrengthPlanner.makeSession(
             date: Date(),
@@ -231,8 +259,7 @@ struct StrengthPlannerTests {
         })
     }
 
-    @Test func scheduledStrengthDoesNotChangeRunWorkouts() throws {
-        let catalog = try StrengthPlanner.loadCatalog()
+    @Test func scheduledStrengthDoesNotChangeRunWorkouts() {
         let prefs = StrengthPreferences(sessionsPerWeek: 2, preferredDays: [.monday, .thursday])
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!

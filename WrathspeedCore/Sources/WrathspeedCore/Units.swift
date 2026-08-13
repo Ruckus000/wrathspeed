@@ -39,6 +39,10 @@ public enum Units {
         return String(format: "%d:%02d %@", minutes, remainder, suffix)
     }
 
+    public static func splitDistance(for unit: DistanceUnit) -> Double {
+        unit == .miles ? metersPerMile : metersPerKilometer
+    }
+
     public static func formatDuration(_ duration: TimeInterval) -> String {
         let total = Int(duration.rounded())
         let hours = total / 3600

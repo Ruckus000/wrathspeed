@@ -19,6 +19,10 @@ public enum PaceCalculator {
         return vo2(velocityMetersPerMinute: velocity) / percentVO2Max(minutes: minutes)
     }
 
+    public static func percentVO2(for zone: PaceZone) -> Double {
+        zonePercents[zone] ?? 0.70
+    }
+
     public static func zones(vdot: Double) -> PaceZones {
         var map: [PaceZone: TimeInterval] = [:]
         for zone in PaceZone.allCases {

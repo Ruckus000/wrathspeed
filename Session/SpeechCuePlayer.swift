@@ -10,6 +10,7 @@ import WatchKit
 final class SpeechCuePlayer: @unchecked Sendable {
     private let synthesizer = AVSpeechSynthesizer()
     var isEnabled = true
+    var cueStyle: CueStyle = .standard
 
     func activateSession() {
         let session = AVAudioSession.sharedInstance()
@@ -19,21 +20,11 @@ final class SpeechCuePlayer: @unchecked Sendable {
 
     func speak(_ cue: Cue) {
         guard isEnabled else { return }
-        let utterance = AVSpeechUtterance(string: phrase(for: cue))
+        let utterance = AVSpeechUtterance(string: cueStyle.phrase(for: cue))
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.95
         utterance.preUtteranceDelay = 0
         synthesizer.speak(utterance)
         playHaptic(for: cue)
-    }
-
-    private func phrase(for cue: Cue) -> String {
-        switch cue {
-        case .stepStarted(let name): "\(name)."
-        case .stepCompleted(let name): "\(name) complete."
-        case .speedUp: "Speed up."
-        case .slowDown: "Slow down."
-        case .split(let km, _): "Kilometer \(km)."
-        }
     }
 
     private func playHaptic(for cue: Cue) {
