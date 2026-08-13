@@ -298,8 +298,17 @@ final class AppStore {
     func record(_ result: WorkoutResult) {
         if results.contains(where: { existing in
             if let uuid = result.healthKitUUID, let existingUUID = existing.healthKitUUID, uuid == existingUUID { return true }
-            return existing.workoutID == result.workoutID && existing.startedAt == result.startedAt
-        }) { return }
+            if existing.workoutID == result.workoutID && existing.startedAt == result.startedAt {
+                return result.healthSync.state != .synced
+            }
+            return false
+        }) {
+            if let index = results.firstIndex(where: { $0.workoutID == result.workoutID && $0.startedAt == result.startedAt }) {
+                results[index] = result
+                persist()
+            }
+            return
+        }
         let previousVDOT = profile?.vdot
         var stored = result
         if stored.healthSync.state == .notRequired, stored.healthKitUUID != nil {
@@ -595,6 +604,14 @@ final class AppStore {
         }, onFailure: { [weak self] error in
             self?.errorMessage = "Workout wasn't saved to Health: \(error.localizedDescription)"
         })
+        session.onSnapshot = { [weak self] snapshot in
+            guard let self, let context = self.modelContext else { return }
+            if snapshot.state == .saved {
+                try? ActiveSessionStore.clear(from: context)
+            } else {
+                try? ActiveSessionStore.save(snapshot, to: context)
+            }
+        }
         workoutCoordinator.installMirroringHandler()
         pushWatchWorkouts()
         if let result = workoutCoordinator.consumeLatestResult() {

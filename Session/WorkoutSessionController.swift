@@ -2,23 +2,32 @@ import Foundation
 import HealthKit
 import WrathspeedCore
 
-#if os(iOS)
-import ActivityKit
-#endif
-
 @MainActor
 @Observable
 final class WorkoutSessionController: NSObject {
+    enum LaunchState: Equatable {
+        case idle
+        case waitingForWatch
+        case recording
+        case failed(String)
+    }
+
     private(set) var metrics = LiveMetrics(elapsed: 0, distanceMeters: 0)
     private(set) var stepper: WorkoutStepper?
     private(set) var isRunning = false
     private(set) var isPaused = false
     private(set) var blueprint: WorkoutBlueprint?
     private(set) var lastCues: [Cue] = []
+    private(set) var launchState: LaunchState = .idle
     var cuesEnabled = true
     var zones: PaceZones?
+    var splitUnit: DistanceUnit = .kilometers
+    var cueStyle: CueStyle = .standard
 
+    private(set) var sessionState: ActiveSessionState = .preparing
     var onFinished: ((WorkoutResult) -> Void)?
+    var onFailure: ((Error) -> Void)?
+    var onSnapshot: ((ActiveSessionSnapshot) -> Void)?
 
     private let healthStore = HKHealthStore()
     private let speech = SpeechCuePlayer()
@@ -28,10 +37,26 @@ final class WorkoutSessionController: NSObject {
     private var startedAt: Date?
     private var isPrimary = true
     private var applyingRemote = false
+    private let routeRecorder: any WorkoutRouteRecording
+    private var pauseStartedAt: Date?
+    private var pausedDuration: TimeInterval = 0
+    private var recordedSplits: [WorkoutSplit] = []
+    private var splitMarkedDistance = 0.0
+    private var splitMarkedElapsed: TimeInterval = 0
 
     #if os(iOS)
-    nonisolated(unsafe) private var liveActivity: Activity<WorkoutActivityAttributes>?
+    private let liveActivityPresenter = WorkoutLiveActivityPresenter()
     #endif
+
+    override init() {
+        routeRecorder = WorkoutRouteRecorder(healthStore: healthStore)
+        super.init()
+    }
+
+    init(routeRecorder: any WorkoutRouteRecording) {
+        self.routeRecorder = routeRecorder
+        super.init()
+    }
 
     func requestAuthorization() async throws {
         let read: Set<HKObjectType> = [
@@ -57,7 +82,13 @@ final class WorkoutSessionController: NSObject {
         stepper = WorkoutStepper(blueprint: blueprint)
         cuePolicy = CuePolicy()
         speech.isEnabled = cuesEnabled
+        speech.cueStyle = cueStyle
         speech.activateSession()
+        pausedDuration = 0
+        pauseStartedAt = nil
+        recordedSplits = []
+        splitMarkedDistance = 0
+        splitMarkedElapsed = 0
         try await requestAuthorization()
 
         let configuration = HKWorkoutConfiguration()
@@ -66,7 +97,13 @@ final class WorkoutSessionController: NSObject {
 
         #if os(iOS)
         if WCSessionBridge.isWatchAppInstalled {
-            try await startWatchApp(configuration)
+            launchState = .waitingForWatch
+            do {
+                try await startWatchApp(configuration)
+            } catch {
+                launchState = .failed(error.localizedDescription)
+                throw error
+            }
             return
         }
         #endif
@@ -82,6 +119,7 @@ final class WorkoutSessionController: NSObject {
         builder?.delegate = self
         builder?.dataSource = HKLiveWorkoutDataSource(healthStore: healthStore, workoutConfiguration: session.workoutConfiguration)
         isRunning = true
+        launchState = .recording
         startedAt = Date()
         #if os(iOS)
         startLiveActivity()
@@ -91,12 +129,14 @@ final class WorkoutSessionController: NSObject {
     func pause() {
         session?.pause()
         isPaused = true
+        routeRecorder.setRecording(false)
         if !applyingRemote { send(.pause) }
     }
 
     func resume() {
         session?.resume()
         isPaused = false
+        routeRecorder.setRecording(true)
         if !applyingRemote { send(.resume) }
     }
 
@@ -151,6 +191,10 @@ final class WorkoutSessionController: NSObject {
         session.startActivity(with: start)
         try await builder.beginCollection(at: start)
         isRunning = true
+        launchState = .recording
+        sessionState = .recording
+        publishSnapshot()
+        routeRecorder.begin(for: blueprint?.location ?? .outdoor)
         if let first = blueprint?.steps.first {
             speech.speak(.stepStarted(first.name))
         }
@@ -187,6 +231,7 @@ final class WorkoutSessionController: NSObject {
             elapsed: metrics.elapsed,
             distanceMeters: metrics.distanceMeters,
             paceSecPerKm: metrics.currentPaceSecPerKm,
+            heartRate: metrics.heartRate,
             stepIndex: stepper?.stepIndex ?? 0,
             stepName: stepper?.currentStep?.name ?? "",
             isPaused: isPaused
@@ -204,41 +249,100 @@ final class WorkoutSessionController: NSObject {
     private func finishIfNeeded() async {
         guard isRunning else { return }
         isRunning = false
+        sessionState = .finishing
+        publishSnapshot()
         let end = Date()
-        try? await builder?.endCollection(at: end)
-        _ = try? await builder?.finishWorkout()
+        routeRecorder.stop()
+        var localResult: WorkoutResult?
         if let blueprint {
-            let duration = end.timeIntervalSince(startedAt ?? end)
+            let duration = activeElapsed(at: end)
             let pace = metrics.distanceMeters > 0 ? (duration / metrics.distanceMeters) * 1_000 : nil
-            let result = WorkoutResult(
+            localResult = WorkoutResult(
                 workoutID: blueprint.id,
                 startedAt: startedAt ?? end,
                 duration: duration,
                 distanceMeters: metrics.distanceMeters,
                 averagePaceSecPerKm: pace,
-                location: blueprint.location
+                heartRateAverage: metrics.heartRate,
+                location: blueprint.location,
+                healthSync: HealthSyncMetadata(state: .pending, lastAttemptAt: end)
             )
-            onFinished?(result)
+            onFinished?(localResult!)
+            sessionState = .saved
         }
+        do {
+            try await builder?.endCollection(at: end)
+            guard let workout = try await builder?.finishWorkout() else { throw HKError(.errorHealthDataUnavailable) }
+            let fullRoute = (try? await routeRecorder.finish(for: workout)) ?? []
+            let route = RouteSampler.displayRoute(from: fullRoute)
+            if var result = localResult {
+                var splits = recordedSplits
+                if splits.isEmpty, !route.isEmpty {
+                    splits = SplitBuilder.fromRoute(route, unit: splitUnit)
+                }
+                result.healthKitUUID = workout.uuid
+                result.route = route.isEmpty ? nil : route
+                result.splits = splits.isEmpty ? nil : splits
+                result.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: workout.uuid)
+                onFinished?(result)
+            }
+        } catch {
+            sessionState = .healthSyncPending
+            if var result = localResult {
+                result.healthSync = HealthSyncMetadata(state: .failed, failureMessage: error.localizedDescription, lastAttemptAt: end)
+                onFinished?(result)
+            } else {
+                onFailure?(error)
+            }
+        }
+        publishSnapshot(clear: true)
+        launchState = .idle
+        sessionState = .saved
         #if os(iOS)
-        await liveActivity?.end(nil, dismissalPolicy: .immediate)
-        liveActivity = nil
+        await liveActivityPresenter.end()
         #endif
+    }
+
+    private func publishSnapshot(clear: Bool = false) {
+        guard let blueprint, let data = try? JSONEncoder().encode(blueprint) else { return }
+        if clear {
+            onSnapshot?(ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: data,
+                source: .wrathspeedPhone,
+                state: sessionState,
+                updatedAt: Date()
+            ))
+            return
+        }
+        onSnapshot?(ActiveSessionSnapshot(
+            workoutID: blueprint.id,
+            blueprintData: data,
+            source: .wrathspeedPhone,
+            state: sessionState,
+            startedAt: startedAt,
+            elapsedSeconds: metrics.elapsed,
+            distanceMeters: metrics.distanceMeters,
+            stepIndex: stepper?.stepIndex ?? 0,
+            isPaused: isPaused
+        ))
+    }
+
+    private func activeElapsed(at date: Date) -> TimeInterval {
+        let pausedNow = pauseStartedAt.map { date.timeIntervalSince($0) } ?? 0
+        return max(0, date.timeIntervalSince(startedAt ?? date) - pausedDuration - pausedNow)
     }
 
     #if os(iOS)
     private func startLiveActivity() {
         let attributes = WorkoutActivityAttributes(workoutName: blueprint?.title ?? "Run")
         let state = activityState()
-        liveActivity = try? Activity.request(
-            attributes: attributes,
-            content: ActivityContent(state: state, staleDate: nil)
-        )
+        liveActivityPresenter.start(attributes: attributes, state: state)
     }
 
     private func updateLiveActivity() {
         let state = activityState()
-        Task { await liveActivity?.update(ActivityContent(state: state, staleDate: nil)) }
+        liveActivityPresenter.update(state: state)
     }
 
     private func activityState() -> WorkoutActivityAttributes.ContentState {
@@ -248,7 +352,8 @@ final class WorkoutSessionController: NSObject {
             elapsed: metrics.elapsed,
             distanceMeters: metrics.distanceMeters,
             paceSecPerKm: metrics.currentPaceSecPerKm,
-            isPaused: isPaused
+            isPaused: isPaused,
+            distanceUnitRaw: splitUnit.rawValue
         )
     }
     #endif
@@ -258,13 +363,26 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
         Task { @MainActor in
             isPaused = toState == .paused
+            routeRecorder.setRecording(toState == .running)
+            if toState == .paused { pauseStartedAt = date }
+            if toState == .running, let pauseStartedAt {
+                pausedDuration += date.timeIntervalSince(pauseStartedAt)
+                self.pauseStartedAt = nil
+            }
             if toState == .ended {
                 await finishIfNeeded()
             }
         }
     }
 
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {}
+    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
+        Task { @MainActor in
+            routeRecorder.stop()
+            isRunning = false
+            launchState = .failed(error.localizedDescription)
+            onFailure?(error)
+        }
+    }
 
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didReceiveDataFromRemoteWorkoutSession data: [Data]) {
         Task { @MainActor in
@@ -281,8 +399,10 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
                     metrics = LiveMetrics(
                         elapsed: message.elapsed,
                         distanceMeters: message.distanceMeters,
-                        currentPaceSecPerKm: message.paceSecPerKm
+                        currentPaceSecPerKm: message.paceSecPerKm,
+                        heartRate: message.heartRate
                     )
+                    captureSplitsIfNeeded()
                 }
             }
         }
@@ -294,8 +414,7 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
         Task { @MainActor in
             let distance = workoutBuilder.statistics(for: HKQuantityType(.distanceWalkingRunning))?
                 .sumQuantity()?.doubleValue(for: .meter()) ?? metrics.distanceMeters
-            let start = workoutBuilder.startDate ?? startedAt ?? Date()
-            let elapsed = Date().timeIntervalSince(start)
+            let elapsed = activeElapsed(at: Date())
             let pace: Double? = {
                 if let speed = workoutBuilder.statistics(for: HKQuantityType(.runningSpeed))?
                     .mostRecentQuantity()?.doubleValue(for: HKUnit.meter().unitDivided(by: .second())),
@@ -305,7 +424,15 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
                 if distance > 0, elapsed > 0 { return (elapsed / distance) * 1_000 }
                 return nil
             }()
-            metrics = LiveMetrics(elapsed: elapsed, distanceMeters: distance, currentPaceSecPerKm: pace)
+            let heartRate = workoutBuilder.statistics(for: HKQuantityType(.heartRate))?
+                .mostRecentQuantity()?.doubleValue(for: HKUnit(from: "count/min"))
+            metrics = LiveMetrics(
+                elapsed: elapsed,
+                distanceMeters: distance,
+                currentPaceSecPerKm: pace,
+                heartRate: heartRate ?? metrics.heartRate
+            )
+            captureSplitsIfNeeded()
             if var stepper {
                 let events = stepper.update(metrics: metrics)
                 self.stepper = stepper
@@ -317,5 +444,18 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
             }
         }
     }
-}
 
+    private func captureSplitsIfNeeded() {
+        let captured = SplitBuilder.nextSplits(
+            previousCount: recordedSplits.count,
+            previousDistance: splitMarkedDistance,
+            previousElapsed: splitMarkedElapsed,
+            currentDistance: metrics.distanceMeters,
+            currentElapsed: metrics.elapsed,
+            unit: splitUnit
+        )
+        recordedSplits.append(contentsOf: captured.splits)
+        splitMarkedDistance = captured.distance
+        splitMarkedElapsed = captured.elapsed
+    }
+}
