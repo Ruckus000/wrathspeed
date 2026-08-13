@@ -47,7 +47,10 @@ struct HistoryView: View {
                 }
                 VStack(spacing: 0) {
                     if filter == .runs {
-                        ForEach(store.results, id: \.workoutID) { result in
+                        if store.results.isEmpty {
+                            emptyState("NO RUNS YET. COMPLETE A WORKOUT OR IMPORT FROM APPLE HEALTH.")
+                        } else {
+                            ForEach(store.results, id: \.workoutID) { result in
                         NavigationLink {
                             RunDetailView(result: result)
                         } label: {
@@ -82,12 +85,21 @@ struct HistoryView: View {
                         .buttonStyle(.plain)
                         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
                         }
+                        }
+                    } else if filter == .strength {
+                        if store.strengthResults.isEmpty {
+                            emptyState("STRENGTH HISTORY BUILDS FROM COMPLETED SESSIONS.")
+                        } else {
+                            ForEach(store.strengthResults) { result in
+                                strengthResultRow(result)
+                            }
+                        }
+                    } else if store.mobilityResults.isEmpty {
+                        emptyState("MOBILITY HISTORY BUILDS FROM COMPLETED ROUTINES.")
                     } else {
-                        Text(filter == .strength ? "STRENGTH HISTORY BUILDS FROM COMPLETED SESSIONS." : "MOBILITY HISTORY BUILDS FROM COMPLETED ROUTINES.")
-                            .font(WSFont.mono(12))
-                            .foregroundStyle(WSColor.text45)
-                            .padding(.vertical, 24)
-                            .accessibilityLabel("No \(filter.title.lowercased()) history yet")
+                        ForEach(store.mobilityResults) { result in
+                            mobilityResultRow(result)
+                        }
                     }
                 }
                 .padding(.horizontal, WSSpace.gutter)
@@ -99,27 +111,50 @@ struct HistoryView: View {
 
     private func title(for result: WorkoutResult) -> String {
         store.plan?.workouts.first { $0.blueprint.id == result.workoutID || $0.id == result.workoutID }?
-            .blueprint.title.uppercased() ?? "RUN"
+            .blueprint.title.uppercased() ?? (result.source == .instant ? "INSTANT RUN" : "RUN")
+    }
+
+    private func emptyState(_ message: String) -> some View {
+        Text(message)
+            .font(WSFont.mono(12))
+            .foregroundStyle(WSColor.text45)
+            .padding(.vertical, 24)
+            .accessibilityLabel(message)
+    }
+
+    private func strengthResultRow(_ result: StrengthSessionResult) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("STRENGTH SESSION")
+                .font(WSFont.ui(15, weight: .heavy))
+            Text("\(result.setLogs.filter(\.completed).count) sets · \(WSFormat.weekdayDate(result.startedAt))")
+                .font(WSFont.mono(12))
+                .foregroundStyle(WSColor.text50)
+        }
+        .padding(.vertical, 16)
+        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+    }
+
+    private func mobilityResultRow(_ result: MobilitySessionResult) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("MOBILITY ROUTINE")
+                .font(WSFont.ui(15, weight: .heavy))
+            Text("\(result.completedMovementIDs.count) movements · \(WSFormat.weekdayDate(result.startedAt))")
+                .font(WSFont.mono(12))
+                .foregroundStyle(WSColor.text50)
+        }
+        .padding(.vertical, 16)
+        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
     }
 
     private var lastWeekRecap: (eyebrow: String, headline: String)? {
-        let cal = Calendar.current
-        guard let thisWeek = cal.dateInterval(of: .weekOfYear, for: Date())?.start,
-              let lastStart = cal.date(byAdding: .day, value: -7, to: thisWeek)
-        else { return nil }
-        let lastEnd = thisWeek
-        let weekWorkouts = store.plan?.workouts.filter {
-            $0.date >= lastStart && $0.date < lastEnd && $0.blueprint.kind.isRunning
-        } ?? []
-        guard !weekWorkouts.isEmpty else { return nil }
-        let done = weekWorkouts.filter { $0.status == .completed }
-        let miles = done.reduce(0) { $0 + ($1.result?.distanceMeters ?? $1.blueprint.plannedDistanceMeters) }
-        let groups = store.weekGroups()
-        let weekNumber = (groups.firstIndex { cal.isDate($0.start, inSameDayAs: lastStart) } ?? 0) + 1
-        let excuse = done.count == weekWorkouts.count ? "NO EXCUSES." : "KEEP GOING."
+        guard let summary = store.rollingFourWeekSummaries().dropLast().last ?? store.currentWeekSummary() else {
+            return nil
+        }
+        let planned = WSFormat.distance(summary.plannedMeters, unit: store.unit)
+        let actual = WSFormat.distance(summary.actualMeters, unit: store.unit)
         return (
-            "LAST WEEK — WEEK \(weekNumber)",
-            "\(done.count)/\(weekWorkouts.count) SESSIONS. \(WSFormat.distance(miles, unit: store.unit)). \(excuse)"
+            "WEEKLY LOAD",
+            "\(summary.confirmedAdherenceCount)/\(summary.plannedRunCount) RUNS · \(actual) / \(planned) PLANNED"
         )
     }
 }

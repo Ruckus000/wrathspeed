@@ -32,13 +32,17 @@
 		39DC7827A28AC1C7A31A77BD /* WorkoutRouteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */; };
 		3CC57FEA3020E17C575F5168 /* mobility_catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */; };
 		42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */; };
+		46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA496765F3551500A8BAB109 /* ManagePlanView.swift */; };
 		46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */; };
 		4CE2F27B00D079671AFC6E3B /* WSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15C3868B4CD63B285917AFB /* WSComponents.swift */; };
 		5556FA81D699935F03C32F92 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */; };
 		5674EA7501E0D1ACB1B57B34 /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		58D3E009B40C2F83CDB436C4 /* WorkoutSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */; };
+		599682F4FB24ADD240653999 /* SessionRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EF278B0F4CE19776DCFDA /* SessionRecoveryView.swift */; };
+		5B005FDC0F626F9936D5FA74 /* SessionRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C49FE3FC05C57B7375BEAE9F /* SessionRecoveryTests.swift */; };
 		5D96CACCCDC375A0D899A3A2 /* PersistenceMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B128DF18547015FD23B5C2 /* PersistenceMigration.swift */; };
 		605509E7B1013D6B37BB7150 /* UITestingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B109C99D068CDA5571F02ECC /* UITestingSupport.swift */; };
+		61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */; };
 		691401C0B8507A8CF70B2241 /* PersistedEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */; };
 		7040DC7A8C02EEEF45227D0F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEEA40C553246BE6668AC20 /* OnboardingView.swift */; };
 		85D23F74512F143A71B5E0B3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 959F85A1AB57F13A2062AF62 /* Assets.xcassets */; };
@@ -56,6 +60,7 @@
 		A22368527F75EF25E43DFE94 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */; };
 		A87C0CAA1BD1309D797E025E /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		B0504C1BCC111B02EE234E94 /* WrathspeedWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 204CDE73903492B877A70262 /* WrathspeedWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B80CDD50E12330F96C9FA043 /* HealthImportAnchorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F9B612342ADE9FF97239E59 /* HealthImportAnchorStore.swift */; };
 		B82B586796C7106F20987146 /* HealthPermissionPrimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7BF97D90EBF2D7DDF615DE4 /* HealthPermissionPrimerView.swift */; };
 		BE3DC257EA2AC519FE168C15 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */; };
 		BE4E7CAD827D8BFDF70A074A /* WrathspeedWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -70,6 +75,7 @@
 		CFC8C89C1396CD14C3FDC1D7 /* WSFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2D8057349F1E37AC208309 /* WSFormat.swift */; };
 		D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E483C98F5D35228B28E66CCB /* CelebrationView.swift */; };
 		D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */; };
+		D3F25A0FFAE6C37D724AE434 /* WorkoutPreflightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */; };
 		D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */; };
 		DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */; };
 		DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
@@ -77,6 +83,7 @@
 		EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CFBF834821A2F1F2E98191 /* SettingsView.swift */; };
 		F125944CE3894485C7D5D203 /* MobilityPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */; };
 		F5E192E2351C27896E4775FC /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = D4C95B978193A33B7CFAED9E /* WrathspeedCore */; };
+		F69EA4092FDB553EB0491A3B /* ContentLicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CD1315E7BF466C7E327115A /* ContentLicensesView.swift */; };
 		FA6FF25A3D8C63BEA813A02B /* WorkoutSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */; };
 /* End PBXBuildFile section */
 
@@ -153,10 +160,14 @@
 		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
 		5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedWidgets.swift; sourceTree = "<group>"; };
+		5F9B612342ADE9FF97239E59 /* HealthImportAnchorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportAnchorStore.swift; sourceTree = "<group>"; };
 		6259BB5F724E4BB2BC498533 /* WrathspeedUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestingHarnessTests.swift; sourceTree = "<group>"; };
 		66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
+		6C1EF278B0F4CE19776DCFDA /* SessionRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecoveryView.swift; sourceTree = "<group>"; };
+		6CD1315E7BF466C7E327115A /* ContentLicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentLicensesView.swift; sourceTree = "<group>"; };
+		6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEmptyStateUITests.swift; sourceTree = "<group>"; };
 		72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Wrathspeed.entitlements; sourceTree = "<group>"; };
 		74D4ADFAE3CDB660B9C53179 /* Wrathspeed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Wrathspeed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRunView.swift; sourceTree = "<group>"; };
@@ -167,11 +178,13 @@
 		91E19C683D7C4D990ABC4FA2 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		93B97D389D507E23AC2326E7 /* WorkoutLiveActivityPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityPresenter.swift; sourceTree = "<group>"; };
+		94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutPreflightView.swift; sourceTree = "<group>"; };
 		959F85A1AB57F13A2062AF62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9998696233F4B68DDD25435E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A3602198A391BDD9EEF397E2 /* WrathspeedWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WrathspeedWidgets.entitlements; sourceTree = "<group>"; };
 		A84A97B2BB3D926E3604B09D /* WrathspeedWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WrathspeedWatch.entitlements; sourceTree = "<group>"; };
 		A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WrathspeedWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA496765F3551500A8BAB109 /* ManagePlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagePlanView.swift; sourceTree = "<group>"; };
 		AB921F1FAAD5039EBD71AD69 /* WrathspeedWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedWatchApp.swift; sourceTree = "<group>"; };
 		AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthPlayerView.swift; sourceTree = "<group>"; };
 		ACAF9D2CD26EBF982A6FF521 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
@@ -187,6 +200,7 @@
 		C15C3868B4CD63B285917AFB /* WSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSComponents.swift; sourceTree = "<group>"; };
 		C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionCoordinator.swift; sourceTree = "<group>"; };
 		C3D775A70F9B51D2BE1C6F1E /* WrathspeedCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WrathspeedCore; path = WrathspeedCore; sourceTree = SOURCE_ROOT; };
+		C49FE3FC05C57B7375BEAE9F /* SessionRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecoveryTests.swift; sourceTree = "<group>"; };
 		C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		CCEEA40C553246BE6668AC20 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRouteRecorder.swift; sourceTree = "<group>"; };
@@ -261,6 +275,7 @@
 				883309AA5F44874069BA7F88 /* CoachingMVPHardeningTests.swift */,
 				F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */,
 				4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */,
+				C49FE3FC05C57B7375BEAE9F /* SessionRecoveryTests.swift */,
 				643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */,
 			);
 			path = WrathspeedTests;
@@ -285,6 +300,7 @@
 		2D8CF8A522F8F7F11C14CA20 /* WrathspeedUITests */ = {
 			isa = PBXGroup;
 			children = (
+				6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */,
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
 			);
 			path = WrathspeedUITests;
@@ -304,12 +320,15 @@
 				5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */,
 				83B4CFD364D565BED88102B0 /* Assets.xcassets */,
 				E483C98F5D35228B28E66CCB /* CelebrationView.swift */,
+				6CD1315E7BF466C7E327115A /* ContentLicensesView.swift */,
 				4110BD3938FBEC23508A09CF /* DiagnosticsExporter.swift */,
+				5F9B612342ADE9FF97239E59 /* HealthImportAnchorStore.swift */,
 				BD7DD725680061E437C6B105 /* HealthImportService.swift */,
 				B7BF97D90EBF2D7DDF615DE4 /* HealthPermissionPrimerView.swift */,
 				66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */,
 				2C2F88EFC2EB5D541B9AA700 /* Info.plist */,
 				7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */,
+				AA496765F3551500A8BAB109 /* ManagePlanView.swift */,
 				F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */,
 				E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */,
 				4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */,
@@ -322,12 +341,14 @@
 				92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */,
 				FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */,
 				91E19C683D7C4D990ABC4FA2 /* RootView.swift */,
+				6C1EF278B0F4CE19776DCFDA /* SessionRecoveryView.swift */,
 				D4CFBF834821A2F1F2E98191 /* SettingsView.swift */,
 				50A5504FE777036C5125075E /* strength_catalog.json */,
 				B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */,
 				AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */,
 				065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */,
 				B109C99D068CDA5571F02ECC /* UITestingSupport.swift */,
+				94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */,
 				72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */,
 				15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */,
 				1847D459F192077D2D51E5E4 /* Fonts */,
@@ -608,6 +629,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */,
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -647,6 +669,7 @@
 				9BEE3DCDF0014F0E3BB6DD6E /* CoachingMVPHardeningTests.swift in Sources */,
 				35057545D76FE3DA5D2A1B62 /* OnboardingFlowTests.swift in Sources */,
 				CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */,
+				5B005FDC0F626F9936D5FA74 /* SessionRecoveryTests.swift in Sources */,
 				42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -658,11 +681,14 @@
 				DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */,
 				D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */,
 				9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */,
+				F69EA4092FDB553EB0491A3B /* ContentLicensesView.swift in Sources */,
 				174E00938B40C4F9D4052674 /* DiagnosticsExporter.swift in Sources */,
+				B80CDD50E12330F96C9FA043 /* HealthImportAnchorStore.swift in Sources */,
 				16583A59E8DED8D348D6C0D3 /* HealthImportService.swift in Sources */,
 				B82B586796C7106F20987146 /* HealthPermissionPrimerView.swift in Sources */,
 				34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */,
 				385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */,
+				46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */,
 				D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */,
 				F125944CE3894485C7D5D203 /* MobilityPlayerView.swift in Sources */,
 				30E9A3671D9420EB2EA75674 /* NotFeeling100View.swift in Sources */,
@@ -673,6 +699,7 @@
 				CCCE7740CDFA9F2F39DF223A /* PlanChangeStore.swift in Sources */,
 				9853F0A8A996720767E6BEE1 /* PlanView.swift in Sources */,
 				9A909F6A29B02E45418643B4 /* RootView.swift in Sources */,
+				599682F4FB24ADD240653999 /* SessionRecoveryView.swift in Sources */,
 				2295D09DA4B9A08AC38705E8 /* SessionSyncMessage.swift in Sources */,
 				EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */,
 				2F1364AFE26CA9375735A694 /* SpeechCuePlayer.swift in Sources */,
@@ -687,6 +714,7 @@
 				991C5E1FE8470358DC6DD1A4 /* WatchStartResolver.swift in Sources */,
 				13F239F140195D7F95446699 /* WorkoutActivityAttributes.swift in Sources */,
 				CE1B5220BB24B4351D560354 /* WorkoutLiveActivityPresenter.swift in Sources */,
+				D3F25A0FFAE6C37D724AE434 /* WorkoutPreflightView.swift in Sources */,
 				39DC7827A28AC1C7A31A77BD /* WorkoutRouteRecorder.swift in Sources */,
 				58D3E009B40C2F83CDB436C4 /* WorkoutSessionController.swift in Sources */,
 				FA6FF25A3D8C63BEA813A02B /* WorkoutSessionCoordinator.swift in Sources */,

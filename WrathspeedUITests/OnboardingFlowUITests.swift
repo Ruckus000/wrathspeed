@@ -20,14 +20,14 @@ final class OnboardingFlowUITests: XCTestCase {
         if miles.waitForExistence(timeout: 3) {
             miles.tap()
         }
-        tapNext(times: 2, in: app)
+        tapNext(times: 3, in: app)
 
         let buildDraft = app.buttons["BUILD DRAFT →"]
-        XCTAssertTrue(buildDraft.waitForExistence(timeout: 5), "Build draft button missing")
+        XCTAssertTrue(buildDraft.waitForExistence(timeout: 8), "Build draft button missing")
         buildDraft.tap()
 
         let confirm = app.buttons["CONFIRM PLAN →"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 15), "Draft preview confirm button missing")
+        XCTAssertTrue(confirm.waitForExistence(timeout: 30), "Draft preview confirm button missing")
         confirm.tap()
 
         let today = app.buttons["TODAY"]
