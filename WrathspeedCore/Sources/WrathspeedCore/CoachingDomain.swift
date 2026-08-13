@@ -525,6 +525,10 @@ public extension WorkoutSource {
     }
 }
 
+extension ActiveSessionSnapshot: Identifiable {
+    public var id: UUID { workoutID }
+}
+
 public extension HealthSyncState {
     var title: String {
         switch self {

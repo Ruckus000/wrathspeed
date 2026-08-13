@@ -2,11 +2,13 @@ import SwiftUI
 import WrathspeedCore
 
 struct MobilityPlayerView: View {
+    @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let session: MobilitySession
     @State private var index = 0
     @State private var remaining: TimeInterval
     @State private var timer: Timer?
+    @State private var startedAt = Date()
 
     init(session: MobilitySession) {
         self.session = session
@@ -80,6 +82,13 @@ struct MobilityPlayerView: View {
 
     private func advance() {
         if index + 1 >= session.movements.count {
+            let result = MobilitySessionResult(
+                sessionID: session.id,
+                startedAt: startedAt,
+                endedAt: Date(),
+                completedMovementIDs: session.movements.map(\.id)
+            )
+            store.recordMobilityResult(result)
             dismiss()
             return
         }

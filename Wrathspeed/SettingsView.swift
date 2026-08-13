@@ -68,6 +68,26 @@ struct SettingsView: View {
                         WSChip(title: "Kilometers", selected: store.unit == .kilometers) { setUnit(.kilometers) }
                     }
                 }
+                section("CONTENT") {
+                    NavigationLink {
+                        ContentLicensesView()
+                    } label: {
+                        Text("CONTENT LICENSES ›")
+                            .font(WSFont.ui(14, weight: .heavy))
+                            .foregroundStyle(WSColor.text)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }
+                }
+                if store.n100 != nil {
+                    section("PLAN ADJUSTMENT") {
+                        Button("END NOT FEELING 100%") {
+                            store.endNotFeeling100()
+                        }
+                        .font(WSFont.ui(14, weight: .heavy))
+                        .foregroundStyle(WSColor.accent)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }
+                }
                 section("DIAGNOSTICS") {
                     Button("EXPORT REDACTED DIAGNOSTICS") {
                         if let data = try? DiagnosticsExporter.exportJSON(from: store),
