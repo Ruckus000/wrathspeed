@@ -90,3 +90,71 @@ Simulator: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)
 ## Pass 2b commits
 
 See `git log` after this update.
+
+## Phase A — Repository reconciliation (Aug 12, 2026)
+
+Branch: `recovery/phase-a-repo-reconciliation` @ `76f253f`
+
+### Reconciled
+- Added 21 previously untracked source/resource files referenced by committed targets (Session helpers, Theme, fonts, `strength_catalog.json`, core reconcilers, UI-test harness).
+- Moved `strength_catalog.json` from `WrathspeedCore` package resources to main app bundle; removed package `Resources` processing.
+- `project.yml`: Design folder on iPhone/Watch/Widget targets, HealthKit entitlements properties, WrathspeedTests/WrathspeedUITests targets + scheme test entries.
+- Regenerated Xcode project once via XcodeGen (pbxproj unchanged; xcscheme gained test build/testables).
+- HealthKit entitlement present on iPhone (`Wrathspeed.entitlements`) and Watch (`WrathspeedWatch.entitlements`).
+
+### Deliberately left dirty (user-owned / deferred)
+- `WrathspeedWatch/WatchTodayView.swift`, `WrathspeedWatch/WrathspeedWatchApp.swift` (Watch UI/start-resolver redesign)
+- `WrathspeedCore/Tests/WrathspeedCoreTests/PlanGeneratorTests.swift` (additional reconciler tests)
+- `WrathspeedCore/Sources/WrathspeedCore/InstantWorkoutFactory.swift` (untracked; no committed references)
+- `CURSOR_IMPLEMENTATION_PLAN.md`, `design_handoff_wrathspeed_ui/` (reference material)
+
+### Clean-export acceptance gate (`git archive HEAD`)
+
+```bash
+EXPORT_DIR=$(mktemp -d) && git archive HEAD | tar -x -C "$EXPORT_DIR" && cd "$EXPORT_DIR"
+
+swift test --package-path WrathspeedCore
+# → 45 tests total: 11 XCTest + 34 Swift Testing (@Test), 0 failures
+
+xcodebuild -project Wrathspeed.xcodeproj -scheme Wrathspeed \
+  -destination 'generic/platform=iOS Simulator' build \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-phase-a-derived
+# → BUILD SUCCEEDED
+
+xcodebuild -project Wrathspeed.xcodeproj -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-phase-a-derived
+# → 23 tests, 0 failures
+
+xcodebuild -project Wrathspeed.xcodeproj -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedUITests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-phase-a-derived
+# → 2 tests, 0 failures (HistoryEmptyStateUITests, OnboardingFlowUITests)
+```
+
+Simulator: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)
+
+### Compiler warnings (clean export build + tests)
+
+Production / package source:
+- `TrainingPlanService.swift:23` — variable `plan` was never mutated; consider `let`
+- `SpeechCuePlayer.swift:43,45` — main actor-isolated UIKit/WatchKit haptics from nonisolated `playHaptic` (4 warnings)
+- `MobilityPlayerView.swift:77-79` — main actor-isolated `remaining` / `advance()` from `Timer` Sendable closure (4 warnings)
+- `StrengthPlayerView.swift:247` — `HKWorkout.init(activityType:start:end:)` deprecated in iOS 17
+
+Unit tests:
+- `OnboardingFlowTests.swift:10,35,67,77` — `var` never mutated; consider `let` (4 warnings)
+
+UI tests:
+- `HistoryEmptyStateUITests.swift`, `OnboardingFlowUITests.swift` — Swift 6 main actor isolation warnings on `XCUIApplication`/`XCUIElement` usage (expected in non-`@MainActor` test methods)
+
+Tooling:
+- `appintentsmetadataprocessor` — metadata extraction skipped (no AppIntents.framework dependency)
+
+### Remaining blockers for Phase B
+- Watch UI redesign (`WatchTodayView`, `WatchApp`) still only in dirty tree; committed Watch uses legacy list UI with `pendingStart` shim.
+- `InstantWorkoutFactory.swift` untracked; not required for current build.
+- Additional `PlanGeneratorTests` reconciler coverage only in dirty tree.
+- HealthKit entitlement missing at **code-sign** time in simulator unit tests (logged at runtime; tests still pass with `CODE_SIGNING_ALLOWED=NO`).
