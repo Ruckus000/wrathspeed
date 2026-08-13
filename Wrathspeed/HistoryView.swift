@@ -4,6 +4,12 @@ import WrathspeedCore
 
 struct HistoryView: View {
     @Environment(AppStore.self) private var store
+    @State private var filter: HistoryFilter = .runs
+
+    enum HistoryFilter: String, CaseIterable {
+        case runs, strength, mobility
+        var title: String { rawValue.uppercased() }
+    }
 
     var body: some View {
         NavigationStack {
@@ -13,6 +19,16 @@ struct HistoryView: View {
                     .foregroundStyle(WSColor.text)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
+                    .accessibilityAddTraits(.isHeader)
+                HStack(spacing: 8) {
+                    ForEach(HistoryFilter.allCases, id: \.self) { item in
+                        WSChip(title: item.title, selected: filter == item) { filter = item }
+                            .accessibilityLabel("\(item.title) filter")
+                            .accessibilityAddTraits(filter == item ? .isSelected : [])
+                    }
+                }
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 12)
                 if let recap = lastWeekRecap {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(recap.eyebrow)
@@ -30,7 +46,8 @@ struct HistoryView: View {
                     .padding(.top, 18)
                 }
                 VStack(spacing: 0) {
-                    ForEach(store.results, id: \.workoutID) { result in
+                    if filter == .runs {
+                        ForEach(store.results, id: \.workoutID) { result in
                         NavigationLink {
                             RunDetailView(result: result)
                         } label: {
@@ -64,6 +81,13 @@ struct HistoryView: View {
                         }
                         .buttonStyle(.plain)
                         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+                        }
+                    } else {
+                        Text(filter == .strength ? "STRENGTH HISTORY BUILDS FROM COMPLETED SESSIONS." : "MOBILITY HISTORY BUILDS FROM COMPLETED ROUTINES.")
+                            .font(WSFont.mono(12))
+                            .foregroundStyle(WSColor.text45)
+                            .padding(.vertical, 24)
+                            .accessibilityLabel("No \(filter.title.lowercased()) history yet")
                     }
                 }
                 .padding(.horizontal, WSSpace.gutter)
