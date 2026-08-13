@@ -75,6 +75,7 @@
 		DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
 		E4DA07A801DCFBBC4F5EB632 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
 		EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CFBF834821A2F1F2E98191 /* SettingsView.swift */; };
+		F125944CE3894485C7D5D203 /* MobilityPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */; };
 		F5E192E2351C27896E4775FC /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = D4C95B978193A33B7CFAED9E /* WrathspeedCore */; };
 		FA6FF25A3D8C63BEA813A02B /* WorkoutSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */; };
 /* End PBXBuildFile section */
@@ -148,6 +149,7 @@
 		418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowUITests.swift; sourceTree = "<group>"; };
 		4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceMigrationTests.swift; sourceTree = "<group>"; };
+		4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilityPlayerView.swift; sourceTree = "<group>"; };
 		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
 		5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedWidgets.swift; sourceTree = "<group>"; };
@@ -310,6 +312,7 @@
 				7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */,
 				F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */,
 				E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */,
+				4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */,
 				D68DDE74F3F9C8CB706ACE82 /* NotFeeling100View.swift */,
 				CCEEA40C553246BE6668AC20 /* OnboardingView.swift */,
 				DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */,
@@ -661,6 +664,7 @@
 				34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */,
 				385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */,
 				D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */,
+				F125944CE3894485C7D5D203 /* MobilityPlayerView.swift in Sources */,
 				30E9A3671D9420EB2EA75674 /* NotFeeling100View.swift in Sources */,
 				7040DC7A8C02EEEF45227D0F /* OnboardingView.swift in Sources */,
 				691401C0B8507A8CF70B2241 /* PersistedEntities.swift in Sources */,
