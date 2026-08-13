@@ -28,6 +28,7 @@ final class AppStore {
     var showHealthPermissionPrimer = false
     var healthImportDenied = false
     var healthImportInProgress = false
+    var lastUndoDescription: String?
     var toastMessage: String?
     var celebration: CelebrationPayload?
     var selectedTab: AppTab = .today
@@ -203,29 +204,72 @@ final class AppStore {
     }
 
     func skip(_ workout: ScheduledWorkout, convertQuality: Bool = false) {
+        guard recordPlanChange(kind: .skip, affected: [workout.id], description: convertQuality ? "Converted to easy" : "Skipped session") else { return }
         updateWorkout(workout.id) { AdaptationRules.applySkip($0, convertQualityToEasy: convertQuality) }
         evaluateAdaptation()
         showToast(convertQuality ? "CONVERTED TO EASY" : "SESSION SKIPPED")
+        offerUndo()
     }
 
-    func move(_ workout: ScheduledWorkout, to date: Date) {
-        if workout.blueprint.kind == .longRun, !AdaptationRules.canMoveLongRun(from: workout.date, to: date) {
-            errorMessage = "Long runs can only move within 48 hours."
+    func move(_ workout: ScheduledWorkout, to date: Date, allowWarnings: Bool = false) {
+        guard let plan else { return }
+        let validation = PlanScheduleService.canMove(workout: workout, to: date, plan: plan)
+        guard validation.allowed else {
+            errorMessage = validation.reason
             return
         }
-        if let plan, AdaptationRules.wouldStackQuality(existing: plan.workouts, moving: workout, to: date, calendar: .current) {
-            errorMessage = "That would stack two quality days."
+        if !allowWarnings, !validation.warnings.isEmpty {
+            errorMessage = validation.warnings.joined(separator: " ")
             return
         }
+        guard recordPlanChange(kind: .move, affected: [workout.id], description: "Moved workout") else { return }
         updateWorkout(workout.id) { current in
             var copy = current
             copy.blueprint.date = Calendar.current.startOfDay(for: date)
             return copy
         }
-        showToast("MOVED +1 DAY")
+        showToast("WORKOUT MOVED")
+        offerUndo()
+    }
+
+    func undoLastPlanChange() {
+        guard let context = modelContext,
+              let change = try? PlanChangeStore.latest(in: context),
+              let snapshotData = change.previousSnapshot,
+              let snapshot = try? JSONDecoder().decode(PlanUndoSnapshot.self, from: snapshotData)
+        else { return }
+        plan = snapshot.plan
+        n100 = snapshot.n100
+        try? PlanChangeStore.removeLatest(in: context)
+        persist()
+        pushWatchWorkouts()
+        showToast("UNDONE")
+        lastUndoDescription = nil
+    }
+
+    private func recordPlanChange(kind: PlanChangeKind, affected: [UUID], description: String) -> Bool {
+        guard let plan, let context = modelContext else { return false }
+        let snapshot = PlanUndoSnapshot(plan: plan, n100: n100)
+        guard let data = try? JSONEncoder().encode(snapshot) else { return false }
+        let change = PlanChange(kind: kind, affectedWorkoutIDs: affected, previousSnapshot: data, description: description)
+        do {
+            try PlanChangeStore.append(change, to: context)
+            lastUndoDescription = description
+            return true
+        } catch {
+            errorMessage = "Couldn’t record plan change."
+            return false
+        }
+    }
+
+    private func offerUndo() {
+        if lastUndoDescription != nil {
+            showToast("UPDATED · UNDO AVAILABLE IN PLAN")
+        }
     }
 
     func applyNotFeeling100(_ adjustment: N100Adjustment) {
+        guard recordPlanChange(kind: .adjustment, affected: [], description: "Not feeling 100%") else { return }
         n100 = adjustment
         if var plan {
             plan.workouts = NotFeeling100Rules.apply(workouts: plan.workouts, adjustment: adjustment, calendar: .current)
@@ -234,6 +278,7 @@ final class AppStore {
         persist()
         pushWatchWorkouts()
         showToast("PLAN ADJUSTED FOR \(adjustment.dayCount) DAYS · RETURN: \(adjustment.returnPace.title.uppercased())")
+        offerUndo()
     }
 
     func acceptVDOTSuggestion() {
