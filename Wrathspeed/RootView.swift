@@ -36,6 +36,36 @@ struct RootView: View {
         .fullScreenCover(isPresented: $store.showHealthPermissionPrimer) {
             HealthPermissionPrimerView()
         }
+        .sheet(item: $store.pendingPreflight) { request in
+            WorkoutPreflightView(blueprint: request.blueprint, source: request.source) {
+                store.pendingPreflight = nil
+                Task { await store.start(request.blueprint, source: request.source) }
+            }
+        }
+        .fullScreenCover(item: $store.pendingRecoverySnapshot) { snapshot in
+            SessionRecoveryView(snapshot: snapshot)
+        }
+        .sheet(isPresented: $store.showWatchLaunchTimeout) {
+            WatchLaunchTimeoutView()
+                .presentationDetents([.medium])
+                .presentationBackground(WSColor.bgSheet)
+        }
+        .fullScreenCover(isPresented: liveWorkoutPresented) {
+            if let blueprint = store.session.blueprint {
+                LiveRunView(blueprint: blueprint)
+            }
+        }
+    }
+
+    private var liveWorkoutPresented: Binding<Bool> {
+        Binding(
+            get: {
+                store.session.isRunning
+                    || store.session.launchState == .waitingForWatch
+                    || store.session.sessionState == .countdown
+            },
+            set: { _ in }
+        )
     }
 }
 

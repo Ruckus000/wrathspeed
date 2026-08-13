@@ -23,6 +23,10 @@ final class WorkoutSessionController: NSObject {
     var zones: PaceZones?
     var splitUnit: DistanceUnit = .kilometers
     var cueStyle: CueStyle = .standard
+    var resultSource: WorkoutSource = .wrathspeedPhone
+    var treadmillTargetSpeedMetersPerSecond: Double?
+    var usesManualTreadmillDistance = false
+    var pendingActualTreadmillDistance: Double?
 
     private(set) var sessionState: ActiveSessionState = .preparing
     var onFinished: ((WorkoutResult) -> Void)?
@@ -79,7 +83,8 @@ final class WorkoutSessionController: NSObject {
         if isRunning { return }
         self.blueprint = blueprint
         self.zones = zones
-        stepper = WorkoutStepper(blueprint: blueprint)
+        stepper = WorkoutStepper(blueprint: blueprint, manualTreadmill: blueprint.location == .treadmill)
+        configureTreadmillIfNeeded(for: blueprint)
         cuePolicy = CuePolicy()
         speech.isEnabled = cuesEnabled
         speech.cueStyle = cueStyle
@@ -108,6 +113,43 @@ final class WorkoutSessionController: NSObject {
         }
         #endif
 
+        try await beginCountdownThenStart(configuration: configuration)
+    }
+
+    func startOnPhoneOnly(blueprint: WorkoutBlueprint, zones: PaceZones?) async throws {
+        if isRunning { return }
+        self.blueprint = blueprint
+        self.zones = zones
+        stepper = WorkoutStepper(blueprint: blueprint, manualTreadmill: blueprint.location == .treadmill)
+        configureTreadmillIfNeeded(for: blueprint)
+        cuePolicy = CuePolicy()
+        speech.isEnabled = cuesEnabled
+        speech.cueStyle = cueStyle
+        speech.activateSession()
+        pausedDuration = 0
+        pauseStartedAt = nil
+        recordedSplits = []
+        splitMarkedDistance = 0
+        splitMarkedElapsed = 0
+        try await requestAuthorization()
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .running
+        configuration.locationType = blueprint.location == .outdoor ? .outdoor : .indoor
+        try await beginCountdownThenStart(configuration: configuration)
+    }
+
+    func cancelPendingLaunch() {
+        guard !isRunning else { return }
+        blueprint = nil
+        stepper = nil
+        launchState = .idle
+        sessionState = .preparing
+    }
+
+    private func beginCountdownThenStart(configuration: HKWorkoutConfiguration) async throws {
+        sessionState = .countdown
+        publishSnapshot()
+        try await Task.sleep(for: .seconds(3))
         try await startPrimary(configuration: configuration)
     }
 
@@ -256,15 +298,17 @@ final class WorkoutSessionController: NSObject {
         var localResult: WorkoutResult?
         if let blueprint {
             let duration = activeElapsed(at: end)
-            let pace = metrics.distanceMeters > 0 ? (duration / metrics.distanceMeters) * 1_000 : nil
+            let distance = resolvedDistanceMeters()
+            let pace = distance > 0 ? (duration / distance) * 1_000 : nil
             localResult = WorkoutResult(
                 workoutID: blueprint.id,
                 startedAt: startedAt ?? end,
                 duration: duration,
-                distanceMeters: metrics.distanceMeters,
+                distanceMeters: resolvedDistanceMeters(),
                 averagePaceSecPerKm: pace,
                 heartRateAverage: metrics.heartRate,
                 location: blueprint.location,
+                source: resultSource,
                 healthSync: HealthSyncMetadata(state: .pending, lastAttemptAt: end)
             )
             onFinished?(localResult!)
@@ -457,5 +501,34 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
         recordedSplits.append(contentsOf: captured.splits)
         splitMarkedDistance = captured.distance
         splitMarkedElapsed = captured.elapsed
+    }
+
+    func setTreadmillTargetSpeed(metersPerSecond: Double) {
+        treadmillTargetSpeedMetersPerSecond = metersPerSecond
+    }
+
+    func applyActualTreadmillDistance(_ meters: Double) {
+        pendingActualTreadmillDistance = meters
+    }
+
+    func estimatedTreadmillDistanceMeters() -> Double {
+        guard usesManualTreadmillDistance, let speed = treadmillTargetSpeedMetersPerSecond else {
+            return metrics.distanceMeters
+        }
+        return speed * metrics.elapsed
+    }
+
+    private func configureTreadmillIfNeeded(for blueprint: WorkoutBlueprint) {
+        usesManualTreadmillDistance = blueprint.location == .treadmill
+        pendingActualTreadmillDistance = nil
+        if usesManualTreadmillDistance {
+            treadmillTargetSpeedMetersPerSecond = 2.777
+        }
+    }
+
+    private func resolvedDistanceMeters() -> Double {
+        if let actual = pendingActualTreadmillDistance { return actual }
+        if usesManualTreadmillDistance { return estimatedTreadmillDistanceMeters() }
+        return metrics.distanceMeters
     }
 }
