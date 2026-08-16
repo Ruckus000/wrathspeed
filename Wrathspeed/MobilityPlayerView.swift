@@ -88,8 +88,12 @@ struct MobilityPlayerView: View {
                 endedAt: Date(),
                 completedMovementIDs: session.movements.map(\.id)
             )
-            store.recordMobilityResult(result)
-            dismiss()
+            do {
+                try store.recordMobilityResult(result)
+                dismiss()
+            } catch {
+                return
+            }
             return
         }
         index += 1

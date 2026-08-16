@@ -573,28 +573,44 @@ final class AppStore {
         }
     }
 
-    func recordStrengthResult(_ result: StrengthSessionResult) {
-        if let index = strengthResults.firstIndex(where: { $0.sessionID == result.sessionID && $0.startedAt == result.startedAt }) {
-            strengthResults[index] = result
-        } else {
-            strengthResults.insert(result, at: 0)
+    func recordStrengthResult(_ result: StrengthSessionResult) throws {
+        do {
+            try persistStrengthResult(result)
+        } catch {
+            errorMessage = "Couldn't save strength session: \(error.localizedDescription)"
+            throw error
         }
-        persistStrengthResult(result)
+        upsertGuidedResult(&strengthResults, result, matches: StrengthSessionResult.matches)
     }
 
-    func recordMobilityResult(_ result: MobilitySessionResult) {
-        if let index = mobilityResults.firstIndex(where: { $0.sessionID == result.sessionID }) {
-            mobilityResults[index] = result
-        } else {
-            mobilityResults.insert(result, at: 0)
+    func recordMobilityResult(_ result: MobilitySessionResult) throws {
+        do {
+            try persistMobilityResult(result)
+        } catch {
+            errorMessage = "Couldn't save mobility session: \(error.localizedDescription)"
+            throw error
         }
+        upsertGuidedResult(&mobilityResults, result, matches: MobilitySessionResult.matches)
     }
 
-    private func persistStrengthResult(_ result: StrengthSessionResult) {
-        guard let context = modelContext else { return }
-        guard let payload = try? VersionedPayload.encode(result) else { return }
-        context.insert(StrengthSessionResultEntity(id: result.id, sessionID: result.sessionID, payloadData: payload))
-        try? context.save()
+    private func persistStrengthResult(_ result: StrengthSessionResult) throws {
+        guard let context = modelContext else {
+            throw AppPersistenceError.storageUnavailable
+        }
+        if repository?.forceGuidedResultSaveFailure == true {
+            throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated guided result save failure"])
+        }
+        try GuidedSessionResultStore.upsertStrengthResult(result, to: context)
+    }
+
+    private func persistMobilityResult(_ result: MobilitySessionResult) throws {
+        guard let context = modelContext else {
+            throw AppPersistenceError.storageUnavailable
+        }
+        if repository?.forceGuidedResultSaveFailure == true {
+            throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated guided result save failure"])
+        }
+        try GuidedSessionResultStore.upsertMobilityResult(result, to: context)
     }
 
     func startInstant(request: InstantWorkoutRequest) async {
@@ -811,9 +827,20 @@ final class AppStore {
         if let result = workoutCoordinator.consumeLatestResult() {
             handleWorkoutResult(result)
         }
+        loadGuidedSessionResults()
         if let snapshot = try? modelContext.flatMap({ try ActiveSessionStore.load(from: $0) }),
            snapshot.state != .saved {
             pendingRecoverySnapshot = snapshot
+        }
+    }
+
+    private func loadGuidedSessionResults() {
+        guard let context = modelContext else { return }
+        do {
+            strengthResults = try GuidedSessionResultStore.loadStrengthResults(from: context)
+            mobilityResults = try GuidedSessionResultStore.loadMobilityResults(from: context)
+        } catch {
+            errorMessage = "Couldn't load guided session history: \(error.localizedDescription)"
         }
     }
 
@@ -940,6 +967,10 @@ final class AppStore {
         repository?.forceSaveFailure = value
     }
 
+    func setForceGuidedResultSaveFailureForTesting(_ value: Bool) {
+        repository?.forceGuidedResultSaveFailure = value
+    }
+
     private func currentPersistedState() -> PersistedState {
         PersistedState(
             hasOnboarded: hasOnboarded,
@@ -969,4 +1000,24 @@ final class AppStore {
             errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
         }
     }
+
+    private func upsertGuidedResult<T>(
+        _ items: inout [T],
+        _ result: T,
+        matches: (T, T) -> Bool
+    ) where T: StrengthOrMobilityResult {
+        if let index = items.firstIndex(where: { matches($0, result) }) {
+            items[index] = result
+        } else {
+            items.insert(result, at: 0)
+        }
+        items.sort { $0.startedAt > $1.startedAt }
+    }
 }
+
+private protocol StrengthOrMobilityResult {
+    var startedAt: Date { get }
+}
+
+extension StrengthSessionResult: StrengthOrMobilityResult {}
+extension MobilitySessionResult: StrengthOrMobilityResult {}

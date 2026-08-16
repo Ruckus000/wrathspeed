@@ -197,6 +197,7 @@ final class AppStateRepository {
     private(set) var migrationError: String?
     var forceSaveFailure = false
     var forceSaveFailureAfterMutation = false
+    var forceGuidedResultSaveFailure = false
 
     init(context: ModelContext) {
         self.context = context

@@ -195,7 +195,11 @@ struct StrengthPlayerView: View {
         logs[logIndex].loadValue = loadValue > 0 ? loadValue : nil
         logs[logIndex].loadUnit = loadValue > 0 ? loadUnit : nil
         logs[logIndex].note = note.isEmpty ? nil : note
-        persistLocalResult()
+        do {
+            try persistLocalResult()
+        } catch {
+            // AppStore.errorMessage is presented by RootView.
+        }
     }
 
     private var logIndex: Int {
@@ -224,11 +228,15 @@ struct StrengthPlayerView: View {
 
     private func finishSession() {
         running = false
-        finished = true
-        persistLocalResult()
+        do {
+            try persistLocalResult()
+            finished = true
+        } catch {
+            finished = false
+        }
     }
 
-    private func persistLocalResult() {
+    private func persistLocalResult() throws {
         let result = StrengthSessionResult(
             sessionID: session.id,
             startedAt: startedAt,
@@ -236,12 +244,12 @@ struct StrengthPlayerView: View {
             setLogs: logs,
             healthSync: healthSync
         )
-        store.recordStrengthResult(result)
+        try store.recordStrengthResult(result)
     }
 
     private func saveToHealth() async {
         healthSync = HealthSyncMetadata(state: .pending, lastAttemptAt: Date())
-        persistLocalResult()
+        do { try persistLocalResult() } catch { return }
         let hk = HKHealthStore()
         let end = Date()
         let workout = HKWorkout(activityType: .traditionalStrengthTraining, start: startedAt, end: end)
@@ -252,6 +260,6 @@ struct StrengthPlayerView: View {
         } catch {
             healthSync = HealthSyncMetadata(state: .failed, failureMessage: error.localizedDescription, lastAttemptAt: end)
         }
-        persistLocalResult()
+        do { try persistLocalResult() } catch {}
     }
 }
