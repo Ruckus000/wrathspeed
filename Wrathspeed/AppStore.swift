@@ -442,6 +442,9 @@ final class AppStore {
             try await healthImporter.requestAuthorization()
             importResult = try await healthImporter.importWorkouts(anchor: anchor, since: since)
             results = HealthImportMerge.merge(existing: results, imports: importResult.workouts)
+            for result in results {
+                reconcilePlanEmbeddedResult(result)
+            }
             applyMatchSuggestions()
             try persistThrowing()
         } catch {

@@ -118,7 +118,14 @@ public enum HealthImportMerge {
             if let index = merged.firstIndex(where: { $0.healthKitUUID == imported.healthKitUUID }) {
                 var current = merged[index]
                 current.duration = imported.duration
-                current.distanceMeters = imported.distanceMeters
+                let preserveConfirmedTreadmillDistance =
+                    current.location == .treadmill && current.source != .appleHealth
+                if !preserveConfirmedTreadmillDistance {
+                    current.distanceMeters = imported.distanceMeters
+                }
+                if current.location == .treadmill, current.duration > 0, current.distanceMeters > 0 {
+                    current.averagePaceSecPerKm = (current.duration / current.distanceMeters) * 1_000
+                }
                 current.heartRateAverage = imported.heartRateAverage ?? current.heartRateAverage
                 current.energyKilocalories = imported.energyKilocalories ?? current.energyKilocalories
                 current.cadenceAverage = imported.cadenceAverage ?? current.cadenceAverage

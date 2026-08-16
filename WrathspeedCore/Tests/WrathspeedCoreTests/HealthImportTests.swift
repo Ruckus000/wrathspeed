@@ -125,4 +125,140 @@ final class HealthImportTests: XCTestCase {
         XCTAssertNil(result.cadenceAverage)
         XCTAssertEqual(result.source, .appleHealth)
     }
+
+    func testLocalTreadmillImportPreservesConfirmedDistanceAndEnrichesMetrics() {
+        for source in [WorkoutSource.wrathspeedPhone, .wrathspeedWatch, .instant] {
+            let uuid = UUID()
+            let workoutID = UUID()
+            let startedAt = Date(timeIntervalSince1970: 1_730_100_000)
+            let matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: UUID())
+            let route = [RoutePoint(latitude: 40.7, longitude: -74.0, timestamp: startedAt)]
+            let splits = [WorkoutSplit(index: 1, distanceMeters: 1_000, duration: 360, paceSecPerKm: 360)]
+            let existing = WorkoutResult(
+                workoutID: workoutID,
+                startedAt: startedAt,
+                duration: 1_800,
+                distanceMeters: 6_200,
+                averagePaceSecPerKm: (1_800 / 6_200) * 1_000,
+                location: .treadmill,
+                healthKitUUID: uuid,
+                route: route,
+                splits: splits,
+                source: source,
+                matchInfo: matchInfo,
+                isUnavailableInHealth: true,
+                healthSync: HealthSyncMetadata(state: .synced, healthKitUUID: uuid)
+            )
+            let imported = ImportedHealthWorkout(
+                healthKitUUID: uuid,
+                startedAt: startedAt.addingTimeInterval(30),
+                endedAt: startedAt.addingTimeInterval(2_000),
+                duration: 1_920,
+                distanceMeters: 5_000,
+                location: .outdoor,
+                heartRateAverage: 148,
+                energyKilocalories: 410,
+                cadenceAverage: 172
+            )
+
+            let merged = HealthImportMerge.merge(existing: [existing], imports: [imported])
+
+            XCTAssertEqual(merged.count, 1, "source \(source.rawValue)")
+            XCTAssertEqual(merged[0].distanceMeters, 6_200, accuracy: 0.01)
+            XCTAssertEqual(merged[0].duration, 1_920, accuracy: 0.01)
+            XCTAssertEqual(
+                merged[0].averagePaceSecPerKm ?? 0,
+                (1_920 / 6_200) * 1_000,
+                accuracy: 0.01
+            )
+            XCTAssertEqual(merged[0].heartRateAverage, 148)
+            XCTAssertEqual(merged[0].energyKilocalories, 410)
+            XCTAssertEqual(merged[0].cadenceAverage, 172)
+            XCTAssertEqual(merged[0].healthSync.state, HealthSyncState.synced)
+            XCTAssertEqual(merged[0].healthSync.healthKitUUID, uuid)
+            XCTAssertEqual(merged[0].healthKitUUID, uuid)
+            XCTAssertFalse(merged[0].isUnavailableInHealth)
+            XCTAssertEqual(merged[0].source, source)
+            XCTAssertEqual(merged[0].matchInfo, matchInfo)
+            XCTAssertEqual(merged[0].route, route)
+            XCTAssertEqual(merged[0].splits, splits)
+            XCTAssertEqual(merged[0].workoutID, workoutID)
+            XCTAssertEqual(merged[0].startedAt, startedAt)
+            XCTAssertEqual(merged[0].location, RunLocation.treadmill)
+        }
+    }
+
+    func testAppleHealthTreadmillImportAcceptsUpdatedDistanceAndPace() {
+        let uuid = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_730_100_100)
+        let existing = WorkoutResult(
+            workoutID: uuid,
+            startedAt: startedAt,
+            duration: 1_800,
+            distanceMeters: 5_000,
+            averagePaceSecPerKm: 360,
+            location: .treadmill,
+            healthKitUUID: uuid,
+            source: .appleHealth,
+            healthSync: HealthSyncMetadata(state: .synced, healthKitUUID: uuid)
+        )
+        let imported = ImportedHealthWorkout(
+            healthKitUUID: uuid,
+            startedAt: startedAt.addingTimeInterval(12),
+            endedAt: startedAt.addingTimeInterval(1_920),
+            duration: 1_920,
+            distanceMeters: 5_400,
+            location: .treadmill,
+            heartRateAverage: 151
+        )
+
+        let merged = HealthImportMerge.merge(existing: [existing], imports: [imported])
+
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged[0].distanceMeters, 5_400, accuracy: 0.01)
+        XCTAssertEqual(merged[0].duration, 1_920, accuracy: 0.01)
+        XCTAssertEqual(merged[0].averagePaceSecPerKm ?? 0, (1_920 / 5_400) * 1_000, accuracy: 0.01)
+        XCTAssertEqual(merged[0].heartRateAverage, 151)
+        XCTAssertEqual(merged[0].source, .appleHealth)
+        XCTAssertEqual(merged[0].startedAt, imported.startedAt)
+        XCTAssertEqual(merged[0].location, .treadmill)
+    }
+
+    func testLocalOutdoorImportStillReplacesDistance() {
+        let uuid = UUID()
+        let workoutID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_730_100_200)
+        let existing = WorkoutResult(
+            workoutID: workoutID,
+            startedAt: startedAt,
+            duration: 1_800,
+            distanceMeters: 5_000,
+            averagePaceSecPerKm: 360,
+            location: .outdoor,
+            healthKitUUID: uuid,
+            source: .wrathspeedPhone,
+            healthSync: HealthSyncMetadata(state: .synced, healthKitUUID: uuid)
+        )
+        let imported = ImportedHealthWorkout(
+            healthKitUUID: uuid,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(2_000),
+            duration: 2_000,
+            distanceMeters: 5_400,
+            location: .outdoor,
+            heartRateAverage: 140
+        )
+
+        let merged = HealthImportMerge.merge(existing: [existing], imports: [imported])
+
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged[0].distanceMeters, 5_400, accuracy: 0.01)
+        XCTAssertEqual(merged[0].duration, 2_000, accuracy: 0.01)
+        XCTAssertEqual(merged[0].averagePaceSecPerKm, 360)
+        XCTAssertEqual(merged[0].heartRateAverage, 140)
+        XCTAssertEqual(merged[0].source, .wrathspeedPhone)
+        XCTAssertEqual(merged[0].workoutID, workoutID)
+        XCTAssertEqual(merged[0].startedAt, startedAt)
+        XCTAssertEqual(merged[0].location, .outdoor)
+    }
 }

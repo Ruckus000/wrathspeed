@@ -53,6 +53,9 @@
 | Health background observer | **Skipped** — no background-delivery entitlement | Incremental import runs on app open / manual refresh only |
 | Watch timeout / mirrored session | **UI only on phone** | Requires real Watch hardware to fully verify |
 | Treadmill target speed UI | **Partial** — speed defaults in session; no in-run speed picker | Users adjust speed on treadmill manually |
+| History/Core SRP cleanup | **Deferred / non-blocking** | `historyRowIdentity` still lives on `WorkoutResultMerge`; persistence identity remains `identityKey` |
+| Treadmill sheet presentation | **Needs simulator/manual UI confirmation** | Persistence and callback/import authority are covered by unit tests; SwiftUI sheet interaction is not |
+| Different-attempt treadmill callback | **Test hardening only** | `testDifferentStartedAtIsNotTreatedAsPendingResult` does not yet prove the other attempt is recorded; not a claimed verified behavior |
 
 ## Test results (pass 2b — Aug 12, 2026)
 
@@ -168,3 +171,69 @@ These three findings are deferred, not fixed. They are accepted for continued un
 3. A current startup failure can leave `.countdown` and its recovery snapshot behind; the existing snapshot “clear” path does not reliably emit AppStore’s `.saved` deletion signal.
 
 Physical-Watch validation remains required for multi-device HealthKit behavior.
+
+## Phase B1 data-integrity integration (recovery branch)
+
+Branch: `recovery/phase-a-repo-reconciliation`
+
+Phase B1 intended data-integrity behavior is integrated on this recovery branch. It was not copied as an aggregate diff from `cursor/phase-b1-data-integrity` @ `765218f` because Phase A contains newer Watch work that must not be removed.
+
+Integration sequence:
+- Prior recovery slices through `6e620b8` (`Make treadmill confirmation transactional and preserve match invariants`)
+- This checkpoint: Health-import authority for locally confirmed treadmill distance (commit on this update)
+
+Read-only reconciliation against Phase B1 @ `765218f`:
+
+| Intended Phase B1 behavior | Recovery status |
+|---|---|
+| Workout result identity and canonical merge | Present (`WorkoutResultMerge` identity/match/merge/`canonicalize`) |
+| Persistence rollback and canonicalization | Present (repository rollback + save-time canonicalize) |
+| Guided-session durability | Present (`GuidedSessionResultStore` + `GuidedSessionPersistenceTests`) |
+| Transactional run completion | Present (`AppStore.record` + `WorkoutResultRecordTests`) |
+| Recovery durability | Present (finishing recoverable; `SessionRecoveryTests` require attached storage) |
+| Health import transaction and anchor ordering | Present (merge + persist, then anchor; restore results/plan on failure) |
+| Match/unmatch transactional behavior | Present (`WorkoutResultMatchActionTests`; Watch publish after successful unmatch) |
+| Watch publication timing | Present (publish after successful persist; skipped on rollback) |
+| Treadmill confirmation durability | Present (`confirmTreadmillDistance` pending until persist; late callback preserves distance) |
+| Relaunch and post-mutation failure coverage | Present (`WorkoutResultRelaunchTests`, Health import and match post-mutation tests) |
+
+This slice closed the remaining Health-import gap: automatic `HealthImportMerge` no longer overwrites locally owned treadmill `distanceMeters`. Apple-Health-owned treadmill results still accept Health distance. Outdoor/local imports still replace distance. After merge, existing plan embeddings are reconciled so persist canonicalize cannot restore a stale duration/pace over imported enrichment. Instant treadmill results with no plan copy keep confirmed distance through import and relaunch.
+
+### Verification (clean tracked-source export, untracked `InstantWorkoutFactory.swift` excluded)
+
+```bash
+git diff --check
+# → clean
+
+EXPORT via git ls-files (tracked working tree only)
+
+swift test --package-path WrathspeedCore
+# → 14 XCTest + 81 Swift Testing, 0 failures
+# HealthImportTests: 7 tests, 0 failures (includes treadmill authority cases)
+
+xcodebuild ... test -only-testing:WrathspeedTests
+# → 101 tests, 0 failures
+# HealthImportPersistenceTests 6
+# WorkoutResultTreadmillTests 6
+# WorkoutResultMatchActionTests 15
+# WorkoutResultRecordTests 14
+# WorkoutResultRelaunchTests 10
+# SessionRecoveryTests 2
+
+xcodebuild ... -configuration Debug -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+# → BUILD SUCCEEDED
+
+xcodebuild ... -configuration Release -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+# → BUILD SUCCEEDED
+```
+
+Simulator tests: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)
+
+UI tests were not run for this slice.
+
+### Still deferred (not claimed verified)
+
+- Physical-Watch HealthKit lifecycle validation remains a **release blocker** (see Deferred HealthKit lifecycle hardening above).
+- `historyRowIdentity` SRP cleanup remains **non-blocking**.
+- Treadmill sheet presentation still needs simulator/manual UI confirmation.
+- The different-`startedAt` treadmill test’s incomplete “not swallowed” assertion is future test-hardening, not a verified behavior.
