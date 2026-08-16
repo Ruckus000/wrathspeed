@@ -161,8 +161,171 @@ final class CoachingMVPHardeningTests: XCTestCase {
         controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .countdown)
         XCTAssertFalse(controller.canAcceptMirroredSession)
 
-        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .preparing)
+        controller.testing_configureMirroredAdmissionContext(
+            sessionState: .preparing,
+            activeStartupID: nil
+        )
         XCTAssertTrue(controller.canAcceptMirroredSession)
+    }
+
+    @MainActor
+    func testMirroredAdmissionTable() {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone)
+
+        struct Case {
+            let label: String
+            let launchState: WorkoutSessionController.LaunchState
+            let sessionState: ActiveSessionState
+            let activeStartupID: UInt?
+            let pendingStartup: Bool
+            let hasCurrentSession: Bool
+            let isRunning: Bool
+            let expected: Bool
+        }
+
+        let startupID: UInt = 7
+        let cases: [Case] = [
+            Case(label: "idle", launchState: .idle, sessionState: .preparing, activeStartupID: nil, pendingStartup: false, hasCurrentSession: false, isRunning: false, expected: true),
+            Case(label: "local preparing startup", launchState: .idle, sessionState: .preparing, activeStartupID: startupID, pendingStartup: false, hasCurrentSession: false, isRunning: false, expected: false),
+            Case(label: "waitingForWatch", launchState: .waitingForWatch, sessionState: .preparing, activeStartupID: startupID, pendingStartup: false, hasCurrentSession: false, isRunning: false, expected: true),
+            Case(label: "current session", launchState: .idle, sessionState: .preparing, activeStartupID: nil, pendingStartup: false, hasCurrentSession: true, isRunning: false, expected: false),
+            Case(label: "pending pair", launchState: .idle, sessionState: .preparing, activeStartupID: nil, pendingStartup: true, hasCurrentSession: false, isRunning: false, expected: false),
+            Case(label: "countdown", launchState: .idle, sessionState: .countdown, activeStartupID: nil, pendingStartup: false, hasCurrentSession: false, isRunning: false, expected: false),
+            Case(label: "recording", launchState: .recording, sessionState: .recording, activeStartupID: nil, pendingStartup: false, hasCurrentSession: false, isRunning: true, expected: false),
+            Case(label: "finishing", launchState: .idle, sessionState: .finishing, activeStartupID: nil, pendingStartup: false, hasCurrentSession: false, isRunning: false, expected: false),
+            Case(label: "running flag", launchState: .recording, sessionState: .recording, activeStartupID: nil, pendingStartup: false, hasCurrentSession: false, isRunning: true, expected: false),
+        ]
+
+        for testCase in cases {
+            controller.testing_configureMirroredAdmissionContext(
+                launchState: testCase.launchState,
+                sessionState: testCase.sessionState,
+                activeStartupID: testCase.activeStartupID,
+                pendingStartup: testCase.pendingStartup,
+                hasCurrentSession: testCase.hasCurrentSession,
+                isRunning: testCase.isRunning
+            )
+            XCTAssertEqual(
+                controller.canAcceptMirroredSession,
+                testCase.expected,
+                "mirrored admission for \(testCase.label)"
+            )
+        }
+    }
+
+    @MainActor
+    func testMirroredRejectionLeavesControllerStateUnchanged() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_configureMirroredAdmissionContext(
+            launchState: .idle,
+            sessionState: .preparing,
+            activeStartupID: 3,
+            isRunning: false
+        )
+        let before = controller.testing_mirroredAdmissionSnapshot()
+        XCTAssertFalse(controller.canAcceptMirroredSession)
+        let after = controller.testing_mirroredAdmissionSnapshot()
+        XCTAssertEqual(before.launchState, after.launchState)
+        XCTAssertEqual(before.sessionState, after.sessionState)
+        XCTAssertEqual(before.isRunning, after.isRunning)
+        XCTAssertEqual(before.hasSession, after.hasSession)
+        XCTAssertEqual(before.hasPendingStartup, after.hasPendingStartup)
+    }
+
+    @MainActor
+    func testRemoteEndSendCompletesBeforeLocalStopEnd() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
+        controller.testing_skipHealthKitStopEnd = true
+        controller.testing_skipFinishIfNeeded = true
+        var sendCompleted = false
+        controller.testing_remoteEndSendHandler = { _ in
+            XCTAssertFalse(sendCompleted)
+            sendCompleted = true
+        }
+        await controller.end()
+        XCTAssertTrue(sendCompleted)
+        XCTAssertEqual(
+            controller.testing_lifecyclePhases,
+            [.remoteEndSendStarted, .remoteEndSendCompleted, .localStopEnd]
+        )
+    }
+
+    @MainActor
+    func testRemoteEndSendFailureStillStopsLocally() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
+        controller.testing_skipHealthKitStopEnd = true
+        controller.testing_skipFinishIfNeeded = true
+        enum SendFailure: Error { case failed }
+        controller.testing_remoteEndSendHandler = { _ in
+            throw SendFailure.failed
+        }
+        await controller.end()
+        XCTAssertEqual(
+            controller.testing_lifecyclePhases,
+            [.remoteEndSendStarted, .remoteEndSendFailed, .localStopEnd]
+        )
+    }
+
+    @MainActor
+    func testRemoteOriginatedEndDoesNotEcho() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
+        controller.testing_skipHealthKitStopEnd = true
+        controller.testing_skipFinishIfNeeded = true
+        controller.testing_remoteEndSendHandler = { _ in
+            XCTFail("remote end should not echo")
+        }
+        await controller.testing_simulateRemoteEnd()
+        XCTAssertEqual(controller.testing_lifecyclePhases, [.localStopEnd])
+    }
+
+    @MainActor
+    func testRemoteEndUsesCapturedSessionNotLaterSession() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
+        controller.testing_skipHealthKitStopEnd = true
+        controller.testing_skipFinishIfNeeded = true
+        let captured = NSObject()
+        let later = NSObject()
+        controller.testing_endCaptureToken = captured
+        controller.testing_remoteEndSendHandler = { _ in
+            XCTAssertEqual(controller.testing_capturedEndToken, captured)
+            controller.testing_endCaptureToken = later
+            try await Task.sleep(for: .milliseconds(20))
+            XCTAssertEqual(controller.testing_capturedEndToken, captured)
+        }
+        await controller.end()
+        XCTAssertEqual(
+            controller.testing_lifecyclePhases,
+            [.remoteEndSendStarted, .remoteEndSendCompleted, .localStopEnd]
+        )
+    }
+
+    @MainActor
+    func testOverlappingFinishPathsAreAtMostOnce() async {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
+        controller.testing_skipHealthKitStopEnd = true
+        var finishEntries = 0
+        controller.onFinished = { _ in
+            finishEntries += 1
+        }
+        controller.testing_remoteEndSendHandler = { _ in
+            controller.testing_simulateFinishEntry(blueprint: blueprint)
+        }
+        await controller.end()
+        XCTAssertEqual(finishEntries, 1)
+        XCTAssertEqual(controller.sessionState, .saved)
     }
 
     func testCoordinatorRecordingPhaseIsNotStarting() {

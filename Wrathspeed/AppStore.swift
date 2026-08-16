@@ -948,12 +948,34 @@ final class AppStore {
             return
         }
         guard snapshot.state.isRecoverableUnfinishedSession else {
+            if snapshot.state == .saved {
+                clearMatchingStartupRecovery(for: snapshot, in: context)
+            }
             return
         }
         do {
             try ActiveSessionStore.save(snapshot, to: context)
         } catch {
             errorMessage = "Couldn't save workout recovery state: \(error.localizedDescription)"
+        }
+    }
+
+    private func clearMatchingStartupRecovery(for snapshot: ActiveSessionSnapshot, in context: ModelContext) {
+        if let pending = pendingRecoverySnapshot, pending.workoutID == snapshot.workoutID {
+            if pending.state == .finishing {
+                return
+            }
+            if pending.state == .preparing || pending.state == .countdown {
+                pendingRecoverySnapshot = nil
+            }
+        }
+        guard let stored = try? ActiveSessionStore.load(from: context) else { return }
+        guard stored.workoutID == snapshot.workoutID else { return }
+        if stored.state == .finishing {
+            return
+        }
+        if stored.state == .preparing || stored.state == .countdown {
+            try? ActiveSessionStore.clear(from: context)
         }
     }
 

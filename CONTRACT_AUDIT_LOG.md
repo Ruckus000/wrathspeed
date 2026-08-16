@@ -252,3 +252,73 @@ UI tests were not run for this slice.
 - `historyRowIdentity` SRP cleanup remains **non-blocking**.
 - Treadmill sheet presentation still needs simulator/manual UI confirmation.
 - The different-`startedAt` treadmill test’s incomplete “not swallowed” assertion is future test-hardening, not a verified behavior.
+
+## Phase B2 — HealthKit / Watch session lifecycle hardening (Aug 16, 2026)
+
+Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 commit
+
+**Phase B2 deterministic lifecycle implementation complete; physical-Watch acceptance remains a release gate.**
+
+### Implemented behavior
+
+1. **Remote End ordering** — `end()` captures `sessionToEnd` once, awaits `sendEndToRemote(through:)` before `localStopEnd`, send failure/cancellation does not block local stop/end/finish, remote-originated End does not echo, overlapping finish paths remain at-most-once.
+2. **Mirrored-session admission** — rejects pre-countdown local startup ownership (`activeStartupID` while not `.waitingForWatch`); accepts expected mirror during `.waitingForWatch`; rejects current/pending/countdown/recording/finishing/running cases; rejection does not mutate controller state or end the mirror.
+3. **Startup cleanup / recovery** — matching cancellation or current startup failure discards only the pending pair, resets out of `.countdown`, emits terminal `.saved` snapshot for AppStore clear, stale generations remain silent; AppStore clears only matching `.preparing`/`countdown` recovery on terminal `.saved` and never clears stored `.finishing` without persisted result.
+
+### Automated evidence
+
+```bash
+git diff --check
+# → clean
+
+swift test --package-path WrathspeedCore
+# → 81 Swift Testing + 18 XCTest, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 114 tests, 0 failures
+# CoachingMVPHardeningTests 25 (includes mirrored admission table + End ordering)
+# SessionRecoveryTests 7
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedUITests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 2 tests, 0 failures
+
+xcodebuild -scheme Wrathspeed -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' build \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → BUILD SUCCEEDED
+
+xcodebuild -scheme Wrathspeed -configuration Release \
+  -destination 'generic/platform=iOS Simulator' build \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → BUILD SUCCEEDED (embedded WrathspeedWatch compile gate; no separate Watch Simulator scheme)
+
+nm Release-iphonesimulator/Wrathspeed.app/Wrathspeed | grep testing_
+# → no DEBUG seam symbols
+```
+
+Simulator: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)
+
+### Physical-Watch checklist — **pending** (not verified from simulator/unit tests)
+
+1. Phone-initiated End stops the Watch primary.
+2. End delivery failure/disconnect still completes locally once.
+3. Cancel during `startMirroringToCompanionDevice()`.
+4. Cancel during `builder.beginCollection()`.
+5. Failure during `beginCollection()` leaves no running or saved partial workout.
+6. Late mirror after phone fallback is rejected without affecting the active phone workout.
+7. Expected mirror during `.waitingForWatch` attaches successfully.
+8. Mirror while finishing is rejected without ending the Watch workout.
+9. Cancel → restart → cancel leaves no orphaned session.
+10. Finish → immediate start does not attach a stale mirror or discard the finished workout.
+
+### Deferred (unchanged)
+
+- Physical-Watch transport validation remains a **release blocker**.
+- `historyRowIdentity` SRP cleanup remains **non-blocking**.
+- Treadmill sheet presentation still needs simulator/manual UI confirmation.

@@ -168,6 +168,7 @@ final class WorkoutSessionController: NSObject {
         guard !isRunning else { return }
         discardPendingStartup()
         guard sessionState != .finishing else { return }
+        emitTerminalStartupClearIfNeeded()
         clearPendingLaunchState()
     }
 
@@ -220,6 +221,7 @@ final class WorkoutSessionController: NSObject {
         guard !isStartupActive(startupID) else { return false }
         discardMatchingPendingStartup(sessionToDiscard, builder: builderToDiscard)
         if pendingStartup == nil, activeStartupID == nil, !isRunning, sessionState != .finishing {
+            emitTerminalStartupClearIfNeeded()
             clearPendingLaunchState()
         }
         return true
@@ -231,12 +233,32 @@ final class WorkoutSessionController: NSObject {
         session sessionToDiscard: HKWorkoutSession,
         builder builderToDiscard: HKLiveWorkoutBuilder
     ) -> Bool {
-        let cancelled = !isStartupActive(startupID)
+        let stale = !isStartupActive(startupID)
         discardMatchingPendingStartup(sessionToDiscard, builder: builderToDiscard)
-        if cancelled, pendingStartup == nil, activeStartupID == nil, !isRunning, sessionState != .finishing {
-            clearPendingLaunchState()
+        if stale {
+            if pendingStartup == nil, activeStartupID == nil, !isRunning, sessionState != .finishing {
+                emitTerminalStartupClearIfNeeded()
+                clearPendingLaunchState()
+            }
+            return true
         }
-        return cancelled
+        cleanupCurrentStartupFailure(startupID: startupID)
+        return false
+    }
+
+    private func cleanupCurrentStartupFailure(startupID: UInt?) {
+        guard isStartupActive(startupID) else { return }
+        guard session == nil, sessionState != .finishing else { return }
+        emitTerminalStartupClearIfNeeded()
+        clearPendingLaunchState()
+        if activeStartupID == startupID {
+            activeStartupID = nil
+        }
+    }
+
+    private func emitTerminalStartupClearIfNeeded() {
+        guard blueprint != nil else { return }
+        publishSnapshot(clear: true)
     }
 
     private func discardMatchingPendingStartup(
@@ -272,13 +294,31 @@ final class WorkoutSessionController: NSObject {
         }
     }
 
+    #if DEBUG
+    private var testing_forcePendingStartup = false
+    private var testing_forceCurrentSession = false
+    #endif
+
     var canAcceptMirroredSession: Bool {
-        !isRunning
-            && session == nil
-            && pendingStartup == nil
-            && sessionState != .finishing
-            && sessionState != .countdown
-            && sessionState != .recording
+        #if DEBUG
+        guard !isRunning,
+              session == nil && !testing_forceCurrentSession,
+              pendingStartup == nil && !testing_forcePendingStartup,
+              sessionState != .finishing,
+              sessionState != .countdown,
+              sessionState != .recording else { return false }
+        #else
+        guard !isRunning,
+              session == nil,
+              pendingStartup == nil,
+              sessionState != .finishing,
+              sessionState != .countdown,
+              sessionState != .recording else { return false }
+        #endif
+        if activeStartupID != nil && launchState != .waitingForWatch {
+            return false
+        }
+        return true
     }
 
     @discardableResult
@@ -328,10 +368,9 @@ final class WorkoutSessionController: NSObject {
     func end() async {
         let sessionToEnd = session
         if !applyingRemote {
-            send(.end, through: sessionToEnd)
+            await sendEndToRemote(through: sessionToEnd)
         }
-        sessionToEnd?.stopActivity(with: Date())
-        sessionToEnd?.end()
+        localStopEnd(sessionToEnd)
         await finishIfNeeded()
     }
 
@@ -419,6 +458,57 @@ final class WorkoutSessionController: NSObject {
         lastCues.forEach(speech.speak)
     }
 
+    private func endSyncMessageData() -> Data? {
+        SessionSyncMessage(
+            kind: .end,
+            elapsed: metrics.elapsed,
+            distanceMeters: metrics.distanceMeters,
+            paceSecPerKm: metrics.currentPaceSecPerKm,
+            heartRate: metrics.heartRate,
+            stepIndex: stepper?.stepIndex ?? 0,
+            stepName: stepper?.currentStep?.name ?? "",
+            isPaused: isPaused
+        ).encoded()
+    }
+
+    private func sendEndToRemote(through target: HKWorkoutSession?) async {
+        guard let data = endSyncMessageData() else { return }
+        #if DEBUG
+        if target == nil && testing_remoteEndSendHandler == nil { return }
+        testing_capturedEndToken = testing_endCaptureToken
+        testing_lifecyclePhases.append(.remoteEndSendStarted)
+        if let handler = testing_remoteEndSendHandler {
+            do {
+                try await handler(data)
+                testing_lifecyclePhases.append(.remoteEndSendCompleted)
+            } catch {
+                testing_lifecyclePhases.append(.remoteEndSendFailed)
+            }
+            return
+        }
+        #endif
+        guard let target else { return }
+        do {
+            try await target.sendToRemoteWorkoutSession(data: data)
+            #if DEBUG
+            testing_lifecyclePhases.append(.remoteEndSendCompleted)
+            #endif
+        } catch {
+            #if DEBUG
+            testing_lifecyclePhases.append(.remoteEndSendFailed)
+            #endif
+        }
+    }
+
+    private func localStopEnd(_ sessionToEnd: HKWorkoutSession?) {
+        #if DEBUG
+        testing_lifecyclePhases.append(.localStopEnd)
+        if testing_skipHealthKitStopEnd { return }
+        #endif
+        sessionToEnd?.stopActivity(with: Date())
+        sessionToEnd?.end()
+    }
+
     private func send(_ kind: SessionSyncMessage.Kind, through target: HKWorkoutSession? = nil) {
         let destination = target ?? session
         let message = SessionSyncMessage(
@@ -442,6 +532,9 @@ final class WorkoutSessionController: NSObject {
     }
 
     private func finishIfNeeded() async {
+        #if DEBUG
+        if testing_skipFinishIfNeeded { return }
+        #endif
         guard isRunning, sessionState != .finishing else { return }
         guard let finishingSession = session, let finishingBuilder = builder else { return }
         isRunning = false
@@ -547,6 +640,40 @@ final class WorkoutSessionController: NSObject {
     }
 
     #if DEBUG
+    enum TestingLifecyclePhase: Equatable {
+        case remoteEndSendStarted
+        case remoteEndSendCompleted
+        case remoteEndSendFailed
+        case localStopEnd
+    }
+
+    var testing_lifecyclePhases: [TestingLifecyclePhase] = []
+    var testing_remoteEndSendHandler: ((Data) async throws -> Void)?
+    var testing_skipHealthKitStopEnd = false
+    var testing_skipFinishIfNeeded = false
+    var testing_endCaptureToken: NSObject?
+    var testing_capturedEndToken: NSObject?
+
+    func testing_finishIfNeeded() async {
+        await finishIfNeeded()
+    }
+
+    func testing_simulateFinishEntry(blueprint: WorkoutBlueprint) {
+        guard isRunning, sessionState != .finishing else { return }
+        isRunning = false
+        sessionState = .finishing
+        onFinished?(WorkoutResult(
+            workoutID: blueprint.id,
+            startedAt: startedAt ?? Date(),
+            duration: metrics.elapsed,
+            distanceMeters: metrics.distanceMeters,
+            averagePaceSecPerKm: nil,
+            location: blueprint.location,
+            source: resultSource
+        ))
+        sessionState = .saved
+    }
+
     func testing_publishSnapshot(clear: Bool = false) {
         publishSnapshot(clear: clear)
     }
@@ -559,6 +686,73 @@ final class WorkoutSessionController: NSObject {
         self.blueprint = blueprint
         self.resultSource = source
         self.sessionState = state
+    }
+
+    func testing_prepareForEndTest(blueprint: WorkoutBlueprint, state: ActiveSessionState = .recording) {
+        self.blueprint = blueprint
+        self.sessionState = state
+        self.isRunning = true
+        self.startedAt = Date()
+    }
+
+    func testing_configureMirroredAdmissionContext(
+        launchState: LaunchState = .idle,
+        sessionState: ActiveSessionState = .preparing,
+        activeStartupID: UInt? = nil,
+        pendingStartup: Bool = false,
+        hasCurrentSession: Bool = false,
+        isRunning: Bool = false
+    ) {
+        self.launchState = launchState
+        self.sessionState = sessionState
+        self.activeStartupID = activeStartupID
+        testing_forcePendingStartup = pendingStartup
+        testing_forceCurrentSession = hasCurrentSession
+        self.pendingStartup = nil
+        self.session = nil
+        self.builder = nil
+        self.isRunning = isRunning
+    }
+
+    func testing_mirroredAdmissionSnapshot() -> (
+        launchState: LaunchState,
+        sessionState: ActiveSessionState,
+        isRunning: Bool,
+        hasSession: Bool,
+        hasPendingStartup: Bool
+    ) {
+        (
+            launchState,
+            sessionState,
+            isRunning,
+            session != nil || testing_forceCurrentSession,
+            pendingStartup != nil || testing_forcePendingStartup
+        )
+    }
+
+    @discardableResult
+    func testing_beginOwnedStartup() -> UInt {
+        let id = nextStartupID()
+        activeStartupID = id
+        return id
+    }
+
+    func testing_simulateCountdownOwnership(startupID: UInt, blueprint: WorkoutBlueprint) {
+        activeStartupID = startupID
+        self.blueprint = blueprint
+        stepper = WorkoutStepper(blueprint: blueprint)
+        sessionState = .countdown
+        publishSnapshot()
+    }
+
+    func testing_cleanupCurrentStartupFailure(startupID: UInt) {
+        cleanupCurrentStartupFailure(startupID: startupID)
+    }
+
+    func testing_simulateRemoteEnd() async {
+        applyingRemote = true
+        defer { applyingRemote = false }
+        await end()
     }
     #endif
 
