@@ -115,7 +115,9 @@ public enum HealthImportMerge {
     ) -> [WorkoutResult] {
         var merged = existing
         for imported in imports {
-            if let index = merged.firstIndex(where: { $0.healthKitUUID == imported.healthKitUUID }) {
+            if let index = merged.firstIndex(where: {
+                WorkoutResultMerge.resolvedHealthKitUUID(for: $0) == imported.healthKitUUID
+            }) {
                 var current = merged[index]
                 current.duration = imported.duration
                 let preserveConfirmedTreadmillDistance =
@@ -123,18 +125,21 @@ public enum HealthImportMerge {
                 if !preserveConfirmedTreadmillDistance {
                     current.distanceMeters = imported.distanceMeters
                 }
-                if current.location == .treadmill, current.duration > 0, current.distanceMeters > 0 {
+                if current.source == .appleHealth {
+                    current.startedAt = imported.startedAt
+                    current.location = imported.location
+                }
+                if current.duration > 0, current.distanceMeters > 0 {
                     current.averagePaceSecPerKm = (current.duration / current.distanceMeters) * 1_000
+                } else {
+                    current.averagePaceSecPerKm = nil
                 }
                 current.heartRateAverage = imported.heartRateAverage ?? current.heartRateAverage
                 current.energyKilocalories = imported.energyKilocalories ?? current.energyKilocalories
                 current.cadenceAverage = imported.cadenceAverage ?? current.cadenceAverage
                 current.isUnavailableInHealth = false
+                current.healthKitUUID = imported.healthKitUUID
                 current.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: imported.healthKitUUID)
-                if current.source == .appleHealth {
-                    current.startedAt = imported.startedAt
-                    current.location = imported.location
-                }
                 merged[index] = current
             } else {
                 merged.append(imported.asWorkoutResult())

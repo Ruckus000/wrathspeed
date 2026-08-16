@@ -344,4 +344,58 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
         XCTAssertEqual(store.watchPublicationCountForTesting, watchBefore)
     }
+
+    func testImportMatchesHealthSyncUUIDAndKeepsConfirmedTreadmillDistance() async throws {
+        let mock = MockHealthImportService()
+        let (store, context) = try treadmillPlanStore(importer: mock)
+        let workoutID = try XCTUnwrap(store.plan?.workouts.first?.id)
+        let startedAt = Date().addingTimeInterval(-3_300)
+        let uuid = UUID()
+        var confirmed = confirmedTreadmillResult(workoutID: workoutID, startedAt: startedAt, healthKitUUID: uuid)
+        confirmed.healthKitUUID = nil
+        try store.record(confirmed)
+
+        let watchBefore = store.watchPublicationCountForTesting
+        let celebrationBefore = store.celebration
+        let toastBefore = store.toastMessage
+        mock.workouts = [healthImport(uuid: uuid, startedAt: startedAt)]
+
+        await store.importHealthWorkouts()
+
+        XCTAssertEqual(store.results.count, 1)
+        XCTAssertEqual(store.results.first?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
+        XCTAssertEqual(store.results.first?.duration ?? 0, 1_920, accuracy: 0.01)
+        XCTAssertEqual(store.results.first?.averagePaceSecPerKm ?? 0, (1_920 / 6_200) * 1_000, accuracy: 0.01)
+        XCTAssertEqual(store.results.first?.heartRateAverage, 148)
+        XCTAssertEqual(store.results.first?.energyKilocalories, 410)
+        XCTAssertEqual(store.results.first?.cadenceAverage, 172)
+        XCTAssertEqual(store.results.first?.healthKitUUID, uuid)
+        XCTAssertEqual(store.results.first?.healthSync.healthKitUUID, uuid)
+        XCTAssertEqual(store.results.first?.healthSync.state, .synced)
+        XCTAssertEqual(store.plan?.workouts.first?.result?.id, store.results.first?.id)
+        XCTAssertEqual(store.plan?.workouts.first?.result?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
+        XCTAssertEqual(store.plan?.workouts.first?.result?.duration ?? 0, 1_920, accuracy: 0.01)
+        XCTAssertEqual(
+            store.plan?.workouts.first?.result?.averagePaceSecPerKm ?? 0,
+            (1_920 / 6_200) * 1_000,
+            accuracy: 0.01
+        )
+        XCTAssertEqual(store.celebration, celebrationBefore)
+        XCTAssertEqual(store.toastMessage, toastBefore)
+        XCTAssertEqual(store.watchPublicationCountForTesting, watchBefore)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+        XCTAssertEqual(try HealthImportAnchorStore.load(from: context), mock.anchor)
+
+        let restored = AppStore()
+        restored.attach(context: context)
+        XCTAssertEqual(restored.results.count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+        XCTAssertEqual(restored.results.first?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
+        XCTAssertEqual(restored.results.first?.averagePaceSecPerKm ?? 0, (1_920 / 6_200) * 1_000, accuracy: 0.01)
+        XCTAssertEqual(restored.results.first?.healthKitUUID, uuid)
+        XCTAssertEqual(restored.results.first?.healthSync.healthKitUUID, uuid)
+        XCTAssertEqual(restored.plan?.workouts.first?.result?.id, restored.results.first?.id)
+        XCTAssertEqual(restored.plan?.workouts.first?.result?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
+        XCTAssertEqual(restored.plan?.workouts.first?.result?.duration ?? 0, 1_920, accuracy: 0.01)
+    }
 }

@@ -180,7 +180,8 @@ Phase B1 intended data-integrity behavior is integrated on this recovery branch.
 
 Integration sequence:
 - Prior recovery slices through `6e620b8` (`Make treadmill confirmation transactional and preserve match invariants`)
-- This checkpoint: Health-import authority for locally confirmed treadmill distance (commit on this update)
+- `f1aa27b` Preserve confirmed treadmill distance through Health import
+- This checkpoint: canonical Health-import UUID resolution and final-value pace derivation (closes Phase B1 on the recovery branch)
 
 Read-only reconciliation against Phase B1 @ `765218f`:
 
@@ -197,7 +198,19 @@ Read-only reconciliation against Phase B1 @ `765218f`:
 | Treadmill confirmation durability | Present (`confirmTreadmillDistance` pending until persist; late callback preserves distance) |
 | Relaunch and post-mutation failure coverage | Present (`WorkoutResultRelaunchTests`, Health import and match post-mutation tests) |
 
-This slice closed the remaining Health-import gap: automatic `HealthImportMerge` no longer overwrites locally owned treadmill `distanceMeters`. Apple-Health-owned treadmill results still accept Health distance. Outdoor/local imports still replace distance. After merge, existing plan embeddings are reconciled so persist canonicalize cannot restore a stale duration/pace over imported enrichment. Instant treadmill results with no plan copy keep confirmed distance through import and relaunch.
+`f1aa27b` preserved locally confirmed treadmill distance when Health import matched `WorkoutResult.healthKitUUID`. That was incomplete:
+
+- Matching ignored `healthSync.healthKitUUID`, so a synced local treadmill result with a nil primary UUID appended a second Apple Health row. Persist canonicalize could then merge the duplicate and overwrite confirmed distance.
+- Pace was calculated before Apple Health location was applied, so an outdoor → treadmill Health correction kept a stale pace.
+
+Closed in this checkpoint:
+
+- `HealthImportMerge` matches with `WorkoutResultMerge.resolvedHealthKitUUID(for:)`.
+- A successful match writes the imported UUID into both `healthKitUUID` and `healthSync.healthKitUUID`.
+- Duration, distance, and location are resolved first; `averagePaceSecPerKm` is then derived from the final duration and final distance (or `nil` if either is non-positive).
+- Distance authority remains: local treadmill keeps confirmed distance; Apple Health–owned and local outdoor results take imported Health distance.
+
+Phase B1 data-integrity integration is **closed** on `recovery/phase-a-repo-reconciliation`. Deferred HealthKit lifecycle, physical-Watch validation, History SRP, and treadmill-sheet UI confirmation remain outside this closure.
 
 ### Verification (clean tracked-source export, untracked `InstantWorkoutFactory.swift` excluded)
 
@@ -208,16 +221,18 @@ git diff --check
 EXPORT via git ls-files (tracked working tree only)
 
 swift test --package-path WrathspeedCore
-# → 14 XCTest + 81 Swift Testing, 0 failures
-# HealthImportTests: 7 tests, 0 failures (includes treadmill authority cases)
+# → 18 XCTest + 81 Swift Testing, 0 failures
+# HealthImportTests: 11 tests, 0 failures
 
 xcodebuild ... test -only-testing:WrathspeedTests
-# → 101 tests, 0 failures
-# HealthImportPersistenceTests 6
+# → 102 tests, 0 failures
+# HealthImportPersistenceTests 7
 # WorkoutResultTreadmillTests 6
 # WorkoutResultMatchActionTests 15
 # WorkoutResultRecordTests 14
 # WorkoutResultRelaunchTests 10
+# PersistenceMigrationTests 9
+# GuidedSessionPersistenceTests 12
 # SessionRecoveryTests 2
 
 xcodebuild ... -configuration Debug -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
