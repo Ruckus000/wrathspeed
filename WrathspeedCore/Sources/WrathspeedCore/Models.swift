@@ -356,7 +356,7 @@ public struct WorkoutSplit: Codable, Equatable, Sendable {
 }
 
 public struct WorkoutResult: Codable, Equatable, Sendable, Identifiable {
-    public var id: UUID { workoutID }
+    public var id: String { WorkoutResultMerge.identityKey(for: self) }
     public var workoutID: UUID
     public var startedAt: Date
     public var duration: TimeInterval
