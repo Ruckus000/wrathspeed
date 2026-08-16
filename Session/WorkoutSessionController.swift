@@ -520,26 +520,30 @@ final class WorkoutSessionController: NSObject {
 
     private func makeActiveSessionSnapshot(clear: Bool = false) -> ActiveSessionSnapshot? {
         guard let blueprint, let data = try? JSONEncoder().encode(blueprint) else { return nil }
-        if clear {
-            return ActiveSessionSnapshot(
-                workoutID: blueprint.id,
-                blueprintData: data,
-                source: resultSource,
-                state: sessionState,
-                updatedAt: Date()
-            )
-        }
         return ActiveSessionSnapshot(
             workoutID: blueprint.id,
             blueprintData: data,
             source: resultSource,
-            state: sessionState,
+            state: clear ? .saved : sessionState,
             startedAt: startedAt,
             elapsedSeconds: metrics.elapsed,
-            distanceMeters: metrics.distanceMeters,
+            distanceMeters: resolvedDistanceMeters(),
             stepIndex: stepper?.stepIndex ?? 0,
-            isPaused: isPaused
+            isPaused: isPaused,
+            updatedAt: Date(),
+            healthSync: localHealthSyncMetadata()
         )
+    }
+
+    private func localHealthSyncMetadata() -> HealthSyncMetadata {
+        switch sessionState {
+        case .healthSyncPending:
+            return HealthSyncMetadata(state: .failed, lastAttemptAt: Date())
+        case .saved, .finishing:
+            return HealthSyncMetadata(state: .pending, lastAttemptAt: Date())
+        default:
+            return HealthSyncMetadata()
+        }
     }
 
     #if DEBUG

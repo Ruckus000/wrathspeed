@@ -1,11 +1,33 @@
+import SwiftData
 import XCTest
 @testable import Wrathspeed
 import WrathspeedCore
 
 @MainActor
 final class SessionRecoveryTests: XCTestCase {
-    func testPartialRecoveryCreatesResultWithoutCompletingPlannedWorkout() {
+    private func makeStore() throws -> AppStore {
+        let container = try ModelContainer(
+            for: Schema([
+                SnapshotEntity.self,
+                MigrationMarkerEntity.self,
+                AppSettingsEntity.self,
+                TrainingPlanEntity.self,
+                ScheduledWorkoutEntity.self,
+                WorkoutResultEntity.self,
+                StrengthSessionEntity.self,
+                StrengthSessionResultEntity.self,
+                MobilitySessionResultEntity.self,
+                ActiveSessionSnapshotEntity.self,
+            ]),
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
         let store = AppStore()
+        store.attach(context: ModelContext(container))
+        return store
+    }
+
+    func testPartialRecoveryCreatesResultWithoutCompletingPlannedWorkout() throws {
+        let store = try makeStore()
         let blueprint = WorkoutBlueprint(
             date: Date(),
             kind: .easy,
@@ -29,7 +51,7 @@ final class SessionRecoveryTests: XCTestCase {
         )
         let snapshot = ActiveSessionSnapshot(
             workoutID: blueprint.id,
-            blueprintData: try! JSONEncoder().encode(blueprint),
+            blueprintData: try JSONEncoder().encode(blueprint),
             source: .instant,
             state: .recording,
             startedAt: Date().addingTimeInterval(-1_200),
@@ -41,6 +63,7 @@ final class SessionRecoveryTests: XCTestCase {
         XCTAssertEqual(store.results.first?.source, .instant)
         XCTAssertEqual(store.plan?.workouts.first?.status, .scheduled)
         XCTAssertNil(store.pendingRecoverySnapshot)
+        XCTAssertNil(store.errorMessage)
     }
 
     func testDiscardRecoveryClearsPendingSnapshot() {

@@ -197,6 +197,7 @@ final class CoachingMVPHardeningTests: XCTestCase {
         controller.testing_publishSnapshot(clear: true)
         waitForExpectations(timeout: 1)
         XCTAssertEqual(captured?.source, .wrathspeedPhone)
+        XCTAssertEqual(captured?.state, .saved)
     }
 
     func testWatchStartupCoordinatorControlReadiness() {

@@ -329,7 +329,11 @@ final class AppStore {
             pending.result.averagePaceSecPerKm = (pending.result.duration / meters) * 1_000
         }
         pendingTreadmillDistance = nil
-        record(pending.result)
+        do {
+            try record(pending.result)
+        } catch {
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+        }
     }
 
     private func handleWorkoutResult(_ result: WorkoutResult) {
@@ -353,47 +357,46 @@ final class AppStore {
             )
             return
         }
-        record(result)
+        do {
+            try record(result)
+        } catch {
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+        }
     }
 
-    func record(_ result: WorkoutResult) {
-        if results.contains(where: { existing in
-            if let uuid = result.healthKitUUID, let existingUUID = existing.healthKitUUID, uuid == existingUUID { return true }
-            if existing.workoutID == result.workoutID && existing.startedAt == result.startedAt {
-                return result.healthSync.state != .synced
-            }
-            return false
-        }) {
-            if let index = results.firstIndex(where: { $0.workoutID == result.workoutID && $0.startedAt == result.startedAt }) {
-                results[index] = result
-                persist()
-            }
-            return
+    func record(_ result: WorkoutResult) throws {
+        let recordPlan = WorkoutResultMerge.planRecord(existing: results, incoming: result)
+        let stored = recordPlan.mergedResult
+        let previous = captureRecordedState()
+
+        switch recordPlan.outcome {
+        case .insert:
+            results.insert(stored, at: 0)
+        case .update:
+            guard let index = recordPlan.existingIndex else { return }
+            results[index] = stored
         }
-        let previousVDOT = profile?.vdot
-        var stored = result
-        if stored.healthSync.state == .notRequired, stored.healthKitUUID != nil {
-            stored.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: stored.healthKitUUID)
+
+        if recordPlan.shouldRunCompletionSideEffects {
+            applyPlannedWorkoutCompletion(for: stored, incoming: result)
+            let previousVDOT = profile?.vdot
+            evaluateAdaptation(shouldPersist: false)
+            celebration = makeCelebration(for: stored, previousVDOT: previousVDOT)
+        } else {
+            reconcilePlanEmbeddedResult(stored)
         }
-        results.insert(stored, at: 0)
-        if stored.matchInfo.state == .matched, let scheduledID = stored.matchInfo.scheduledWorkoutID {
-            updateWorkout(scheduledID) { workout in
-                var copy = workout
-                copy.status = .completed
-                copy.result = stored
-                return copy
+
+        do {
+            try persistThrowing()
+            clearRecoverySnapshotIfResultExists(for: stored)
+            if recordPlan.shouldRunCompletionSideEffects {
+                pushWatchWorkouts()
             }
-        } else if result.source != .instant, plan?.workouts.contains(where: { $0.id == result.workoutID || $0.blueprint.id == result.workoutID }) == true {
-            updateWorkout(result.workoutID) { workout in
-                var copy = workout
-                copy.status = .completed
-                copy.result = stored
-                return copy
-            }
+        } catch {
+            restoreRecordedState(previous)
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+            throw error
         }
-        evaluateAdaptation()
-        persist()
-        celebration = makeCelebration(for: stored, previousVDOT: previousVDOT)
     }
 
     func importHealthWorkouts() async {
@@ -550,10 +553,23 @@ final class AppStore {
             discardRecovery()
             return
         }
+        let startedAt = snapshot.estimatedStartedAt()
+        if results.contains(where: { WorkoutResultMerge.matches($0, WorkoutResult(
+            workoutID: blueprint.id,
+            startedAt: startedAt,
+            duration: snapshot.elapsedSeconds,
+            distanceMeters: snapshot.distanceMeters,
+            averagePaceSecPerKm: nil,
+            location: blueprint.location,
+            source: snapshot.source
+        )) }) {
+            discardRecovery()
+            return
+        }
         let pace = snapshot.distanceMeters > 0 ? (snapshot.elapsedSeconds / snapshot.distanceMeters) * 1_000 : nil
         let result = WorkoutResult(
             workoutID: blueprint.id,
-            startedAt: snapshot.startedAt ?? snapshot.updatedAt.addingTimeInterval(-snapshot.elapsedSeconds),
+            startedAt: startedAt,
             duration: snapshot.elapsedSeconds,
             distanceMeters: snapshot.distanceMeters,
             averagePaceSecPerKm: pace,
@@ -561,9 +577,13 @@ final class AppStore {
             source: snapshot.source,
             healthSync: snapshot.healthSync
         )
-        record(result)
-        discardRecovery()
-        showToast("PARTIAL WORKOUT SAVED")
+        do {
+            try record(result)
+            discardRecovery()
+            showToast("PARTIAL WORKOUT SAVED")
+        } catch {
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+        }
     }
 
     func discardRecovery() {
@@ -815,12 +835,7 @@ final class AppStore {
             self?.errorMessage = "Workout wasn't saved to Health: \(error.localizedDescription)"
         })
         session.onSnapshot = { [weak self] snapshot in
-            guard let self, let context = self.modelContext else { return }
-            if snapshot.state == .saved {
-                try? ActiveSessionStore.clear(from: context)
-            } else {
-                try? ActiveSessionStore.save(snapshot, to: context)
-            }
+            self?.handleSessionSnapshot(snapshot)
         }
         workoutCoordinator.installMirroringHandler()
         pushWatchWorkouts()
@@ -828,10 +843,7 @@ final class AppStore {
             handleWorkoutResult(result)
         }
         loadGuidedSessionResults()
-        if let snapshot = try? modelContext.flatMap({ try ActiveSessionStore.load(from: $0) }),
-           snapshot.state != .saved {
-            pendingRecoverySnapshot = snapshot
-        }
+        restorePendingRecoverySnapshotIfNeeded()
     }
 
     private func loadGuidedSessionResults() {
@@ -844,7 +856,48 @@ final class AppStore {
         }
     }
 
-    private func evaluateAdaptation() {
+    private func restorePendingRecoverySnapshotIfNeeded() {
+        guard let context = modelContext else { return }
+        guard let snapshot = try? ActiveSessionStore.load(from: context) else { return }
+        if results.contains(where: { snapshot.matchesResult($0) }) {
+            try? ActiveSessionStore.clear(from: context)
+            return
+        }
+        guard snapshot.state.isRecoverableUnfinishedSession else {
+            try? ActiveSessionStore.clear(from: context)
+            return
+        }
+        pendingRecoverySnapshot = snapshot
+    }
+
+    private func handleSessionSnapshot(_ snapshot: ActiveSessionSnapshot) {
+        guard let context = modelContext else { return }
+        if results.contains(where: { snapshot.matchesResult($0) }) {
+            try? ActiveSessionStore.clear(from: context)
+            pendingRecoverySnapshot = nil
+            return
+        }
+        guard snapshot.state.isRecoverableUnfinishedSession else {
+            return
+        }
+        do {
+            try ActiveSessionStore.save(snapshot, to: context)
+        } catch {
+            errorMessage = "Couldn't save workout recovery state: \(error.localizedDescription)"
+        }
+    }
+
+    private func clearRecoverySnapshotIfResultExists(for result: WorkoutResult) {
+        guard let context = modelContext else { return }
+        if pendingRecoverySnapshot?.matchesResult(result) == true {
+            pendingRecoverySnapshot = nil
+        }
+        if let snapshot = try? ActiveSessionStore.load(from: context), snapshot.matchesResult(result) {
+            try? ActiveSessionStore.clear(from: context)
+        }
+    }
+
+    private func evaluateAdaptation(shouldPersist: Bool = true) {
         guard let plan, let profile else { return }
         let cal = Calendar.current
         let startOfWeek = cal.dateInterval(of: .weekOfYear, for: Date())?.start ?? Date()
@@ -867,15 +920,37 @@ final class AppStore {
         }
         freezeMileage = decision.freezeMileageIncrease
         pendingSuggestion = decision.vdotSuggestion
-        persist()
+        if shouldPersist {
+            persist()
+        }
     }
 
-    private func updateWorkout(_ id: UUID, transform: (ScheduledWorkout) -> ScheduledWorkout) {
+    private func applyPlannedWorkoutCompletion(for stored: WorkoutResult, incoming: WorkoutResult) {
+        if stored.matchInfo.state == .matched, let scheduledID = stored.matchInfo.scheduledWorkoutID {
+            updateWorkout(scheduledID, shouldPersist: false) { workout in
+                var copy = workout
+                copy.status = .completed
+                copy.result = stored
+                return copy
+            }
+        } else if incoming.source != .instant, plan?.workouts.contains(where: { $0.id == incoming.workoutID || $0.blueprint.id == incoming.workoutID }) == true {
+            updateWorkout(incoming.workoutID, shouldPersist: false) { workout in
+                var copy = workout
+                copy.status = .completed
+                copy.result = stored
+                return copy
+            }
+        }
+    }
+
+    private func updateWorkout(_ id: UUID, shouldPersist: Bool = true, transform: (ScheduledWorkout) -> ScheduledWorkout) {
         guard var plan else { return }
         plan.workouts = plan.workouts.map { $0.id == id || $0.blueprint.id == id ? transform($0) : $0 }
         self.plan = plan
-        persist()
-        pushWatchWorkouts()
+        if shouldPersist {
+            persist()
+            pushWatchWorkouts()
+        }
     }
 
     private func currentWeekMileage(in plan: TrainingPlan, calendar: Calendar) -> Double {
@@ -967,6 +1042,10 @@ final class AppStore {
         repository?.forceSaveFailure = value
     }
 
+    func setForceSaveFailureAfterMutationForTesting(_ value: Bool) {
+        repository?.forceSaveFailureAfterMutation = value
+    }
+
     func setForceGuidedResultSaveFailureForTesting(_ value: Bool) {
         repository?.forceGuidedResultSaveFailure = value
     }
@@ -993,11 +1072,61 @@ final class AppStore {
     }
 
     private func persist() {
-        guard let repository else { return }
         do {
-            try repository.save(currentPersistedState())
+            try persistThrowing()
         } catch {
             errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+        }
+    }
+
+    private func persistThrowing() throws {
+        guard let repository else { throw AppPersistenceError.storageUnavailable }
+        try repository.save(currentPersistedState())
+    }
+
+    private struct RecordedStateSnapshot {
+        var results: [WorkoutResult]
+        var plan: TrainingPlan?
+        var profile: RunnerProfile?
+        var celebration: CelebrationPayload?
+        var pendingSuggestion: VDOTSuggestion?
+        var freezeMileage: Bool
+        var freezeMileageBaselineMeters: Double?
+    }
+
+    private func captureRecordedState() -> RecordedStateSnapshot {
+        RecordedStateSnapshot(
+            results: results,
+            plan: plan,
+            profile: profile,
+            celebration: celebration,
+            pendingSuggestion: pendingSuggestion,
+            freezeMileage: freezeMileage,
+            freezeMileageBaselineMeters: freezeMileageBaselineMeters
+        )
+    }
+
+    private func restoreRecordedState(_ snapshot: RecordedStateSnapshot) {
+        results = snapshot.results
+        plan = snapshot.plan
+        profile = snapshot.profile
+        celebration = snapshot.celebration
+        pendingSuggestion = snapshot.pendingSuggestion
+        freezeMileage = snapshot.freezeMileage
+        freezeMileageBaselineMeters = snapshot.freezeMileageBaselineMeters
+    }
+
+    private func reconcilePlanEmbeddedResult(_ stored: WorkoutResult) {
+        guard var plan else { return }
+        var changed = false
+        for index in plan.workouts.indices {
+            guard let embedded = plan.workouts[index].result,
+                  WorkoutResultMerge.matches(embedded, stored) else { continue }
+            plan.workouts[index].result = stored
+            changed = true
+        }
+        if changed {
+            self.plan = plan
         }
     }
 
