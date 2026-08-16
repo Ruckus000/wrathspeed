@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import SwiftData
 import UIKit
 import WrathspeedCore
@@ -45,7 +46,10 @@ final class AppStore {
     var mobilityResults: [MobilitySessionResult] = []
     var pendingWorkoutSource: WorkoutSource = .wrathspeedPhone
     var pendingTreadmillDistance: PendingTreadmillDistance?
+#if DEBUG
+    @ObservationIgnored
     private(set) var watchPublicationCountForTesting = 0
+#endif
 
     private let workoutCoordinator = WorkoutSessionCoordinator()
     private let strengthCatalogLoader: () throws -> StrengthCatalog
@@ -439,6 +443,17 @@ final class AppStore {
 
     func confirmHealthMatch(_ selected: WorkoutResult, scheduledWorkoutID: UUID) {
         guard let index = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+        guard let workout = plan?.workouts.first(where: { $0.id == scheduledWorkoutID }),
+              workout.status == .scheduled || workout.status == .convertedToEasy
+        else { return }
+        let claimedByAnother = results.contains {
+            $0.matchInfo.state == .matched
+                && $0.matchInfo.scheduledWorkoutID == scheduledWorkoutID
+                && !WorkoutResultMerge.matches($0, selected)
+        }
+        if claimedByAnother { return }
+        if let embedded = workout.result, !WorkoutResultMerge.matches(embedded, selected) { return }
+
         let previous = captureRecordedState()
         var result = results[index]
         result.matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: scheduledWorkoutID)
@@ -450,6 +465,7 @@ final class AppStore {
             return copy
         }
         evaluateAdaptation(shouldPersist: false)
+        applyMatchSuggestions()
         do {
             try persistThrowing()
             pushWatchWorkouts()
@@ -1055,7 +1071,9 @@ final class AppStore {
     }
 
     private func pushWatchWorkouts() {
+#if DEBUG
         watchPublicationCountForTesting += 1
+#endif
         let upcoming = upcomingRuns.prefix(14).map(\.blueprint)
         workoutCoordinator.pushUpcoming(UpcomingWorkoutsPayload(blueprints: Array(upcoming), vdot: profile?.vdot, unit: unit))
     }

@@ -50,7 +50,8 @@ struct HistoryView: View {
                         if store.results.isEmpty {
                             emptyState("NO RUNS YET. COMPLETE A WORKOUT OR IMPORT FROM APPLE HEALTH.")
                         } else {
-                            ForEach(store.results) { result in
+                            ForEach(historyRunRows) { row in
+                        let result = row.result
                         NavigationLink {
                             RunDetailView(result: result)
                         } label: {
@@ -109,6 +110,15 @@ struct HistoryView: View {
         }
     }
 
+    private var historyRunRows: [HistoryRunRow] {
+        store.results.map { result in
+            HistoryRunRow(
+                id: WorkoutResultMerge.historyRowIdentity(for: result, in: store.results),
+                result: result
+            )
+        }
+    }
+
     private func title(for result: WorkoutResult) -> String {
         store.plan?.workouts.first { $0.blueprint.id == result.workoutID || $0.id == result.workoutID }?
             .blueprint.title.uppercased() ?? (result.source == .instant ? "INSTANT RUN" : "RUN")
@@ -159,10 +169,19 @@ struct HistoryView: View {
     }
 }
 
+private struct HistoryRunRow: Identifiable {
+    let id: String
+    let result: WorkoutResult
+}
+
 struct RunDetailView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let result: WorkoutResult
+
+    private var currentResult: WorkoutResult {
+        WorkoutResultMerge.canonical(of: result, in: store.results)
+    }
 
     var body: some View {
         WSScreen {
@@ -172,7 +191,7 @@ struct RunDetailView: View {
                     .tracking(1)
                     .foregroundStyle(WSColor.text50)
                 Spacer()
-                Text(WSFormat.weekdayDate(result.startedAt))
+                Text(WSFormat.weekdayDate(currentResult.startedAt))
                     .font(WSFont.mono(11))
                     .foregroundStyle(WSColor.text40)
             }
@@ -184,9 +203,9 @@ struct RunDetailView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 18)
             HStack {
-                stat("DISTANCE", WSFormat.distanceValue(result.distanceMeters, unit: store.unit))
-                stat("TIME", WSFormat.duration(result.duration))
-                stat("AVG PACE", result.averagePaceSecPerKm.map { WSFormat.paceClock($0, unit: store.unit) } ?? "—", accent: true)
+                stat("DISTANCE", WSFormat.distanceValue(currentResult.distanceMeters, unit: store.unit))
+                stat("TIME", WSFormat.duration(currentResult.duration))
+                stat("AVG PACE", currentResult.averagePaceSecPerKm.map { WSFormat.paceClock($0, unit: store.unit) } ?? "—", accent: true)
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.vertical, 14)
@@ -194,14 +213,14 @@ struct RunDetailView: View {
             .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairlineStrong).frame(height: 1) }
             .padding(.top, 22)
             .padding(.horizontal, WSSpace.gutter)
-            if let comparison = store.comparison(for: result) {
+            if let comparison = store.comparison(for: currentResult) {
                 Text(comparison)
                     .font(WSFont.mono(11))
                     .foregroundStyle(WSColor.accent)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
             }
-            if let route = result.route, route.count > 1 {
+            if let route = currentResult.route, route.count > 1 {
                 Map(initialPosition: .region(region(for: route))) {
                     MapPolyline(coordinates: route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) })
                         .stroke(WSColor.accent, lineWidth: 4)
@@ -211,7 +230,7 @@ struct RunDetailView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 16)
             }
-            let splits = store.resolvedSplits(for: result)
+            let splits = store.resolvedSplits(for: currentResult)
             if !splits.isEmpty {
                 Text("SPLITS · VS TARGET")
                     .font(WSFont.mono(10))
@@ -233,18 +252,18 @@ struct RunDetailView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
             VStack(spacing: 0) {
-                WSHairlineRow(label: "SOURCE", value: result.source.displayName.uppercased())
+                WSHairlineRow(label: "SOURCE", value: currentResult.source.displayName.uppercased())
                 WSHairlineRow(label: "MATCH", value: matchLabel)
-                WSHairlineRow(label: "AVG HR", value: result.heartRateAverage.map { "\(Int($0.rounded()))" } ?? "—")
-                WSHairlineRow(label: "LOCATION", value: result.location.title.uppercased())
-                WSHairlineRow(label: "HEALTH SYNC", value: result.healthSync.state.title.uppercased(), valueColor: WSColor.accent, showDivider: false)
+                WSHairlineRow(label: "AVG HR", value: currentResult.heartRateAverage.map { "\(Int($0.rounded()))" } ?? "—")
+                WSHairlineRow(label: "LOCATION", value: currentResult.location.title.uppercased())
+                WSHairlineRow(label: "HEALTH SYNC", value: currentResult.healthSync.state.title.uppercased(), valueColor: WSColor.accent, showDivider: false)
             }
             .padding(.horizontal, WSSpace.gutter)
-            if result.matchInfo.state == .suggested, let suggestedID = result.matchInfo.suggestedWorkoutID {
+            if currentResult.matchInfo.state == .suggested, let suggestedID = currentResult.matchInfo.suggestedWorkoutID {
                 matchSuggestionCard(suggestedID: suggestedID)
-            } else if result.matchInfo.state == .matched {
+            } else if currentResult.matchInfo.state == .matched {
                 WSOutlineButton(title: "UNMATCH FROM PLAN") {
-                    store.unmatchHealthResult(result)
+                    store.unmatchHealthResult(currentResult)
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -256,12 +275,12 @@ struct RunDetailView: View {
     }
 
     private var title: String {
-        store.plan?.workouts.first { $0.blueprint.id == result.workoutID || $0.id == result.workoutID }?
+        store.plan?.workouts.first { $0.blueprint.id == currentResult.workoutID || $0.id == currentResult.workoutID }?
             .blueprint.title.uppercased() ?? "RUN"
     }
 
     private var matchLabel: String {
-        switch result.matchInfo.state {
+        switch currentResult.matchInfo.state {
         case .unmatched: "UNMATCHED"
         case .suggested: "SUGGESTED"
         case .matched: "MATCHED"
@@ -279,15 +298,15 @@ struct RunDetailView: View {
                 .font(WSFont.ui(15, weight: .heavy))
             HStack(spacing: 8) {
                 WSPrimaryButton(title: "CONFIRM", height: 44, fontSize: 16) {
-                    store.confirmHealthMatch(result, scheduledWorkoutID: suggestedID)
+                    store.confirmHealthMatch(currentResult, scheduledWorkoutID: suggestedID)
                 }
                 WSOutlineButton(title: "KEEP UNMATCHED", height: 44) {
-                    store.keepHealthUnmatched(result)
+                    store.keepHealthUnmatched(currentResult)
                 }
             }
-            if let candidates = store.alternateMatchCandidates(for: result).dropFirst().first {
+            if let candidates = store.alternateMatchCandidates(for: currentResult).dropFirst().first {
                 WSOutlineButton(title: "CHOOSE ANOTHER") {
-                    store.rejectHealthMatch(result, suggestedWorkoutID: suggestedID)
+                    store.rejectHealthMatch(currentResult, suggestedWorkoutID: suggestedID)
                 }
                 .overlay {
                     if candidates.scheduledWorkoutID != suggestedID {
@@ -301,15 +320,15 @@ struct RunDetailView: View {
     }
 
     private var targetPace: TimeInterval? {
-        guard let workout = store.plan?.workouts.first(where: { $0.blueprint.id == result.workoutID || $0.id == result.workoutID }),
+        guard let workout = store.plan?.workouts.first(where: { $0.blueprint.id == currentResult.workoutID || $0.id == currentResult.workoutID }),
               workout.blueprint.usesPaceTargets
-        else { return result.averagePaceSecPerKm }
+        else { return currentResult.averagePaceSecPerKm }
         switch workout.blueprint.kind {
         case .easy, .longRun, .freeRun: return store.zones?.secondsPerKilometer(for: .easy)
         case .tempo: return store.zones?.secondsPerKilometer(for: .threshold)
         case .intervals: return store.zones?.secondsPerKilometer(for: .interval)
         case .race: return store.zones?.secondsPerKilometer(for: .marathon)
-        default: return result.averagePaceSecPerKm
+        default: return currentResult.averagePaceSecPerKm
         }
     }
 

@@ -126,6 +126,53 @@ struct WorkoutResultMergeTests {
         #expect(Set([first, second].map(\.id)).count == 2)
     }
 
+    @Test func conflictingHealthKitUUIDsHaveDistinctHistoryRowIdentities() {
+        let firstUUID = UUID()
+        let secondUUID = UUID()
+        var first = baseResult(healthState: .synced, healthKitUUID: firstUUID)
+        first.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: firstUUID)
+        var second = baseResult(healthState: .synced, healthKitUUID: secondUUID)
+        second.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: secondUUID)
+
+        let results = [first, second]
+        let firstRowID = WorkoutResultMerge.historyRowIdentity(for: first, in: results)
+        let secondRowID = WorkoutResultMerge.historyRowIdentity(for: second, in: results)
+        #expect(firstRowID != secondRowID)
+        #expect(firstRowID == "hk:\(firstUUID.uuidString)")
+        #expect(secondRowID == "hk:\(secondUUID.uuidString)")
+    }
+
+    @Test func canonicalResolutionUsesCurrentMatchState() {
+        var suggested = baseResult(healthState: .synced, healthKitUUID: healthUUID)
+        suggested.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: healthUUID)
+        suggested.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: UUID())
+        var matched = suggested
+        matched.matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: UUID())
+        let stale = suggested
+
+        let current = WorkoutResultMerge.canonical(of: stale, in: [matched])
+        #expect(current.matchInfo.state == .matched)
+        #expect(current.matchInfo.scheduledWorkoutID == matched.matchInfo.scheduledWorkoutID)
+        #expect(stale.matchInfo.state == .suggested)
+    }
+
+    @Test func canonicalResolutionKeepsConflictingHealthKitUUIDsDistinct() {
+        let firstUUID = UUID()
+        let secondUUID = UUID()
+        var first = baseResult(healthState: .synced, healthKitUUID: firstUUID)
+        first.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: firstUUID)
+        first.matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: UUID())
+        var second = baseResult(healthState: .synced, healthKitUUID: secondUUID)
+        second.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: secondUUID)
+        second.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: UUID())
+
+        let results = [first, second]
+        #expect(WorkoutResultMerge.canonical(of: first, in: results).healthKitUUID == firstUUID)
+        #expect(WorkoutResultMerge.canonical(of: second, in: results).healthKitUUID == secondUUID)
+        #expect(WorkoutResultMerge.canonical(of: first, in: results).matchInfo.state == .matched)
+        #expect(WorkoutResultMerge.canonical(of: second, in: results).matchInfo.state == .suggested)
+    }
+
     @Test func pendingThenSyncedSharesOnePresentationIdentity() {
         let pending = baseResult(healthState: .pending)
         var synced = baseResult(healthState: .synced, healthKitUUID: healthUUID)
@@ -133,10 +180,19 @@ struct WorkoutResultMergeTests {
 
         var results: [WorkoutResult] = []
         WorkoutResultMerge.ingest(pending, into: &results)
+        let identityBefore = WorkoutResultMerge.historyRowIdentity(for: results[0], in: results)
+        let domainIDBefore = results[0].id
+
         WorkoutResultMerge.ingest(synced, into: &results)
+        let identityAfter = WorkoutResultMerge.historyRowIdentity(for: results[0], in: results)
+
         #expect(results.count == 1)
+        #expect(identityBefore == identityAfter)
+        #expect(identityBefore == "local:\(workoutID.uuidString):\(startedAt.timeIntervalSince1970)")
+        #expect(domainIDBefore == "local:\(workoutID.uuidString):\(startedAt.timeIntervalSince1970)")
         #expect(results[0].id == "hk:\(healthUUID.uuidString)")
         #expect(results[0].id == WorkoutResultMerge.identityKey(for: results[0]))
+        #expect(identityAfter != results[0].id)
     }
 
     @Test func conflictingHealthKitUUIDsDoNotMerge() {

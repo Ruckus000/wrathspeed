@@ -44,6 +44,24 @@ public enum WorkoutResultMerge {
         results.firstIndex { matches($0, result) }
     }
 
+    public static func canonical(of seed: WorkoutResult, in results: [WorkoutResult]) -> WorkoutResult {
+        guard let index = findIndex(of: seed, in: results) else { return seed }
+        return results[index]
+    }
+
+    /// History-only row identity; persistence/merge still uses `identityKey`.
+    public static func historyRowIdentity(for result: WorkoutResult, in results: [WorkoutResult]) -> String {
+        let hasLocalConflict = results.contains { other in
+            other.workoutID == result.workoutID
+                && other.startedAt == result.startedAt
+                && !matches(other, result)
+        }
+        if hasLocalConflict, let uuid = resolvedHealthKitUUID(for: result) {
+            return "hk:\(uuid.uuidString)"
+        }
+        return "local:\(result.workoutID.uuidString):\(result.startedAt.timeIntervalSince1970)"
+    }
+
     public static func planRecord(existing: [WorkoutResult], incoming: WorkoutResult) -> WorkoutResultRecordPlan {
         var normalized = incoming
         if normalized.healthSync.state == .notRequired, normalized.healthKitUUID != nil {

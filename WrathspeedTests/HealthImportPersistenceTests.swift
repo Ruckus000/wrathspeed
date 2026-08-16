@@ -107,4 +107,52 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), mock.anchor)
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
     }
+
+    func testImportPostMutationPersistFailureRestoresStateAndRetryImportsOnce() async throws {
+        let mock = MockHealthImportService()
+        let uuid = UUID()
+        let startedAt = Date().addingTimeInterval(-2_400)
+        mock.workouts = [importedWorkout(uuid: uuid, startedAt: startedAt)]
+        let (store, context) = try onboardedStore(importer: mock)
+        let previousResults = store.results
+        let previousPlan = store.plan
+        let previousAnchor = try HealthImportAnchorStore.load(from: context)
+        let previousToast = store.toastMessage
+        let previousCelebration = store.celebration
+
+        store.setForceSaveFailureAfterMutationForTesting(true)
+        await store.importHealthWorkouts()
+
+        XCTAssertEqual(store.results, previousResults)
+        XCTAssertEqual(store.plan, previousPlan)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 0)
+        XCTAssertFalse(context.hasChanges)
+        XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
+        XCTAssertNotNil(store.errorMessage)
+        XCTAssertEqual(store.toastMessage, previousToast)
+        XCTAssertEqual(store.celebration, previousCelebration)
+        XCTAssertEqual(mock.importCallCount, 1)
+
+        try context.save()
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 0)
+        XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
+
+        store.setForceSaveFailureAfterMutationForTesting(false)
+        store.errorMessage = nil
+        await store.importHealthWorkouts()
+
+        XCTAssertEqual(mock.importCallCount, 2)
+        XCTAssertEqual(store.results.count, 1)
+        XCTAssertEqual(store.results.first?.healthKitUUID, uuid)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+        XCTAssertEqual(try HealthImportAnchorStore.load(from: context), mock.anchor)
+        XCTAssertNil(store.errorMessage)
+
+        let restored = AppStore()
+        restored.attach(context: context)
+        XCTAssertEqual(restored.results.count, 1)
+        XCTAssertEqual(restored.results.first?.healthKitUUID, uuid)
+        XCTAssertEqual(Set(restored.results.map(\.id)).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+    }
 }

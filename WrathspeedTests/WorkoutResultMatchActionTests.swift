@@ -147,6 +147,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let afterA = try result(store, uuid: uuidA)
         let afterB = try result(store, uuid: uuidB)
         XCTAssertTrue(afterA.matchInfo.rejectedWorkoutIDs.contains(firstWorkout.id))
+        XCTAssertTrue(WorkoutResultMerge.canonical(of: resultA, in: store.results).matchInfo.rejectedWorkoutIDs.contains(firstWorkout.id))
         XCTAssertFalse(afterB.matchInfo.rejectedWorkoutIDs.contains(firstWorkout.id))
         XCTAssertEqual(afterB.matchInfo.state, .suggested)
         XCTAssertEqual(afterB.matchInfo.suggestedWorkoutID, secondWorkout.id)
@@ -173,6 +174,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let afterA = try result(store, uuid: uuidA)
         let afterB = try result(store, uuid: uuidB)
         XCTAssertEqual(afterA.matchInfo.state, .unmatched)
+        XCTAssertEqual(WorkoutResultMerge.canonical(of: resultA, in: store.results).matchInfo.state, .unmatched)
         XCTAssertEqual(afterB.matchInfo.state, .suggested)
         XCTAssertEqual(afterB.matchInfo.suggestedWorkoutID, firstWorkout.id)
         XCTAssertEqual(afterB.healthKitUUID, uuidB)
@@ -200,6 +202,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let afterA = try result(store, uuid: uuidA)
         let afterB = try result(store, uuid: uuidB)
         XCTAssertEqual(afterA.matchInfo.state, .unmatched)
+        XCTAssertEqual(WorkoutResultMerge.canonical(of: resultA, in: store.results).matchInfo.state, .unmatched)
         XCTAssertNil(afterA.matchInfo.scheduledWorkoutID)
         XCTAssertEqual(afterB.matchInfo.state, .matched)
         XCTAssertEqual(afterB.matchInfo.scheduledWorkoutID, secondWorkout.id)
@@ -435,6 +438,111 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         XCTAssertEqual(store.watchPublicationCountForTesting, beforeReject)
         XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.state, .suggested)
         XCTAssertEqual(try result(store, uuid: uuidB).matchInfo.suggestedWorkoutID, secondWorkout.id)
+        XCTAssertNotNil(store.errorMessage)
+        XCTAssertNil(store.toastMessage)
+    }
+
+    func testSharedSuggestionConfirmClaimsWorkoutAndRejectsStaleConfirm() throws {
+        let (store, _, firstWorkout, _) = try twoWorkoutStore()
+        let importedID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_720_000_120)
+        let uuidA = UUID()
+        let uuidB = UUID()
+        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+
+        var resultA = try result(store, uuid: uuidA)
+        var resultB = try result(store, uuid: uuidB)
+        resultA.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: firstWorkout.id)
+        resultB.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: firstWorkout.id)
+        store.results = [resultA, resultB]
+        store.save()
+        store.toastMessage = nil
+
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.suggestedWorkoutID, firstWorkout.id)
+        XCTAssertEqual(try result(store, uuid: uuidB).matchInfo.suggestedWorkoutID, firstWorkout.id)
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.state, .suggested)
+        XCTAssertEqual(try result(store, uuid: uuidB).matchInfo.state, .suggested)
+
+        let staleA = resultA
+        store.confirmHealthMatch(resultA, scheduledWorkoutID: firstWorkout.id)
+
+        let afterA = try result(store, uuid: uuidA)
+        let afterB = try result(store, uuid: uuidB)
+        XCTAssertEqual(afterA.matchInfo.state, .matched)
+        XCTAssertEqual(afterA.matchInfo.scheduledWorkoutID, firstWorkout.id)
+        XCTAssertEqual(store.plan?.workouts.first { $0.id == firstWorkout.id }?.status, .completed)
+        XCTAssertEqual(store.plan?.workouts.first { $0.id == firstWorkout.id }?.result?.healthKitUUID, uuidA)
+        XCTAssertNotEqual(afterB.matchInfo.suggestedWorkoutID, firstWorkout.id)
+        XCTAssertNotEqual(afterB.matchInfo.state, .matched)
+        XCTAssertNil(afterB.matchInfo.scheduledWorkoutID)
+        XCTAssertEqual(WorkoutResultMerge.canonical(of: staleA, in: store.results).matchInfo.state, .matched)
+
+        store.toastMessage = nil
+        let beforeStale = store.watchPublicationCountForTesting
+        let planAfterA = store.plan
+        let resultsAfterA = store.results
+        let celebrationAfterA = store.celebration
+        let suggestionAfterA = store.pendingSuggestion
+
+        store.confirmHealthMatch(afterB, scheduledWorkoutID: firstWorkout.id)
+
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.state, .matched)
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.scheduledWorkoutID, firstWorkout.id)
+        XCTAssertEqual(store.plan?.workouts.first { $0.id == firstWorkout.id }?.result?.healthKitUUID, uuidA)
+        XCTAssertNotEqual(try result(store, uuid: uuidB).matchInfo.state, .matched)
+        XCTAssertNil(try result(store, uuid: uuidB).matchInfo.scheduledWorkoutID)
+        XCTAssertEqual(store.watchPublicationCountForTesting, beforeStale)
+        XCTAssertNil(store.toastMessage)
+        XCTAssertEqual(store.plan, planAfterA)
+        XCTAssertEqual(store.results, resultsAfterA)
+        XCTAssertEqual(store.celebration, celebrationAfterA)
+        XCTAssertEqual(store.pendingSuggestion, suggestionAfterA)
+    }
+
+    func testConfirmSaveFailureAfterRefreshingSiblingsRestoresAllState() throws {
+        let (store, _, firstWorkout, _) = try twoWorkoutStore()
+        let importedID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_720_000_130)
+        let uuidA = UUID()
+        let uuidB = UUID()
+        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+
+        var resultA = try result(store, uuid: uuidA)
+        var resultB = try result(store, uuid: uuidB)
+        resultA.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: firstWorkout.id)
+        resultB.matchInfo = WorkoutMatchInfo(state: .suggested, suggestedWorkoutID: firstWorkout.id)
+        store.results = [resultA, resultB]
+        store.save()
+        store.toastMessage = nil
+
+        let previousResults = store.results
+        let previousPlan = store.plan
+        let previousProfile = store.profile
+        let previousCelebration = store.celebration
+        let previousSuggestion = store.pendingSuggestion
+        let previousFreeze = store.freezeMileage
+        let previousFreezeBaseline = store.freezeMileageBaselineMeters
+        let previousToast = store.toastMessage
+        let previousWatch = store.watchPublicationCountForTesting
+
+        store.setForceSaveFailureAfterMutationForTesting(true)
+        store.confirmHealthMatch(resultA, scheduledWorkoutID: firstWorkout.id)
+
+        XCTAssertEqual(store.results, previousResults)
+        XCTAssertEqual(store.plan, previousPlan)
+        XCTAssertEqual(store.profile, previousProfile)
+        XCTAssertEqual(store.celebration, previousCelebration)
+        XCTAssertEqual(store.pendingSuggestion, previousSuggestion)
+        XCTAssertEqual(store.freezeMileage, previousFreeze)
+        XCTAssertEqual(store.freezeMileageBaselineMeters, previousFreezeBaseline)
+        XCTAssertEqual(store.toastMessage, previousToast)
+        XCTAssertEqual(store.watchPublicationCountForTesting, previousWatch)
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.state, .suggested)
+        XCTAssertEqual(try result(store, uuid: uuidA).matchInfo.suggestedWorkoutID, firstWorkout.id)
+        XCTAssertEqual(try result(store, uuid: uuidB).matchInfo.state, .suggested)
+        XCTAssertEqual(try result(store, uuid: uuidB).matchInfo.suggestedWorkoutID, firstWorkout.id)
+        XCTAssertEqual(store.plan?.workouts.first { $0.id == firstWorkout.id }?.status, .scheduled)
+        XCTAssertNil(store.plan?.workouts.first { $0.id == firstWorkout.id }?.result)
         XCTAssertNotNil(store.errorMessage)
         XCTAssertNil(store.toastMessage)
     }
