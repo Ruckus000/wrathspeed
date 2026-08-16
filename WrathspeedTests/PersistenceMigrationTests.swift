@@ -79,9 +79,14 @@ final class PersistenceMigrationTests: XCTestCase {
         let restoredWorkout = try XCTUnwrap(migrated.plan?.workouts.first(where: { $0.status == .completed }))
         let originalWorkout = try XCTUnwrap(legacy.plan?.workouts.first(where: { $0.status == .completed }))
         XCTAssertEqual(restoredWorkout.id, originalWorkout.id)
-        XCTAssertEqual(restoredWorkout.result, originalWorkout.result)
+        XCTAssertEqual(restoredWorkout.result?.workoutID, originalWorkout.result?.workoutID)
+        XCTAssertEqual(restoredWorkout.result?.startedAt, originalWorkout.result?.startedAt)
+        XCTAssertEqual(restoredWorkout.result?.duration, originalWorkout.result?.duration)
+        XCTAssertEqual(restoredWorkout.result?.distanceMeters, originalWorkout.result?.distanceMeters)
+        XCTAssertEqual(restoredWorkout.result?.healthKitUUID, originalWorkout.result?.healthKitUUID)
         XCTAssertEqual(restoredWorkout.result?.route, originalWorkout.result?.route)
         XCTAssertEqual(restoredWorkout.result?.splits, originalWorkout.result?.splits)
+        XCTAssertEqual(restoredWorkout.result?.healthSync.state, .synced)
 
         XCTAssertNotEqual(legacyData, migratedData)
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, legacy.results.count)
@@ -138,6 +143,157 @@ final class PersistenceMigrationTests: XCTestCase {
         let legacyReloaded = try Persistence.loadLegacySnapshot(from: context)
         XCTAssertEqual(legacyReloaded.plan?.id, legacy.plan?.id)
         XCTAssertEqual(legacyReloaded.results.count, legacy.results.count)
+    }
+
+    func testVersionedSaveFailureAfterMutationRollsBackCommittedState() throws {
+        let context = try makeContext()
+        let repository = AppStateRepository(context: context)
+        _ = try repository.load()
+
+        var committed = PersistedState.initial
+        committed.pendingVDOT = 48
+        committed.pendingVDOTReason = "Committed"
+        committed.results = [sampleResult(healthState: .pending)]
+        try repository.save(committed)
+
+        var mutated = committed
+        mutated.pendingVDOT = 99
+        mutated.pendingVDOTReason = "Should not persist"
+        mutated.results.append(sampleResult(
+            workoutID: UUID(),
+            startedAt: Date(timeIntervalSince1970: 1_710_000_100),
+            healthState: .synced,
+            healthKitUUID: UUID()
+        ))
+        repository.forceSaveFailureAfterMutation = true
+        XCTAssertThrowsError(try repository.save(mutated))
+        XCTAssertFalse(context.hasChanges)
+
+        let restored = try AppStateRepository(context: context).load()
+        XCTAssertEqual(restored.pendingVDOT, 48)
+        XCTAssertEqual(restored.pendingVDOTReason, "Committed")
+        XCTAssertEqual(restored.results.count, 1)
+        XCTAssertEqual(restored.results.first?.healthSync.state, .pending)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+    }
+
+    func testStaleEmbeddedPendingPlanResultReloadsAsSyncedCanonical() throws {
+        let context = try makeContext()
+        let repository = AppStateRepository(context: context)
+        _ = try repository.load()
+
+        let workoutID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_710_000_060)
+        let healthUUID = UUID()
+        let pending = sampleResult(workoutID: workoutID, startedAt: startedAt, healthState: .pending)
+        let synced = sampleResult(
+            workoutID: workoutID,
+            startedAt: startedAt,
+            healthState: .synced,
+            healthKitUUID: healthUUID,
+            route: [RoutePoint(latitude: 1, longitude: 2, timestamp: startedAt)]
+        )
+
+        var state = PersistedState.initial
+        state.plan = samplePlan(workoutID: workoutID, result: pending)
+        state.results = [synced]
+        try repository.save(state)
+
+        let restored = try AppStateRepository(context: context).load()
+        XCTAssertEqual(restored.results.count, 1)
+        XCTAssertEqual(restored.results.first?.healthSync.state, .synced)
+        XCTAssertEqual(restored.results.first?.healthKitUUID, healthUUID)
+        XCTAssertEqual(restored.results.first?.route?.count, 1)
+        XCTAssertEqual(restored.plan?.workouts.first?.result?.healthSync.state, .synced)
+        XCTAssertEqual(restored.plan?.workouts.first?.result?.healthKitUUID, healthUUID)
+        XCTAssertEqual(restored.plan?.workouts.first?.result, restored.results.first)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+    }
+
+    func testConflictingHealthKitUUIDsSurviveSaveReloadAsDistinctResults() throws {
+        let context = try makeContext()
+        let repository = AppStateRepository(context: context)
+        _ = try repository.load()
+
+        let workoutID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_710_000_040)
+        let firstUUID = UUID()
+        let secondUUID = UUID()
+
+        var state = PersistedState.initial
+        state.results = [
+            sampleResult(
+                workoutID: workoutID,
+                startedAt: startedAt,
+                healthState: .synced,
+                healthKitUUID: firstUUID
+            ),
+            sampleResult(
+                workoutID: workoutID,
+                startedAt: startedAt,
+                healthState: .synced,
+                healthKitUUID: secondUUID
+            ),
+        ]
+        try repository.save(state)
+
+        let restored = try AppStateRepository(context: context).load()
+        XCTAssertEqual(restored.results.count, 2)
+        XCTAssertEqual(Set(restored.results.compactMap(\.healthKitUUID)), [firstUUID, secondUUID])
+        XCTAssertEqual(
+            Set(restored.results.map(\.id)),
+            ["hk:\(firstUUID.uuidString)", "hk:\(secondUUID.uuidString)"]
+        )
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 2)
+    }
+
+    private func sampleResult(
+        workoutID: UUID = UUID(),
+        startedAt: Date = Date(timeIntervalSince1970: 1_710_000_000),
+        healthState: HealthSyncState,
+        healthKitUUID: UUID? = nil,
+        route: [RoutePoint]? = nil
+    ) -> WorkoutResult {
+        WorkoutResult(
+            workoutID: workoutID,
+            startedAt: startedAt,
+            duration: 1_800,
+            distanceMeters: 5_000,
+            averagePaceSecPerKm: 360,
+            location: .outdoor,
+            healthKitUUID: healthKitUUID,
+            route: route,
+            healthSync: HealthSyncMetadata(state: healthState, healthKitUUID: healthKitUUID)
+        )
+    }
+
+    private func samplePlan(workoutID: UUID, result: WorkoutResult?) -> TrainingPlan {
+        let profile = RunnerProfile(
+            ability: .intermediate,
+            daysPerWeek: 4,
+            longRunWeekday: .sunday,
+            unit: .kilometers
+        )
+        let blueprint = WorkoutBlueprint(
+            id: workoutID,
+            date: Date(timeIntervalSince1970: 1_710_000_000),
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        )
+        return TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: profile,
+            workouts: [
+                ScheduledWorkout(
+                    blueprint: blueprint,
+                    status: result == nil ? .scheduled : .completed,
+                    result: result
+                ),
+            ]
+        )
     }
 
     private func makeContext() throws -> ModelContext {

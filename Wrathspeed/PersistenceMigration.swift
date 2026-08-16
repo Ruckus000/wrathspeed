@@ -79,18 +79,27 @@ enum PersistenceMigration {
         }
 
         var resultEntities: [WorkoutResultEntity] = []
-        var seenResultKeys = Set<String>()
+        var insertedResults: [WorkoutResult] = []
 
         func insertResult(_ result: WorkoutResult, scheduledWorkoutID: UUID?) throws {
-            let key = resultKey(result)
-            guard !seenResultKeys.contains(key) else { return }
-            seenResultKeys.insert(key)
-            let payload = try VersionedPayload.encode(result)
+            let recordPlan = WorkoutResultMerge.planRecord(existing: insertedResults, incoming: result)
+            if let index = recordPlan.existingIndex {
+                insertedResults[index] = recordPlan.mergedResult
+                let entity = resultEntities[index]
+                entity.payloadData = try VersionedPayload.encode(recordPlan.mergedResult)
+                entity.healthKitUUID = recordPlan.mergedResult.healthKitUUID
+                if entity.scheduledWorkoutID == nil {
+                    entity.scheduledWorkoutID = scheduledWorkoutID
+                }
+                return
+            }
+            insertedResults.append(recordPlan.mergedResult)
+            let payload = try VersionedPayload.encode(recordPlan.mergedResult)
             let entity = WorkoutResultEntity(
-                id: result.workoutID,
+                id: recordPlan.mergedResult.workoutID,
                 scheduledWorkoutID: scheduledWorkoutID,
                 payloadData: payload,
-                healthKitUUID: result.healthKitUUID
+                healthKitUUID: recordPlan.mergedResult.healthKitUUID
             )
             context.insert(entity)
             resultEntities.append(entity)
@@ -131,13 +140,6 @@ enum PersistenceMigration {
         try context.save()
     }
 
-    static func resultKey(_ result: WorkoutResult) -> String {
-        if let uuid = result.healthKitUUID {
-            return "hk:\(uuid.uuidString)"
-        }
-        return "local:\(result.workoutID.uuidString):\(result.startedAt.timeIntervalSince1970)"
-    }
-
     private static func verifyMigration(
         legacy: PersistedState,
         planWorkoutCount: Int,
@@ -160,16 +162,9 @@ enum PersistenceMigration {
             throw PersistenceMigrationError.verificationFailed("unexpected workouts without plan")
         }
 
-        var expectedResultKeys = Set(legacy.results.map { PersistenceMigration.resultKey($0) })
-        if let plan = legacy.plan {
-            for workout in plan.workouts {
-                if let result = workout.result {
-                    expectedResultKeys.insert(PersistenceMigration.resultKey(result))
-                }
-            }
-        }
-        guard expectedResultKeys.count == resultCount else {
-            throw PersistenceMigrationError.verificationFailed("result count mismatch expected \(expectedResultKeys.count) got \(resultCount)")
+        let expectedResults = WorkoutResultMerge.canonicalize(results: legacy.results, plan: legacy.plan).results
+        guard expectedResults.count == resultCount else {
+            throw PersistenceMigrationError.verificationFailed("result count mismatch expected \(expectedResults.count) got \(resultCount)")
         }
 
         guard legacy.strengthSessions.count == strengthCount else {
@@ -227,9 +222,11 @@ enum VersionedPersistence {
         }
 
         let resultEntities = try context.fetch(FetchDescriptor<WorkoutResultEntity>())
-        let results = try resultEntities
+        let decodedResults = try resultEntities
             .map { try VersionedPayload.decode(WorkoutResult.self, from: $0.payloadData) }
-            .sorted { $0.startedAt > $1.startedAt }
+        let canonical = WorkoutResultMerge.canonicalize(results: decodedResults, plan: plan)
+        plan = canonical.plan
+        let results = canonical.results.sorted { $0.startedAt > $1.startedAt }
 
         let strengthEntities = try context.fetch(FetchDescriptor<StrengthSessionEntity>())
         let strengthSessions = try strengthEntities.map { try VersionedPayload.decode(StrengthSession.self, from: $0.payloadData) }
@@ -255,7 +252,12 @@ enum VersionedPersistence {
         )
     }
 
-    static func save(_ state: PersistedState, to context: ModelContext) throws {
+    static func save(_ state: PersistedState, to context: ModelContext, beforeCommit: () throws -> Void = {}) throws {
+        var state = state
+        let canonical = WorkoutResultMerge.canonicalize(results: state.results, plan: state.plan)
+        state.results = canonical.results
+        state.plan = canonical.plan
+
         let profileData = try state.profile.map { try VersionedPayload.encode($0) }
         let strengthPrefsData = try VersionedPayload.encode(state.strengthPrefs)
         let liveMetricsData = try VersionedPayload.encode(state.liveMetrics)
@@ -303,6 +305,7 @@ enum VersionedPersistence {
         try syncResults(state, in: context)
         try syncStrengthSessions(state.strengthSessions, in: context)
 
+        try beforeCommit()
         try context.save()
     }
 
@@ -377,19 +380,20 @@ enum VersionedPersistence {
 
     private static func syncResults(_ state: PersistedState, in context: ModelContext) throws {
         let existing = try context.fetch(FetchDescriptor<WorkoutResultEntity>())
-        let desired = mergedResults(from: state)
-        let desiredIDs = Set(desired.map(\.workoutID))
+        var remaining = existing
 
-        for entity in existing where !desiredIDs.contains(entity.id) {
-            context.delete(entity)
-        }
-
-        for result in desired {
+        for result in state.results {
             let payload = try VersionedPayload.encode(result)
             let scheduledID = state.plan?.workouts.first(where: {
                 $0.id == result.workoutID || $0.blueprint.id == result.workoutID
             })?.id
-            if let entity = existing.first(where: { $0.id == result.workoutID }) {
+            if let index = remaining.firstIndex(where: { entity in
+                guard let stored = try? VersionedPayload.decode(WorkoutResult.self, from: entity.payloadData) else {
+                    return false
+                }
+                return WorkoutResultMerge.matches(stored, result)
+            }) {
+                let entity = remaining.remove(at: index)
                 entity.payloadData = payload
                 entity.scheduledWorkoutID = scheduledID
                 entity.healthKitUUID = result.healthKitUUID
@@ -401,6 +405,10 @@ enum VersionedPersistence {
                     healthKitUUID: result.healthKitUUID
                 ))
             }
+        }
+
+        for entity in remaining {
+            context.delete(entity)
         }
     }
 
@@ -418,27 +426,5 @@ enum VersionedPersistence {
                 context.insert(StrengthSessionEntity(id: session.id, payloadData: payload))
             }
         }
-    }
-
-    private static func mergedResults(from state: PersistedState) -> [WorkoutResult] {
-        var merged: [WorkoutResult] = []
-        var keys = Set<String>()
-        for result in state.results {
-            let key = PersistenceMigration.resultKey(result)
-            guard !keys.contains(key) else { continue }
-            keys.insert(key)
-            merged.append(result)
-        }
-        if let plan = state.plan {
-            for workout in plan.workouts {
-                if let result = workout.result {
-                    let key = PersistenceMigration.resultKey(result)
-                    guard !keys.contains(key) else { continue }
-                    keys.insert(key)
-                    merged.append(result)
-                }
-            }
-        }
-        return merged
     }
 }

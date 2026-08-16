@@ -180,11 +180,23 @@ enum Persistence {
     }
 }
 
+enum AppPersistenceError: LocalizedError, Equatable {
+    case storageUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .storageUnavailable:
+            "Storage is not ready yet."
+        }
+    }
+}
+
 @MainActor
 final class AppStateRepository {
     private let context: ModelContext
     private(set) var migrationError: String?
     var forceSaveFailure = false
+    var forceSaveFailureAfterMutation = false
 
     init(context: ModelContext) {
         self.context = context
@@ -209,10 +221,23 @@ final class AppStateRepository {
         if forceSaveFailure {
             throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated save failure"])
         }
-        if try PersistenceMigration.hasMigrated(in: context) {
-            try VersionedPersistence.save(state, to: context)
-        } else {
-            try Persistence.save(state, to: context)
+        do {
+            if try PersistenceMigration.hasMigrated(in: context) {
+                try VersionedPersistence.save(state, to: context, beforeCommit: {
+                    if forceSaveFailureAfterMutation {
+                        throw NSError(
+                            domain: "WrathspeedTests",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "Simulated save failure after mutation"]
+                        )
+                    }
+                })
+            } else {
+                try Persistence.save(state, to: context)
+            }
+        } catch {
+            context.rollback()
+            throw error
         }
     }
 
