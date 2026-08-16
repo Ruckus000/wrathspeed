@@ -23,8 +23,21 @@ public enum CueStyle: String, Codable, CaseIterable, Sendable {
             return self == .drill ? "Too slow. Move." : "Speed up."
         case .slowDown:
             return self == .drill ? "Ease off." : (self == .minimal ? "Ease off." : "Slow down.")
-        case .split(let km, _):
-            return self == .drill ? "K \(km)." : "Kilometer \(km)."
+        case .split(let index, let unit, _):
+            return splitPhrase(index: index, unit: unit)
+        }
+    }
+
+    private func splitPhrase(index: Int, unit: DistanceUnit) -> String {
+        switch unit {
+        case .kilometers:
+            if self == .drill { return "K \(index)." }
+            let noun = index == 1 ? "Kilometer" : "Kilometers"
+            return "\(noun) \(index)."
+        case .miles:
+            if self == .drill { return "MI \(index)." }
+            let noun = index == 1 ? "Mile" : "Miles"
+            return "\(noun) \(index)."
         }
     }
 }

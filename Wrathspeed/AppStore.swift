@@ -516,7 +516,8 @@ final class AppStore {
                 vdot: profile?.vdot,
                 zones: zones,
                 cuesEnabled: cuesEnabled,
-                source: resolvedSource
+                source: resolvedSource,
+                unit: unit
             )
             showWatchLaunchTimeout = workoutCoordinator.watchLaunchPhase == .timedOut
         } catch {
@@ -928,7 +929,7 @@ final class AppStore {
 
     private func pushWatchWorkouts() {
         let upcoming = upcomingRuns.prefix(14).map(\.blueprint)
-        workoutCoordinator.pushUpcoming(UpcomingWorkoutsPayload(blueprints: Array(upcoming), vdot: profile?.vdot))
+        workoutCoordinator.pushUpcoming(UpcomingWorkoutsPayload(blueprints: Array(upcoming), vdot: profile?.vdot, unit: unit))
     }
 
     func save() {

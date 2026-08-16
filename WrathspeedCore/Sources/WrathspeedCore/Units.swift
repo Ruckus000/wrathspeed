@@ -53,4 +53,30 @@ public enum Units {
         }
         return String(format: "%d:%02d", minutes, seconds)
     }
+
+    public static func compactUnitSuffix(_ unit: DistanceUnit) -> String {
+        unit == .miles ? "MI" : "KM"
+    }
+
+    public static func secondsPerUnit(secondsPerKilometer: TimeInterval, unit: DistanceUnit) -> TimeInterval {
+        switch unit {
+        case .kilometers: secondsPerKilometer
+        case .miles: secondsPerKilometer * metersPerMile / metersPerKilometer
+        }
+    }
+
+    public static func paceClock(secondsPerKilometer: TimeInterval, unit: DistanceUnit) -> String {
+        let total = max(0, Int(secondsPerUnit(secondsPerKilometer: secondsPerKilometer, unit: unit).rounded()))
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    public static func compactDistance(_ meters: Double, unit: DistanceUnit, fraction: Int = 2) -> String {
+        let formatted = display(fromMeters: meters, unit: unit)
+            .formatted(.number.precision(.fractionLength(fraction)))
+        return "\(formatted) \(compactUnitSuffix(unit))"
+    }
+
+    public static func compactPace(secondsPerKilometer: TimeInterval, unit: DistanceUnit) -> String {
+        "\(paceClock(secondsPerKilometer: secondsPerKilometer, unit: unit)) /\(compactUnitSuffix(unit))"
+    }
 }

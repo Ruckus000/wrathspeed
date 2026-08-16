@@ -71,33 +71,34 @@ enum CoachingCopy {
         paused: Bool,
         style: CueStyle
     ) -> Chip {
-        if paused {
+        switch PaceBandStatus.evaluate(
+            currentPaceSecPerKm: currentPaceSecPerKm,
+            targetSecPerKm: targetSecPerKm,
+            paused: paused
+        ) {
+        case .paused:
             return Chip(text: style == .drill ? "HOLD." : "PAUSED", kind: .paused)
-        }
-        guard let current = currentPaceSecPerKm, let target = targetSecPerKm, current > 0, target > 0 else {
-            return Chip(text: style == .minimal ? "IN ZONE" : (style == .drill ? "HOLD THE LINE." : "IN ZONE — HOLD IT"), kind: .inZone)
-        }
-        let fastLimit = target * 0.95
-        let slowLimit = target * 1.05
-        if current < fastLimit {
+        case .unavailable:
+            return Chip(text: style == .minimal ? "—" : "NO PACE", kind: .paused)
+        case .tooFast:
             switch style {
             case .minimal: return Chip(text: "HOT", kind: .off)
             case .standard: return Chip(text: "HOT — EASE OFF", kind: .off)
             case .drill: return Chip(text: "EASE OFF.", kind: .off)
             }
-        }
-        if current > slowLimit {
-            let delta = WSFormat.signedPaceDelta(current - target)
+        case .tooSlow:
+            let delta = WSFormat.signedPaceDelta((currentPaceSecPerKm ?? 0) - (targetSecPerKm ?? 0))
             switch style {
             case .minimal: return Chip(text: "OFF", kind: .off)
             case .standard: return Chip(text: "\(delta) OFF — PUSH", kind: .off)
             case .drill: return Chip(text: "TOO SLOW. MOVE.", kind: .off)
             }
-        }
-        switch style {
-        case .minimal: return Chip(text: "IN ZONE", kind: .inZone)
-        case .standard: return Chip(text: "IN ZONE — HOLD IT", kind: .inZone)
-        case .drill: return Chip(text: "HOLD THE LINE.", kind: .inZone)
+        case .inZone:
+            switch style {
+            case .minimal: return Chip(text: "IN ZONE", kind: .inZone)
+            case .standard: return Chip(text: "IN ZONE — HOLD IT", kind: .inZone)
+            case .drill: return Chip(text: "HOLD THE LINE.", kind: .inZone)
+            }
         }
     }
 }

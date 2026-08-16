@@ -111,9 +111,217 @@ struct CuePolicyTests {
             usesPaceTargets: false,
             zones: nil,
             metrics: LiveMetrics(elapsed: 360, distanceMeters: 1_000, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(cues.contains { if case .split(1, .kilometers, _) = $0 { return true }; return false })
+    }
+
+    @Test func announcesFirstAndSubsequentKilometerSplits() {
+        var policy = CuePolicy()
+        let first = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 360, distanceMeters: 1_000, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(first.contains { if case .split(1, .kilometers, _) = $0 { return true }; return false })
+
+        let second = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 720, distanceMeters: 2_000, currentPaceSecPerKm: 365),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(second.contains { if case .split(2, .kilometers, _) = $0 { return true }; return false })
+    }
+
+    @Test func announcesFirstAndSubsequentMileSplits() {
+        var policy = CuePolicy()
+        let mile = Units.metersPerMile
+        let first = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 600, distanceMeters: mile, currentPaceSecPerKm: 390),
+            events: [],
+            splitUnit: .miles
+        )
+        #expect(first.contains { if case .split(1, .miles, _) = $0 { return true }; return false })
+
+        let second = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 1_200, distanceMeters: mile * 2, currentPaceSecPerKm: 395),
+            events: [],
+            splitUnit: .miles
+        )
+        #expect(second.contains { if case .split(2, .miles, _) = $0 { return true }; return false })
+    }
+
+    @Test func doesNotDuplicateSplitWithinSameBoundary() {
+        var policy = CuePolicy()
+        _ = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 360, distanceMeters: 1_050, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        let repeatCue = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 370, distanceMeters: 1_080, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(!repeatCue.contains { if case .split = $0 { return true }; return false })
+    }
+
+    @Test func announcesMultipleBoundariesCrossedBetweenSamples() {
+        var policy = CuePolicy()
+        let cues = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 900, distanceMeters: 2_100, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        let splitIndices = cues.compactMap { cue -> Int? in
+            if case .split(let index, .kilometers, _) = cue { return index }
+            return nil
+        }
+        #expect(splitIndices == [1, 2])
+    }
+
+    @Test func legacyDefaultUnitUsesKilometers() {
+        var policy = CuePolicy()
+        let cues = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 360, distanceMeters: 1_000, currentPaceSecPerKm: 360),
             events: []
         )
-        #expect(cues.contains { if case .split(1, _) = $0 { return true }; return false })
+        #expect(cues.contains { if case .split(1, .kilometers, _) = $0 { return true }; return false })
+    }
+
+    @Test func retainsBoundaryWhenPaceUnavailable() {
+        var policy = CuePolicy()
+        let withoutPace = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 360, distanceMeters: 1_000, currentPaceSecPerKm: nil),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(!withoutPace.contains { if case .split = $0 { return true }; return false })
+
+        let withPace = policy.evaluate(
+            step: step(),
+            usesPaceTargets: false,
+            zones: nil,
+            metrics: LiveMetrics(elapsed: 370, distanceMeters: 1_020, currentPaceSecPerKm: 360),
+            events: [],
+            splitUnit: .kilometers
+        )
+        #expect(withPace.contains { if case .split(1, .kilometers, _) = $0 { return true }; return false })
+    }
+
+    @Test func cueAndSplitBuilderShareKilometerToleranceBoundaries() {
+        cueAndSplitBuilderStayAligned(unit: .kilometers, unitMeters: Units.metersPerKilometer)
+    }
+
+    @Test func cueAndSplitBuilderShareMileToleranceBoundaries() {
+        cueAndSplitBuilderStayAligned(unit: .miles, unitMeters: Units.metersPerMile)
+    }
+
+    private func cueAndSplitBuilderStayAligned(unit: DistanceUnit, unitMeters: Double) {
+        let threshold = unitMeters * SplitBoundary.tolerance
+        let samples: [Double] = [
+            threshold - 1,
+            threshold,
+            unitMeters,
+            unitMeters + threshold - 1,
+            unitMeters + threshold,
+            unitMeters * 2,
+        ]
+
+        var policy = CuePolicy()
+        var splitState = (count: 0, distance: 0.0, elapsed: 0.0)
+        var announced: [Int] = []
+        var recorded: [Int] = []
+
+        for (offset, distance) in samples.enumerated() {
+            let elapsed = TimeInterval(offset + 1) * 300
+            let pace = 360.0
+            let cues = policy.evaluate(
+                step: step(),
+                usesPaceTargets: false,
+                zones: nil,
+                metrics: LiveMetrics(elapsed: elapsed, distanceMeters: distance, currentPaceSecPerKm: pace),
+                events: [],
+                splitUnit: unit
+            )
+            announced.append(contentsOf: cues.compactMap { cue in
+                if case .split(let index, _, _) = cue { return index }
+                return nil
+            })
+
+            let captured = SplitBuilder.nextSplits(
+                previousCount: splitState.count,
+                previousDistance: splitState.distance,
+                previousElapsed: splitState.elapsed,
+                currentDistance: distance,
+                currentElapsed: elapsed,
+                unit: unit
+            )
+            recorded.append(contentsOf: captured.splits.map(\.index))
+            splitState = (splitState.count + captured.splits.count, captured.distance, captured.elapsed)
+        }
+
+        #expect(announced == recorded)
+        #expect(announced == [1, 2])
+    }
+}
+
+struct SplitBuilderFromRouteTests {
+    @Test func sparseSegmentCrossingTwoKilometerBoundariesEmitsConsecutiveSplits() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        let end = Date(timeIntervalSince1970: 1_600)
+        let points = [
+            RoutePoint(latitude: 0, longitude: 0, timestamp: start),
+            RoutePoint(latitude: 0.025, longitude: 0, timestamp: end),
+        ]
+        let splits = SplitBuilder.fromRoute(points, unit: .kilometers)
+        #expect(splits.map(\.index) == [1, 2])
+        #expect(splits.count == 2)
+        #expect(splits.allSatisfy { $0.duration > 0 })
+        let allocated = splits.reduce(0.0) { $0 + $1.duration }
+        let segmentElapsed = end.timeIntervalSince(start)
+        #expect(allocated <= segmentElapsed)
+        #expect(splits[0].duration + splits[1].duration == allocated)
+    }
+}
+
+struct CueStyleSplitPhraseTests {
+    @Test func singularAndPluralKilometerPhrases() {
+        #expect(CueStyle.standard.phrase(for: .split(index: 1, unit: .kilometers, paceSecPerKm: 360)) == "Kilometer 1.")
+        #expect(CueStyle.standard.phrase(for: .split(index: 2, unit: .kilometers, paceSecPerKm: 360)) == "Kilometers 2.")
+    }
+
+    @Test func singularAndPluralMilePhrases() {
+        #expect(CueStyle.standard.phrase(for: .split(index: 1, unit: .miles, paceSecPerKm: 390)) == "Mile 1.")
+        #expect(CueStyle.standard.phrase(for: .split(index: 2, unit: .miles, paceSecPerKm: 390)) == "Miles 2.")
     }
 }
 

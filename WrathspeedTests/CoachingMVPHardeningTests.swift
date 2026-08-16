@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import HealthKit
 import SwiftData
 import XCTest
 @testable import Wrathspeed
@@ -81,6 +82,156 @@ final class CoachingMVPHardeningTests: XCTestCase {
         var missingBlueprint = WatchStartResolver()
         XCTAssertNil(missingBlueprint.receiveLaunchRequest())
         XCTAssertNil(missingBlueprint.receiveLaunchRequest())
+    }
+
+    func testWatchWorkoutContextUsesWatchResultSource() {
+        let request = makeStartRequest()
+        let context = WatchWorkoutContext.make(from: request, fallbackUnit: .kilometers)
+        XCTAssertEqual(context.resultSource, .wrathspeedWatch)
+        XCTAssertEqual(context.unit, .kilometers)
+        XCTAssertEqual(context.blueprint.id, request.blueprint.id)
+        XCTAssertNotNil(context.zones)
+    }
+
+    func testWatchWorkoutContextDoesNotUsePhoneSource() {
+        let request = makeStartRequest()
+        let context = WatchWorkoutContext.make(from: request, fallbackUnit: .miles)
+        XCTAssertNotEqual(context.resultSource, .wrathspeedPhone)
+        XCTAssertEqual(context.resultSource, .wrathspeedWatch)
+    }
+
+    @MainActor
+    func testWatchStoreAppliesWatchContextBeforeStartup() {
+        let store = WatchStore()
+        let request = makeStartRequest()
+        store.beginWorkout(request)
+        XCTAssertEqual(store.session.resultSource, .wrathspeedWatch)
+        XCTAssertEqual(store.session.splitUnit, .kilometers)
+        XCTAssertFalse(store.canPauseOrLap)
+    }
+
+    @MainActor
+    func testCancelStartupIfPendingWhileStarting() {
+        let store = WatchStore()
+        store.beginWorkout(makeStartRequest())
+        XCTAssertTrue(store.isStartupPending)
+        store.cancelStartupIfPending()
+        XCTAssertFalse(store.isStartupPending)
+        XCTAssertFalse(store.session.isRunning)
+    }
+
+    @MainActor
+    func testStartDuringFinishingDoesNotRecord() async throws {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .finishing)
+        try await controller.start(blueprint: blueprint, zones: nil)
+        XCTAssertFalse(controller.isRunning)
+        XCTAssertEqual(controller.sessionState, .finishing)
+        XCTAssertNotEqual(controller.launchState, .recording)
+    }
+
+    @MainActor
+    func testWatchStoreDoesNotStartOrMarkRecordingWhileFinishing() {
+        let store = WatchStore()
+        let request = makeStartRequest()
+        store.session.testing_configureSnapshot(
+            blueprint: request.blueprint,
+            source: .wrathspeedWatch,
+            state: .finishing
+        )
+        store.beginWorkout(request)
+        XCTAssertFalse(store.isStartupPending)
+        XCTAssertFalse(store.canPauseOrLap)
+        XCTAssertFalse(store.session.isRunning)
+        XCTAssertEqual(store.session.sessionState, .finishing)
+        XCTAssertNotEqual(store.session.launchState, .recording)
+    }
+
+    @MainActor
+    func testMirroredAttachmentRejectedWhileFinishingOrRecording() {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .finishing)
+        XCTAssertFalse(controller.canAcceptMirroredSession)
+
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .recording)
+        XCTAssertFalse(controller.canAcceptMirroredSession)
+
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .countdown)
+        XCTAssertFalse(controller.canAcceptMirroredSession)
+
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedPhone, state: .preparing)
+        XCTAssertTrue(controller.canAcceptMirroredSession)
+    }
+
+    func testCoordinatorRecordingPhaseIsNotStarting() {
+        var startup = WatchWorkoutStartupCoordinator()
+        let generation = startup.beginStartup()
+        startup.markRecording(expectedGeneration: generation)
+        XCTAssertEqual(startup.phase, .recording)
+        XCTAssertNotEqual(startup.phase, .starting)
+    }
+
+    @MainActor
+    func testActiveSessionSnapshotUsesResultSource() {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = makeStartRequest().blueprint
+        controller.testing_configureSnapshot(blueprint: blueprint, source: .wrathspeedWatch)
+        let snapshotExpectation = expectation(description: "snapshot")
+        var captured: ActiveSessionSnapshot?
+        controller.onSnapshot = { snapshot in
+            captured = snapshot
+            snapshotExpectation.fulfill()
+        }
+        controller.testing_publishSnapshot()
+        waitForExpectations(timeout: 1)
+        XCTAssertEqual(captured?.source, .wrathspeedWatch)
+
+        controller.resultSource = .wrathspeedPhone
+        let phoneExpectation = expectation(description: "phone snapshot")
+        controller.onSnapshot = { snapshot in
+            captured = snapshot
+            phoneExpectation.fulfill()
+        }
+        controller.testing_publishSnapshot(clear: true)
+        waitForExpectations(timeout: 1)
+        XCTAssertEqual(captured?.source, .wrathspeedPhone)
+    }
+
+    func testWatchStartupCoordinatorControlReadiness() {
+        var startup = WatchWorkoutStartupCoordinator()
+        XCTAssertFalse(startup.canPauseOrLap)
+
+        let generation = startup.beginStartup()
+        XCTAssertFalse(startup.canPauseOrLap)
+
+        startup.markRecording(expectedGeneration: generation)
+        XCTAssertTrue(startup.canPauseOrLap)
+
+        startup.cancelStartup()
+        XCTAssertFalse(startup.canPauseOrLap)
+    }
+
+    func testWatchStartupCancellationInvalidatesStaleGeneration() {
+        var startup = WatchWorkoutStartupCoordinator()
+        let first = startup.beginStartup()
+        startup.cancelStartup()
+        startup.markRecording(expectedGeneration: first)
+        XCTAssertFalse(startup.canPauseOrLap)
+        XCTAssertEqual(startup.phase, .idle)
+    }
+
+    func testWatchStartRequestDecodesLegacyPayloadWithoutUnit() throws {
+        let request = makeStartRequest()
+        let encoded = try JSONEncoder().encode(request)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        json.removeValue(forKey: "unit")
+        let legacy = try JSONSerialization.data(withJSONObject: json)
+        let decoded = try JSONDecoder().decode(WatchStartRequest.self, from: legacy)
+        XCTAssertNil(decoded.unit)
+        XCTAssertEqual(decoded.vdot, 45)
+        XCTAssertEqual(decoded.blueprint.title, "Easy run")
     }
 
     func testRouteSamplingCapsPointsAndPreservesEndpoints() {
@@ -194,7 +345,7 @@ final class CoachingMVPHardeningTests: XCTestCase {
         XCTAssertNotNil(store.errorMessage)
     }
 
-    private func makeStartRequest() -> WatchStartRequest {
+    private func makeStartRequest(unit: DistanceUnit? = .kilometers) -> WatchStartRequest {
         WatchStartRequest(
             blueprint: WorkoutBlueprint(
                 date: Date(),
@@ -204,7 +355,8 @@ final class CoachingMVPHardeningTests: XCTestCase {
                 plannedDistanceMeters: 5_000,
                 usesPaceTargets: true
             ),
-            vdot: 45
+            vdot: 45,
+            unit: unit
         )
     }
 
@@ -218,4 +370,11 @@ final class CoachingMVPHardeningTests: XCTestCase {
         """
         return try JSONDecoder().decode(StrengthCatalog.self, from: Data(json.utf8))
     }
+}
+
+private final class NoopRouteRecorder: WorkoutRouteRecording {
+    func begin(for location: RunLocation) {}
+    func setRecording(_ isRecording: Bool) {}
+    func stop() {}
+    func finish(for workout: HKWorkout) async throws -> [RoutePoint] { [] }
 }

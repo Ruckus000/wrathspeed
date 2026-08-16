@@ -478,11 +478,18 @@ public struct UpcomingWorkoutsPayload: Codable, Equatable, Sendable {
     public var generatedAt: Date
     public var blueprints: [WorkoutBlueprint]
     public var vdot: Double?
+    public var unit: DistanceUnit?
 
-    public init(generatedAt: Date = Date(), blueprints: [WorkoutBlueprint], vdot: Double? = nil) {
+    public init(
+        generatedAt: Date = Date(),
+        blueprints: [WorkoutBlueprint],
+        vdot: Double? = nil,
+        unit: DistanceUnit? = nil
+    ) {
         self.generatedAt = generatedAt
         self.blueprints = blueprints
         self.vdot = vdot
+        self.unit = unit
     }
 }
 

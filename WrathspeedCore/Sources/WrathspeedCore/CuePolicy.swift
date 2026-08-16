@@ -5,7 +5,7 @@ public enum Cue: Equatable, Sendable {
     case stepCompleted(String)
     case speedUp
     case slowDown
-    case split(kilometers: Int, paceSecPerKm: Double)
+    case split(index: Int, unit: DistanceUnit, paceSecPerKm: Double)
 }
 
 public struct CuePolicy: Equatable, Sendable {
@@ -15,8 +15,8 @@ public struct CuePolicy: Equatable, Sendable {
 
     private var lastPaceCueAt: TimeInterval?
     private var offTargetSince: TimeInterval?
-    private var lastSplitKm: Int
-    private var lastDistance: Double
+    private var lastSplitIndex: Int
+    private var lastMarkedDistance: Double
 
     public init(
         offTargetHold: TimeInterval = 20,
@@ -28,8 +28,8 @@ public struct CuePolicy: Equatable, Sendable {
         self.paceTolerance = paceTolerance
         self.lastPaceCueAt = nil
         self.offTargetSince = nil
-        self.lastSplitKm = 0
-        self.lastDistance = 0
+        self.lastSplitIndex = 0
+        self.lastMarkedDistance = 0
     }
 
     public mutating func evaluate(
@@ -37,7 +37,8 @@ public struct CuePolicy: Equatable, Sendable {
         usesPaceTargets: Bool,
         zones: PaceZones?,
         metrics: LiveMetrics,
-        events: [StepEvent]
+        events: [StepEvent],
+        splitUnit: DistanceUnit = .kilometers
     ) -> [Cue] {
         var cues: [Cue] = []
         for event in events {
@@ -51,12 +52,20 @@ public struct CuePolicy: Equatable, Sendable {
             }
         }
 
-        let km = Int(metrics.distanceMeters / 1_000)
-        if km > lastSplitKm, km > 0, let pace = metrics.currentPaceSecPerKm {
-            cues.append(.split(kilometers: km, paceSecPerKm: pace))
-            lastSplitKm = km
+        var splitIndex = lastSplitIndex
+        var markedDistance = lastMarkedDistance
+        while let segmentDistance = SplitBoundary.nextSegmentDistance(
+            markedDistance: markedDistance,
+            currentDistance: metrics.distanceMeters,
+            unit: splitUnit
+        ) {
+            splitIndex += 1
+            guard let pace = metrics.currentPaceSecPerKm else { break }
+            cues.append(.split(index: splitIndex, unit: splitUnit, paceSecPerKm: pace))
+            markedDistance += segmentDistance
+            lastSplitIndex = splitIndex
+            lastMarkedDistance = markedDistance
         }
-        lastDistance = metrics.distanceMeters
 
         guard usesPaceTargets,
               let step,

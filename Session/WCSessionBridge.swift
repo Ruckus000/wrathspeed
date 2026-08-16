@@ -39,9 +39,9 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
         try? WCSession.default.updateApplicationContext(lastPlanContext)
     }
 
-    func requestStart(_ blueprint: WorkoutBlueprint, vdot: Double?) {
+    func requestStart(_ blueprint: WorkoutBlueprint, vdot: Double?, unit: DistanceUnit? = nil) {
         guard WCSession.isSupported() else { return }
-        if let data = try? JSONEncoder().encode(WatchStartRequest(blueprint: blueprint, vdot: vdot)) {
+        if let data = try? JSONEncoder().encode(WatchStartRequest(blueprint: blueprint, vdot: vdot, unit: unit)) {
             let payload = ["start": data]
             if WCSession.default.isReachable {
                 WCSession.default.sendMessage(payload, replyHandler: nil) { _ in

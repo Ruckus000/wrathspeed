@@ -1,5 +1,6 @@
 import HealthKit
 import SwiftUI
+import WatchKit
 import WrathspeedCore
 
 @main
@@ -12,35 +13,36 @@ struct WrathspeedWatchApp: App {
             WatchTodayView()
                 .environment(store)
                 .onAppear {
+                    delegate.onWorkoutLaunch = { store.receiveLaunchRequest() }
                     store.session.onFinished = { result in
                         store.bridge.sendResult(result)
                     }
-                    if let pending = store.bridge.pendingStart {
-                        store.pending = pending
+                    if delegate.consumePendingWorkoutLaunch() {
+                        store.receiveLaunchRequest()
+                    }
+                    if let request = store.bridge.pendingStartRequest {
+                        store.receive(request)
                     }
                 }
         }
     }
 }
 
-final class WatchDelegate: NSObject, WKApplicationDelegate {
-    func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
-        NotificationCenter.default.post(name: .watchShouldStartWorkout, object: workoutConfiguration)
-    }
-}
-
-extension Notification.Name {
-    static let watchShouldStartWorkout = Notification.Name("watchShouldStartWorkout")
-}
-
 @MainActor
-@Observable
-final class WatchStore {
-    let session = WorkoutSessionController()
-    let bridge = WCSessionBridge()
-    var pending: WorkoutBlueprint?
+final class WatchDelegate: NSObject, WKApplicationDelegate {
+    var onWorkoutLaunch: (() -> Void)?
+    private var hasPendingWorkoutLaunch = false
 
-    var upcoming: [WorkoutBlueprint] {
-        bridge.upcoming?.blueprints ?? []
+    func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
+        if let onWorkoutLaunch {
+            onWorkoutLaunch()
+        } else {
+            hasPendingWorkoutLaunch = true
+        }
+    }
+
+    func consumePendingWorkoutLaunch() -> Bool {
+        defer { hasPendingWorkoutLaunch = false }
+        return hasPendingWorkoutLaunch
     }
 }

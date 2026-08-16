@@ -158,3 +158,13 @@ Tooling:
 - `InstantWorkoutFactory.swift` untracked; not required for current build.
 - Additional `PlanGeneratorTests` reconciler coverage only in dirty tree.
 - HealthKit entitlement missing at **code-sign** time in simulator unit tests (logged at runtime; tests still pass with `CODE_SIGNING_ALLOWED=NO`).
+
+### Deferred HealthKit lifecycle hardening — accepted development risk
+
+These three findings are deferred, not fixed. They are accepted for continued unrelated development. They are release blockers and are required before TestFlight, release integration, or final physical-Watch acceptance.
+
+1. Remote End is still fire-and-forget. The captured session is correct, but `.end` delivery is not awaited before local `stopActivity()` / `end()`.
+2. Mirrored-session admission does not reject the pre-countdown window where `activeStartupID` is set but state remains `.preparing`.
+3. A current startup failure can leave `.countdown` and its recovery snapshot behind; the existing snapshot “clear” path does not reliably emit AppStore’s `.saved` deletion signal.
+
+Physical-Watch validation remains required for multi-device HealthKit behavior.

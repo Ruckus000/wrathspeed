@@ -3,7 +3,6 @@ import Foundation
 public enum SplitBuilder {
     public static func fromRoute(_ points: [RoutePoint], unit: DistanceUnit) -> [WorkoutSplit] {
         guard points.count >= 2 else { return [] }
-        let unitMeters = Units.splitDistance(for: unit)
         var splits: [WorkoutSplit] = []
         var cumulative = 0.0
         var markedDistance = 0.0
@@ -11,18 +10,30 @@ public enum SplitBuilder {
         var index = 0
 
         for i in 1..<points.count {
-            cumulative += meters(from: points[i - 1], to: points[i])
-            while cumulative - markedDistance >= unitMeters * 0.95 {
+            let segmentStart = points[i - 1]
+            let segmentEnd = points[i]
+            let segmentMeters = meters(from: segmentStart, to: segmentEnd)
+            let segmentStartDistance = cumulative
+            let segmentDuration = segmentEnd.timestamp.timeIntervalSince(segmentStart.timestamp)
+            cumulative += segmentMeters
+            while let distance = SplitBoundary.nextSegmentDistance(
+                markedDistance: markedDistance,
+                currentDistance: cumulative,
+                unit: unit
+            ) {
+                guard distance > 0, segmentMeters > 0 else { break }
+                let splitEndDistance = markedDistance + distance
+                let fraction = min(1, max(0, (splitEndDistance - segmentStartDistance) / segmentMeters))
+                let splitTime = segmentStart.timestamp.addingTimeInterval(segmentDuration * fraction)
+                let duration = splitTime.timeIntervalSince(markedTime)
+                guard duration > 0 else { break }
                 index += 1
-                let duration = points[i].timestamp.timeIntervalSince(markedTime)
-                let distance = min(unitMeters, cumulative - markedDistance)
-                guard distance > 0, duration > 0 else { break }
                 let pace = (duration / distance) * 1_000
                 splits.append(
                     WorkoutSplit(index: index, distanceMeters: distance, duration: duration, paceSecPerKm: pace)
                 )
                 markedDistance += distance
-                markedTime = points[i].timestamp
+                markedTime = splitTime
             }
         }
         return splits
@@ -36,14 +47,16 @@ public enum SplitBuilder {
         currentElapsed: TimeInterval,
         unit: DistanceUnit
     ) -> (splits: [WorkoutSplit], distance: Double, elapsed: TimeInterval) {
-        let unitMeters = Units.splitDistance(for: unit)
         var splits: [WorkoutSplit] = []
         var markedDistance = previousDistance
         var markedElapsed = previousElapsed
         var index = previousCount
-        while currentDistance - markedDistance >= unitMeters * 0.95 {
+        while let distance = SplitBoundary.nextSegmentDistance(
+            markedDistance: markedDistance,
+            currentDistance: currentDistance,
+            unit: unit
+        ) {
             index += 1
-            let distance = min(unitMeters, currentDistance - markedDistance)
             let fraction = distance / max(currentDistance - markedDistance, 1)
             let duration = max(1, (currentElapsed - markedElapsed) * fraction)
             let pace = (duration / distance) * 1_000

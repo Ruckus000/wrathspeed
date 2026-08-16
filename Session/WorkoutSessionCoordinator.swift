@@ -17,6 +17,7 @@ final class WorkoutSessionCoordinator {
     private(set) var watchLaunchPhase: WatchLaunchPhase = .idle
     private var pendingBlueprint: WorkoutBlueprint?
     private var pendingVDOT: Double?
+    private var pendingUnit: DistanceUnit?
     private var pendingZones: PaceZones?
     private var pendingCuesEnabled = true
     private var pendingSource: WorkoutSource = .wrathspeedPhone
@@ -37,9 +38,11 @@ final class WorkoutSessionCoordinator {
     func installMirroringHandler() {
         HKHealthStore().workoutSessionMirroringStartHandler = { [weak self] mirrored in
             Task { @MainActor in
-                self?.watchTimeoutTask?.cancel()
-                self?.watchLaunchPhase = .recording
-                await self?.session.attachMirrored(session: mirrored)
+                guard let self else { return }
+                let attached = await self.session.attachMirrored(session: mirrored)
+                guard attached else { return }
+                self.watchTimeoutTask?.cancel()
+                self.watchLaunchPhase = .recording
             }
         }
     }
@@ -58,10 +61,13 @@ final class WorkoutSessionCoordinator {
         vdot: Double?,
         zones: PaceZones?,
         cuesEnabled: Bool,
-        source: WorkoutSource = .wrathspeedPhone
+        source: WorkoutSource = .wrathspeedPhone,
+        unit: DistanceUnit? = nil
     ) async throws {
+        guard session.sessionState != .finishing else { return }
         pendingBlueprint = blueprint
         pendingVDOT = vdot
+        pendingUnit = unit
         pendingZones = zones
         pendingCuesEnabled = cuesEnabled
         pendingSource = source
@@ -71,7 +77,7 @@ final class WorkoutSessionCoordinator {
 
         if WCSessionBridge.isWatchAppInstalled {
             watchLaunchPhase = .waitingForWatch
-            bridge.requestStart(blueprint, vdot: vdot)
+            bridge.requestStart(blueprint, vdot: vdot, unit: unit)
             watchTimeoutTask?.cancel()
             watchTimeoutTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(12))
@@ -95,7 +101,7 @@ final class WorkoutSessionCoordinator {
     func retryWatchLaunch() async {
         guard let blueprint = pendingBlueprint else { return }
         watchLaunchPhase = .waitingForWatch
-        bridge.requestStart(blueprint, vdot: pendingVDOT)
+        bridge.requestStart(blueprint, vdot: pendingVDOT, unit: pendingUnit)
         watchTimeoutTask?.cancel()
         watchTimeoutTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(12))
@@ -111,7 +117,7 @@ final class WorkoutSessionCoordinator {
         watchTimeoutTask?.cancel()
         do {
             try await session.startOnPhoneOnly(blueprint: blueprint, zones: pendingZones)
-            watchLaunchPhase = .recording
+            watchLaunchPhase = session.isRunning ? .recording : .idle
         } catch {
             watchLaunchPhase = .failed(error.localizedDescription)
         }
