@@ -50,7 +50,7 @@ struct HistoryView: View {
                         if store.results.isEmpty {
                             emptyState("NO RUNS YET. COMPLETE A WORKOUT OR IMPORT FROM APPLE HEALTH.")
                         } else {
-                            ForEach(store.results, id: \.workoutID) { result in
+                            ForEach(store.results) { result in
                         NavigationLink {
                             RunDetailView(result: result)
                         } label: {
@@ -244,7 +244,7 @@ struct RunDetailView: View {
                 matchSuggestionCard(suggestedID: suggestedID)
             } else if result.matchInfo.state == .matched {
                 WSOutlineButton(title: "UNMATCH FROM PLAN") {
-                    store.unmatchHealthResult(result.workoutID)
+                    store.unmatchHealthResult(result)
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -279,15 +279,15 @@ struct RunDetailView: View {
                 .font(WSFont.ui(15, weight: .heavy))
             HStack(spacing: 8) {
                 WSPrimaryButton(title: "CONFIRM", height: 44, fontSize: 16) {
-                    store.confirmHealthMatch(for: result.workoutID, scheduledWorkoutID: suggestedID)
+                    store.confirmHealthMatch(result, scheduledWorkoutID: suggestedID)
                 }
                 WSOutlineButton(title: "KEEP UNMATCHED", height: 44) {
-                    store.keepHealthUnmatched(for: result.workoutID)
+                    store.keepHealthUnmatched(result)
                 }
             }
             if let candidates = store.alternateMatchCandidates(for: result).dropFirst().first {
                 WSOutlineButton(title: "CHOOSE ANOTHER") {
-                    store.rejectHealthMatch(for: result.workoutID, suggestedWorkoutID: suggestedID)
+                    store.rejectHealthMatch(result, suggestedWorkoutID: suggestedID)
                 }
                 .overlay {
                     if candidates.scheduledWorkoutID != suggestedID {

@@ -45,6 +45,7 @@ final class AppStore {
     var mobilityResults: [MobilitySessionResult] = []
     var pendingWorkoutSource: WorkoutSource = .wrathspeedPhone
     var pendingTreadmillDistance: PendingTreadmillDistance?
+    private(set) var watchPublicationCountForTesting = 0
 
     private let workoutCoordinator = WorkoutSessionCoordinator()
     private let strengthCatalogLoader: () throws -> StrengthCatalog
@@ -405,12 +406,25 @@ final class AppStore {
         defer { healthImportInProgress = false }
         let since = importWindowStart()
         let anchor = modelContext.flatMap { try? HealthImportAnchorStore.load(from: $0) }
+        let previousResults = results
+        let previousPlan = plan
+        let importResult: HealthImportResult
         do {
             try await healthImporter.requestAuthorization()
-            let importResult = try await healthImporter.importWorkouts(anchor: anchor, since: since)
+            importResult = try await healthImporter.importWorkouts(anchor: anchor, since: since)
             results = HealthImportMerge.merge(existing: results, imports: importResult.workouts)
             applyMatchSuggestions()
-            persist()
+            try persistThrowing()
+        } catch {
+            results = previousResults
+            plan = previousPlan
+            healthImportDenied = healthImporter.authorizationDenied
+            if !healthImportDenied {
+                errorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
+            }
+            return
+        }
+        do {
             if let newAnchor = importResult.newAnchor, let context = modelContext {
                 try HealthImportAnchorStore.save(newAnchor, to: context)
             }
@@ -423,54 +437,66 @@ final class AppStore {
         }
     }
 
-    func confirmHealthMatch(for resultID: UUID, scheduledWorkoutID: UUID) {
-        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
+    func confirmHealthMatch(_ selected: WorkoutResult, scheduledWorkoutID: UUID) {
+        guard let index = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+        let previous = captureRecordedState()
         var result = results[index]
         result.matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: scheduledWorkoutID)
         results[index] = result
-        updateWorkout(scheduledWorkoutID) { workout in
+        updateWorkout(scheduledWorkoutID, shouldPersist: false) { workout in
             var copy = workout
             copy.status = .completed
             copy.result = result
             return copy
         }
-        evaluateAdaptation()
-        persist()
-        showToast("RUN LINKED TO PLAN")
-    }
-
-    func rejectHealthMatch(for resultID: UUID, suggestedWorkoutID: UUID) {
-        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
-        var result = results[index]
-        var rejected = result.matchInfo.rejectedWorkoutIDs
-        if !rejected.contains(suggestedWorkoutID) { rejected.append(suggestedWorkoutID) }
-        result.matchInfo = WorkoutMatchInfo(state: .ignored, rejectedWorkoutIDs: rejected)
-        results[index] = result
-        applyMatchSuggestions(for: resultID)
-        persist()
-    }
-
-    func keepHealthUnmatched(for resultID: UUID) {
-        guard let index = results.firstIndex(where: { $0.workoutID == resultID }) else { return }
-        results[index].matchInfo.state = .unmatched
-        persist()
-    }
-
-    func unmatchHealthResult(_ resultID: UUID) {
-        guard let index = results.firstIndex(where: { $0.workoutID == resultID }),
-              let scheduledID = results[index].matchInfo.scheduledWorkoutID else { return }
-        var result = results[index]
-        result.matchInfo = WorkoutMatchInfo(state: .unmatched)
-        results[index] = result
-        updateWorkout(scheduledID) { workout in
-            var copy = workout
-            if copy.status == .completed, copy.result?.workoutID == resultID {
-                copy.status = .scheduled
-                copy.result = nil
-            }
-            return copy
+        evaluateAdaptation(shouldPersist: false)
+        do {
+            try persistThrowing()
+            pushWatchWorkouts()
+            showToast("RUN LINKED TO PLAN")
+        } catch {
+            restoreRecordedState(previous)
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
         }
-        persist()
+    }
+
+    func rejectHealthMatch(_ selected: WorkoutResult, suggestedWorkoutID: UUID) {
+        guard let index = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+        persistResultMutation {
+            var result = results[index]
+            var rejected = result.matchInfo.rejectedWorkoutIDs
+            if !rejected.contains(suggestedWorkoutID) { rejected.append(suggestedWorkoutID) }
+            result.matchInfo = WorkoutMatchInfo(state: .ignored, rejectedWorkoutIDs: rejected)
+            results[index] = result
+            applyMatchSuggestions(for: result)
+        }
+    }
+
+    func keepHealthUnmatched(_ selected: WorkoutResult) {
+        guard WorkoutResultMerge.findIndex(of: selected, in: results) != nil else { return }
+        persistResultMutation {
+            guard let index = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+            results[index].matchInfo.state = .unmatched
+        }
+    }
+
+    func unmatchHealthResult(_ selected: WorkoutResult) {
+        guard let index = WorkoutResultMerge.findIndex(of: selected, in: results),
+              let scheduledID = results[index].matchInfo.scheduledWorkoutID else { return }
+        persistResultMutation(publishesWatchPlan: true) {
+            guard let currentIndex = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+            var result = results[currentIndex]
+            result.matchInfo = WorkoutMatchInfo(state: .unmatched)
+            results[currentIndex] = result
+            updateWorkout(scheduledID, shouldPersist: false) { workout in
+                var copy = workout
+                if copy.status == .completed, let embedded = copy.result, WorkoutResultMerge.matches(embedded, selected) {
+                    copy.status = .scheduled
+                    copy.result = nil
+                }
+                return copy
+            }
+        }
     }
 
     func openHealthSettings() {
@@ -487,10 +513,9 @@ final class AppStore {
         return ninetyDays
     }
 
-    private func applyMatchSuggestions(for resultID: UUID? = nil) {
-        let targets = resultID.map { id in results.filter { $0.workoutID == id } } ?? results
+    private func applyMatchSuggestions(for selected: WorkoutResult? = nil) {
         for index in results.indices {
-            guard targets.contains(where: { $0.workoutID == results[index].workoutID }) else { continue }
+            if let selected, !WorkoutResultMerge.matches(results[index], selected) { continue }
             let result = results[index]
             guard result.source == .appleHealth, result.matchInfo.state != .matched else { continue }
             let rejected = Set(result.matchInfo.rejectedWorkoutIDs)
@@ -1030,6 +1055,7 @@ final class AppStore {
     }
 
     private func pushWatchWorkouts() {
+        watchPublicationCountForTesting += 1
         let upcoming = upcomingRuns.prefix(14).map(\.blueprint)
         workoutCoordinator.pushUpcoming(UpcomingWorkoutsPayload(blueprints: Array(upcoming), vdot: profile?.vdot, unit: unit))
     }
@@ -1114,6 +1140,20 @@ final class AppStore {
         pendingSuggestion = snapshot.pendingSuggestion
         freezeMileage = snapshot.freezeMileage
         freezeMileageBaselineMeters = snapshot.freezeMileageBaselineMeters
+    }
+
+    private func persistResultMutation(publishesWatchPlan: Bool = false, _ mutate: () -> Void) {
+        let previous = captureRecordedState()
+        mutate()
+        do {
+            try persistThrowing()
+            if publishesWatchPlan {
+                pushWatchWorkouts()
+            }
+        } catch {
+            restoreRecordedState(previous)
+            errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
+        }
     }
 
     private func reconcilePlanEmbeddedResult(_ stored: WorkoutResult) {
