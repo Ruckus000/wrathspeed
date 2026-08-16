@@ -333,21 +333,30 @@ final class AppStore {
         if pending.result.duration > 0, meters > 0 {
             pending.result.averagePaceSecPerKm = (pending.result.duration / meters) * 1_000
         }
-        pendingTreadmillDistance = nil
+        pendingTreadmillDistance = pending
         do {
             try record(pending.result)
+            pendingTreadmillDistance = nil
         } catch {
             errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
         }
     }
 
+#if DEBUG
+    func testing_handleWorkoutResult(_ result: WorkoutResult) {
+        handleWorkoutResult(result)
+    }
+#endif
+
     private func handleWorkoutResult(_ result: WorkoutResult) {
-        if var pending = pendingTreadmillDistance, pending.result.workoutID == result.workoutID {
+        if var pending = pendingTreadmillDistance, WorkoutResultMerge.matches(pending.result, result) {
             if result.healthSync.state == .synced || result.healthSync.state == .failed {
                 pending.result.healthSync = result.healthSync
-                pending.result.healthKitUUID = result.healthKitUUID
-                pending.result.route = result.route
-                pending.result.splits = result.splits
+                if let uuid = WorkoutResultMerge.resolvedHealthKitUUID(for: result) {
+                    pending.result.healthKitUUID = uuid
+                }
+                if let route = result.route { pending.result.route = route }
+                if let splits = result.splits { pending.result.splits = splits }
                 pendingTreadmillDistance = pending
             }
             return
@@ -363,10 +372,26 @@ final class AppStore {
             return
         }
         do {
-            try record(result)
+            try record(resultPreservingConfirmedTreadmillDistance(result))
         } catch {
             errorMessage = "Couldn’t save training data: \(error.localizedDescription)"
         }
+    }
+
+    private func resultPreservingConfirmedTreadmillDistance(_ incoming: WorkoutResult) -> WorkoutResult {
+        guard incoming.location == .treadmill,
+              let index = WorkoutResultMerge.findIndex(of: incoming, in: results)
+        else { return incoming }
+        let existing = results[index]
+        guard existing.location == .treadmill else { return incoming }
+        var copy = incoming
+        copy.distanceMeters = existing.distanceMeters
+        if copy.duration > 0, existing.distanceMeters > 0 {
+            copy.averagePaceSecPerKm = (copy.duration / existing.distanceMeters) * 1_000
+        } else {
+            copy.averagePaceSecPerKm = existing.averagePaceSecPerKm
+        }
+        return copy
     }
 
     func record(_ result: WorkoutResult) throws {
@@ -443,6 +468,7 @@ final class AppStore {
 
     func confirmHealthMatch(_ selected: WorkoutResult, scheduledWorkoutID: UUID) {
         guard let index = WorkoutResultMerge.findIndex(of: selected, in: results) else { return }
+        guard results[index].matchInfo.state != .matched else { return }
         guard let workout = plan?.workouts.first(where: { $0.id == scheduledWorkoutID }),
               workout.status == .scheduled || workout.status == .convertedToEasy
         else { return }

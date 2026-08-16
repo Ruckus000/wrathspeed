@@ -15,7 +15,6 @@ struct PendingTreadmillDistance: Identifiable, Equatable {
 
 struct TreadmillDistanceSheet: View {
     @Environment(AppStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
     let pending: PendingTreadmillDistance
     @State private var actualDisplay: Double
 
@@ -59,12 +58,10 @@ struct TreadmillDistanceSheet: View {
             Spacer(minLength: 24)
             WSPrimaryButton(title: "SAVE WORKOUT") {
                 store.confirmTreadmillDistance(actualDisplay)
-                dismiss()
             }
             .accessibilityLabel("Save workout with actual treadmill distance")
             Button("USE ESTIMATE") {
                 store.confirmTreadmillDistance(Units.display(fromMeters: pending.estimateMeters, unit: store.unit))
-                dismiss()
             }
             .font(WSFont.ui(12, weight: .heavy))
             .foregroundStyle(WSColor.text50)
@@ -76,6 +73,11 @@ struct TreadmillDistanceSheet: View {
         .padding(.bottom, 40)
         .background(WSColor.bgSheet.ignoresSafeArea())
         .interactiveDismissDisabled()
+        .overlay {
+            if let message = store.errorMessage {
+                WSAlert(message: message) { store.errorMessage = nil }
+            }
+        }
         .onAppear {
             actualDisplay = Units.display(fromMeters: pending.estimateMeters, unit: store.unit)
         }
