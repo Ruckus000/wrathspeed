@@ -26,6 +26,11 @@ public enum WorkoutReminderRules {
         "workout-reminder-\(workoutID.uuidString)"
     }
 
+    public static func scheduledTimeMinutes(hour: Int, minute: Int) -> Int {
+        let total = hour * 60 + minute
+        return max(0, min(total, (24 * 60) - 1))
+    }
+
     public static func fireDate(
         workoutDay: Date,
         scheduledTimeMinutes: Int,
@@ -37,32 +42,63 @@ public enum WorkoutReminderRules {
     }
 }
 
-public final class MockWorkoutReminderScheduler: WorkoutReminderScheduling, @unchecked Sendable {
-    public var authorizationGranted = true
-    public var shouldFailScheduling = false
-    public private(set) var scheduled: [UUID: Date] = [:]
+public enum WorkoutReminderOperation: Equatable, Sendable {
+    case cancel(workoutID: UUID)
+    case schedule(workoutID: UUID, fireDate: Date, title: String)
+}
 
-    public init() {}
+public enum WorkoutReminderReconciliation {
+    public static func operations(
+        before: [ScheduledWorkout],
+        after: [ScheduledWorkout],
+        calendar: Calendar = .current
+    ) -> [WorkoutReminderOperation] {
+        let beforeByID = Dictionary(uniqueKeysWithValues: before.map { ($0.id, $0) })
+        let afterIDs = Set(after.map(\.id))
+        var output: [WorkoutReminderOperation] = []
 
-    public func requestAuthorizationIfNeeded() async -> Bool {
-        authorizationGranted
-    }
-
-    public func scheduleReminder(workoutID: UUID, fireDate: Date, title: String) async throws {
-        if !authorizationGranted {
-            throw WorkoutReminderSchedulingError.permissionDenied
+        for workout in before where !afterIDs.contains(workout.id) {
+            if workout.reminderEnabled {
+                output.append(.cancel(workoutID: workout.id))
+            }
         }
-        if shouldFailScheduling {
-            throw WorkoutReminderSchedulingError.schedulingFailed
+
+        for workout in after {
+            let previous = beforeByID[workout.id]
+            if let operation = reminderOperation(previous: previous, current: workout, calendar: calendar) {
+                output.append(operation)
+            }
         }
-        scheduled[workoutID] = fireDate
+        return output
     }
 
-    public func cancelReminder(workoutID: UUID) async {
-        scheduled.removeValue(forKey: workoutID)
-    }
+    private static func reminderOperation(
+        previous: ScheduledWorkout?,
+        current: ScheduledWorkout,
+        calendar: Calendar
+    ) -> WorkoutReminderOperation? {
+        let wasEnabled = previous?.reminderEnabled == true
+        let isEnabled = current.reminderEnabled
 
-    public func notificationIdentifier(for workoutID: UUID) -> String {
-        WorkoutReminderRules.notificationIdentifier(for: workoutID)
+        if !isEnabled {
+            return wasEnabled ? .cancel(workoutID: current.id) : nil
+        }
+
+        guard let minutes = current.scheduledTimeMinutes,
+              let fireDate = WorkoutReminderRules.fireDate(
+                workoutDay: current.date,
+                scheduledTimeMinutes: minutes,
+                calendar: calendar
+              )
+        else { return nil }
+
+        if wasEnabled,
+           previous?.scheduledTimeMinutes == minutes,
+           calendar.isDate(previous!.date, inSameDayAs: current.date),
+           previous?.blueprint.title == current.blueprint.title {
+            return nil
+        }
+
+        return .schedule(workoutID: current.id, fireDate: fireDate, title: current.blueprint.title)
     }
 }

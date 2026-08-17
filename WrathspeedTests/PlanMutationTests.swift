@@ -156,4 +156,158 @@ final class PlanMutationTests: XCTestCase {
         store.endNotFeeling100()
         XCTAssertEqual(store.displayPlan?.workouts.last?.blueprint.kind, .tempo)
     }
+
+    func testConvertWritesOnePlanChange() throws {
+        let (store, context) = try makeStore()
+        let quality = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: Date(),
+            kind: .tempo,
+            title: "Tempo",
+            steps: [],
+            plannedDistanceMeters: 8_000,
+            usesPaceTargets: true
+        ))
+        store.plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [quality]
+        )
+        store.profile = store.plan?.profile
+        store.save()
+        store.skip(quality, convertQuality: true)
+        XCTAssertEqual(planChangeCount(context), 1)
+    }
+
+    func testPlanChangeFailureCommitsNeitherPlanNorChange() throws {
+        let (store, context) = try makeStore()
+        store.plan = samplePlan()
+        store.profile = store.plan?.profile
+        store.save()
+        let workout = try XCTUnwrap(store.plan?.workouts.first)
+        let originalStatus = workout.status
+        store.setForcePlanChangeFailureForTesting(true)
+        store.skip(workout)
+        XCTAssertEqual(store.plan?.workouts.first?.status, originalStatus)
+        XCTAssertEqual(planChangeCount(context), 0)
+    }
+
+    func testFailedMutationSurvivesRelaunch() throws {
+        let container = try ModelContainer(for: Schema(modelTypes), configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let context = ModelContext(container)
+        let store = AppStore()
+        store.attach(context: context)
+        store.plan = samplePlan()
+        store.profile = store.plan?.profile
+        store.save()
+        let workout = try XCTUnwrap(store.plan?.workouts.first)
+        let originalDate = workout.date
+        store.setForcePlanChangeFailureForTesting(true)
+        store.move(workout, to: Calendar.current.date(byAdding: .day, value: 2, to: Date())!)
+
+        let reloaded = AppStore()
+        reloaded.attach(context: context)
+        XCTAssertTrue(Calendar.current.isDate(
+            reloaded.plan?.workouts.first?.date ?? .distantPast,
+            inSameDayAs: originalDate
+        ))
+        XCTAssertEqual(planChangeCount(context), 0)
+    }
+
+    func testRetryAfterFailureCreatesOneChange() throws {
+        let (store, context) = try makeStore()
+        store.plan = samplePlan()
+        store.profile = store.plan?.profile
+        store.save()
+        let workout = try XCTUnwrap(store.plan?.workouts.first)
+        store.setForcePlanChangeFailureForTesting(true)
+        store.skip(workout)
+        store.setForcePlanChangeFailureForTesting(false)
+        let skipped = try XCTUnwrap(store.plan?.workouts.first)
+        store.skip(skipped)
+        XCTAssertEqual(planChangeCount(context), 1)
+    }
+
+    func testSuccessToastOnlyAfterAtomicCommit() throws {
+        let (store, _) = try makeStore()
+        store.plan = samplePlan()
+        store.profile = store.plan?.profile
+        store.save()
+        let workout = try XCTUnwrap(store.plan?.workouts.first)
+        store.setForcePlanChangeFailureForTesting(true)
+        store.skip(workout)
+        XCTAssertNil(store.toastMessage)
+        store.setForcePlanChangeFailureForTesting(false)
+        let scheduled = try XCTUnwrap(store.plan?.workouts.first)
+        let watchBefore = store.watchPublicationCountForTesting
+        store.skip(scheduled)
+        XCTAssertNotNil(store.toastMessage)
+        XCTAssertEqual(store.watchPublicationCountForTesting, watchBefore + 1)
+    }
+
+    func testScheduleApplyFailureRestoresProfileAndPlan() throws {
+        let (store, context) = try makeStore()
+        store.plan = samplePlan()
+        store.profile = store.plan?.profile
+        let originalProfile = store.profile
+        let originalWorkoutCount = store.plan?.workouts.count
+        store.save()
+        store.setForceSaveFailureAfterMutationForTesting(true)
+        try? store.applyManagePlanSchedule(
+            days: [.monday, .wednesday, .friday, .sunday],
+            daysPerWeek: 4,
+            longRunDay: .sunday
+        )
+        XCTAssertEqual(store.profile?.availableWeekdays, originalProfile?.availableWeekdays)
+        XCTAssertEqual(store.plan?.workouts.count, originalWorkoutCount)
+        XCTAssertEqual(planChangeCount(context), 0)
+
+        let reloaded = AppStore()
+        reloaded.attach(context: context)
+        XCTAssertEqual(reloaded.profile?.availableWeekdays, originalProfile?.availableWeekdays)
+    }
+
+    func testApplyMissedWorkRequiresPreview() throws {
+        let (store, context) = try makeStore()
+        let missed = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
+            kind: .easy,
+            title: "Missed",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        store.plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [missed]
+        )
+        store.profile = store.plan?.profile
+        store.save()
+        let situation = try XCTUnwrap(store.missedWorkSituation)
+        XCTAssertThrowsError(try store.applyMissedWork(choice: .skipMissed, situation: situation, preview: nil))
+        XCTAssertEqual(planChangeCount(context), 0)
+    }
+
+    func testApplyMissedWorkWithPreviewWritesOneChange() throws {
+        let (store, context) = try makeStore()
+        let missed = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
+            kind: .easy,
+            title: "Missed",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        store.plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [missed]
+        )
+        store.profile = store.plan?.profile
+        store.save()
+        let situation = try XCTUnwrap(store.missedWorkSituation)
+        let preview = try XCTUnwrap(store.previewMissedWork(choice: .skipMissed, situation: situation))
+        try store.applyMissedWork(choice: .skipMissed, situation: situation, preview: preview)
+        XCTAssertEqual(planChangeCount(context), 1)
+    }
 }

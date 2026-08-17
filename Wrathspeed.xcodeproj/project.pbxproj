@@ -98,6 +98,7 @@
 		DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */; };
 		DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
 		E4DA07A801DCFBBC4F5EB632 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
+		EBD1A6E1491FF628060B1971 /* MockWorkoutReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652F94F27F65A00D2B75770C /* MockWorkoutReminderScheduler.swift */; };
 		EE5AC9B48E19C5C56977383D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4CFBF834821A2F1F2E98191 /* SettingsView.swift */; };
 		F125944CE3894485C7D5D203 /* MobilityPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */; };
 		F5E192E2351C27896E4775FC /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = D4C95B978193A33B7CFAED9E /* WrathspeedCore */; };
@@ -187,6 +188,7 @@
 		623774FFF1E871E49DE1774E /* WeeklyCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCalendarView.swift; sourceTree = "<group>"; };
 		6259BB5F724E4BB2BC498533 /* WrathspeedUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestingHarnessTests.swift; sourceTree = "<group>"; };
+		652F94F27F65A00D2B75770C /* MockWorkoutReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWorkoutReminderScheduler.swift; sourceTree = "<group>"; };
 		66E0BE933D5F6D29B309A5D8 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		6B0EE754EE4AD6718482106B /* PaceBandStatus+Watch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PaceBandStatus+Watch.swift"; sourceTree = "<group>"; };
 		6B6EE3BB8CB85959A4A0878C /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
@@ -309,6 +311,7 @@
 				883309AA5F44874069BA7F88 /* CoachingMVPHardeningTests.swift */,
 				B91D30196391D4579E7FD233 /* GuidedSessionPersistenceTests.swift */,
 				9DAED163BE4A498B0C2618B9 /* HealthImportPersistenceTests.swift */,
+				652F94F27F65A00D2B75770C /* MockWorkoutReminderScheduler.swift */,
 				F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */,
 				4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */,
 				7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */,
@@ -723,6 +726,7 @@
 				9BEE3DCDF0014F0E3BB6DD6E /* CoachingMVPHardeningTests.swift in Sources */,
 				A4444553BCAAC35AB37FA673 /* GuidedSessionPersistenceTests.swift in Sources */,
 				9E6C3C58A33CAF7EDB5138DB /* HealthImportPersistenceTests.swift in Sources */,
+				EBD1A6E1491FF628060B1971 /* MockWorkoutReminderScheduler.swift in Sources */,
 				35057545D76FE3DA5D2A1B62 /* OnboardingFlowTests.swift in Sources */,
 				CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */,
 				CFCA2597B2606BCEFF0E00D6 /* PlanMutationTests.swift in Sources */,

@@ -233,6 +233,13 @@ final class AppStateRepository {
                             userInfo: [NSLocalizedDescriptionKey: "Simulated save failure after mutation"]
                         )
                     }
+                    if forcePlanChangeFailure {
+                        throw NSError(
+                            domain: "WrathspeedTests",
+                            code: 3,
+                            userInfo: [NSLocalizedDescriptionKey: "Simulated plan change failure"]
+                        )
+                    }
                 })
             } else {
                 try Persistence.save(state, to: context)

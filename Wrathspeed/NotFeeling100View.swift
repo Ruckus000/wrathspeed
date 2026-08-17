@@ -30,8 +30,12 @@ struct NotFeeling100View: View {
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 12)
                 WSOutlineButton(title: "END ADJUSTMENT") {
-                    store.endNotFeeling100()
-                    dismiss()
+                    if store.endNotFeeling100() {
+                        dismiss()
+                    } else {
+                        errorMessage = store.errorMessage
+                        store.errorMessage = nil
+                    }
                 }
                 .padding(.top, 10)
                 .accessibilityIdentifier("n100_end_adjustment")
@@ -96,10 +100,16 @@ struct NotFeeling100View: View {
             }
             .padding(.top, 20)
             .accessibilityIdentifier("n100_apply")
-            if store.n100 != nil {
+            if store.n100 != nil,
+               let adjustment = store.n100,
+               NotFeeling100Rules.canDiscardOnCreationDay(adjustment: adjustment, createdOn: Date()) {
                 Button("DISCARD TODAY") {
-                    store.discardNotFeeling100IfCreationDay()
-                    dismiss()
+                    if store.discardNotFeeling100IfCreationDay() {
+                        dismiss()
+                    } else {
+                        errorMessage = store.errorMessage
+                        store.errorMessage = nil
+                    }
                 }
                 .font(WSFont.ui(12, weight: .heavy))
                 .foregroundStyle(WSColor.destructive)

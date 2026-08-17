@@ -43,9 +43,7 @@ public enum HistoryInsights {
         let plannedRunCount = workouts.filter {
             $0.status == .scheduled || $0.status == .convertedToEasy || $0.status == .completed
         }.count
-        let confirmed = workouts.filter {
-            $0.status == .completed && ($0.result?.matchInfo.state == .matched)
-        }.count
+        let confirmed = workouts.filter { countsTowardAdherence($0) }.count
 
         let deduped = deduplicatedResults(results)
         let weekResults = deduped.filter { $0.startedAt >= weekStart && $0.startedAt < end }
@@ -93,5 +91,17 @@ public enum HistoryInsights {
             }
         }
         return output
+    }
+
+    static func countsTowardAdherence(_ workout: ScheduledWorkout) -> Bool {
+        guard workout.status == .completed, let result = workout.result else { return false }
+        switch result.source {
+        case .wrathspeedPhone, .wrathspeedWatch:
+            return result.workoutID == workout.blueprint.id || result.workoutID == workout.id
+        case .appleHealth:
+            return result.matchInfo.state == .matched && result.matchInfo.scheduledWorkoutID == workout.id
+        case .instant:
+            return false
+        }
     }
 }

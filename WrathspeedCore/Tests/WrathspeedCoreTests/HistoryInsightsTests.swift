@@ -64,4 +64,84 @@ final class HistoryInsightsTests: XCTestCase {
         XCTAssertEqual(summary.confirmedAdherenceCount, 1)
         XCTAssertEqual(summary.actualMeters, 5_000)
     }
+
+    func testPhoneCompletedPlannedWorkoutCountsTowardAdherence() {
+        let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
+        var completed = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: weekStart,
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        completed.status = .completed
+        let result = WorkoutResult(
+            workoutID: completed.blueprint.id,
+            startedAt: weekStart.addingTimeInterval(3_600),
+            duration: 1_800,
+            distanceMeters: 5_000,
+            averagePaceSecPerKm: 360,
+            location: .outdoor,
+            source: .wrathspeedPhone
+        )
+        completed.result = result
+        let plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [completed]
+        )
+        let summary = HistoryInsights.weeklySummary(plan: plan, results: [result], weekStart: weekStart)
+        XCTAssertEqual(summary.confirmedAdherenceCount, 1)
+    }
+
+    func testWatchCompletedPlannedWorkoutCountsTowardAdherence() {
+        let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
+        var completed = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: weekStart,
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        completed.status = .completed
+        let result = WorkoutResult(
+            workoutID: completed.blueprint.id,
+            startedAt: weekStart.addingTimeInterval(3_600),
+            duration: 1_800,
+            distanceMeters: 5_000,
+            averagePaceSecPerKm: 360,
+            location: .outdoor,
+            source: .wrathspeedWatch
+        )
+        completed.result = result
+        let plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [completed]
+        )
+        let summary = HistoryInsights.weeklySummary(plan: plan, results: [result], weekStart: weekStart)
+        XCTAssertEqual(summary.confirmedAdherenceCount, 1)
+    }
+
+    func testCompletedWithoutEmbeddedResultDoesNotCount() {
+        let weekStart = Calendar.current.dateInterval(of: .weekOfYear, for: Date())!.start
+        var completed = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: weekStart,
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        completed.status = .completed
+        let plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [completed]
+        )
+        let summary = HistoryInsights.weeklySummary(plan: plan, results: [], weekStart: weekStart)
+        XCTAssertEqual(summary.confirmedAdherenceCount, 0)
+    }
 }

@@ -360,50 +360,53 @@ Simulator: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)
 
 Branch: `recovery/phase-a-repo-reconciliation`
 
-Milestone 4 deterministic schedule/adaptation behavior is implemented with transactional plan mutations, weekly calendar navigation, optional workout reminders, missed-work choices, and expanded automated coverage.
+**Initial completion (`4543573`) required a corrective pass.** The first claim used a two-save plan mutation sequence, schedule-apply profile ordering bug, reminder time drift on date moves, missing undo reminder reconciliation, adherence under-counting local completions, adjustment discard keyed to start date, missed-work apply without preview, and a production-shipped mock scheduler.
+
+**Corrective pass closed all eight verified findings** with production-path regression tests and single-save atomic commits.
 
 ### Implemented
 - Weekly calendar (current ±1 week) from Plan with accessible move-date flow and warning overrides
-- Transactional move/skip/convert/regenerate/adjust/undo: persist plan first, then `PlanChange`, Watch publish and success UI only after durable save
-- Optional scheduled time + local reminder via injectable `WorkoutReminderScheduling` boundary
-- Manage Plan preview-before-apply with history preservation via existing reconciler
-- Not Feeling 100% overlay: create/edit/end/discard with base-plan preservation
-- Missed-work choices: skip, move eligible, extend non-race plans (no silent stacking)
-- Weekly load deduplication; adherence counts confirmed matches only
+- **Atomic** move/skip/convert/regenerate/adjust/undo: stage `PlanChange` in the same `ModelContext`, one `repository.save()` commits application state and plan-change history together; Watch publish, success UI, and reminder reconciliation only after that save succeeds
+- Reminder wall-clock time derived from hour/minute components (`WorkoutReminderRules.scheduledTimeMinutes`); post-commit `WorkoutReminderReconciliation` diff for move/regenerate/missed-work/undo
+- Manage Plan preview-before-apply; profile assignment occurs inside the mutation closure so rollback restores the original profile
+- Not Feeling 100% overlay with `N100Adjustment.createdAt` for discard-on-creation-day; legacy payloads without `createdAt` decode safely and cannot discard
+- Missed-work Apply requires a current preview matching the selected choice and situation
+- Weekly load deduplication; adherence counts phone/Watch completions and confirmed external matches once
+- `MockWorkoutReminderScheduler` moved to `WrathspeedTests` only
 
-### Automated evidence
+### Automated evidence (corrective pass)
 
 ```bash
 git diff --check
 # → clean
 
 swift test --package-path WrathspeedCore
-# → 33 XCTest + 81 Swift Testing (@Test), 0 failures
+# → 46 XCTest + 88 Swift Testing (@Test), 0 failures
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
   test -only-testing:WrathspeedTests \
-  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-derived
-# → 137 tests, 0 failures
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-corrective-derived
+# → 147 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
   test -only-testing:WrathspeedUITests \
-  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-derived
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-corrective-derived
 # → 4 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed -configuration Debug \
   -destination 'generic/platform=iOS Simulator' build \
-  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-derived
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-corrective-derived
 # → BUILD SUCCEEDED
 
 xcodebuild -scheme Wrathspeed -configuration Release \
   -destination 'generic/platform=iOS Simulator' build \
-  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-derived
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-m4-corrective-derived
 # → BUILD SUCCEEDED
 
-nm /tmp/wrathspeed-m4-derived/Build/Products/Release-iphonesimulator/Wrathspeed.app/Wrathspeed | grep testing_
-# → no DEBUG seam symbols
+nm /tmp/wrathspeed-m4-corrective-derived/Build/Products/Release-iphonesimulator/Wrathspeed.app/Wrathspeed | grep -E 'testing_|ForTesting|MockWorkoutReminderScheduler'
+# → no matches
 ```
 
 Simulator: iPhone 17 Pro, iOS 26.0 (`C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F`)

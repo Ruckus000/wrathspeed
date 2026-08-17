@@ -99,9 +99,11 @@ struct WorkoutMoveDateSheet: View {
     }
 
     private func reminderMinutes() -> Int {
-        let day = Calendar.current.startOfDay(for: selectedDate)
-        let delta = reminderTime.timeIntervalSince(day)
-        return max(0, min(Int(delta / 60), (24 * 60) - 1))
+        let components = Calendar.current.dateComponents([.hour, .minute], from: reminderTime)
+        return WorkoutReminderRules.scheduledTimeMinutes(
+            hour: components.hour ?? 0,
+            minute: components.minute ?? 0
+        )
     }
 }
 

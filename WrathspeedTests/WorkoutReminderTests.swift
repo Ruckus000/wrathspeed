@@ -48,7 +48,7 @@ final class WorkoutReminderTests: XCTestCase {
         let workout = try XCTUnwrap(store.plan?.workouts.first)
 
         store.move(workout, to: tomorrow, scheduledTimeMinutes: 420, reminderEnabled: true)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        await store.awaitReminderReconciliation()
         XCTAssertEqual(store.plan?.workouts.first?.blueprint.date, Calendar.current.startOfDay(for: tomorrow))
         XCTAssertNotNil(store.reminderNotice)
         XCTAssertTrue(reminder.scheduled.isEmpty)
@@ -76,7 +76,64 @@ final class WorkoutReminderTests: XCTestCase {
         let workout = try XCTUnwrap(store.plan?.workouts.first)
         store.setForceSaveFailureAfterMutationForTesting(true)
         store.move(workout, to: Calendar.current.date(byAdding: .day, value: 2, to: Date())!, scheduledTimeMinutes: 420, reminderEnabled: true)
-        try await Task.sleep(nanoseconds: 100_000_000)
+        await store.awaitReminderReconciliation()
         XCTAssertTrue(reminder.scheduled.isEmpty)
+    }
+
+    func testMoveWithEnabledReminderSchedulesOnce() async throws {
+        let reminder = MockWorkoutReminderScheduler()
+        let (store, _) = try makeStore(reminder: reminder)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+        store.plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [
+                ScheduledWorkout(blueprint: WorkoutBlueprint(
+                    date: Date(),
+                    kind: .easy,
+                    title: "Easy",
+                    steps: [],
+                    plannedDistanceMeters: 5_000,
+                    usesPaceTargets: true
+                )),
+            ]
+        )
+        store.profile = store.plan?.profile
+        store.save()
+        let workout = try XCTUnwrap(store.plan?.workouts.first)
+        store.move(workout, to: tomorrow, scheduledTimeMinutes: 420, reminderEnabled: true)
+        await store.awaitReminderReconciliation()
+        XCTAssertEqual(reminder.scheduled.count, 1)
+    }
+
+    func testUndoMoveRestoresOriginalReminder() async throws {
+        let reminder = MockWorkoutReminderScheduler()
+        let (store, _) = try makeStore(reminder: reminder)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+        let originalDay = Calendar.current.startOfDay(for: Date())
+        var workout = ScheduledWorkout(blueprint: WorkoutBlueprint(
+            date: originalDay,
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        ))
+        workout.reminderEnabled = true
+        workout.scheduledTimeMinutes = 420
+        store.plan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .intermediate, daysPerWeek: 4, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: [workout]
+        )
+        store.profile = store.plan?.profile
+        store.save()
+        let scheduled = try XCTUnwrap(store.plan?.workouts.first)
+        store.move(scheduled, to: tomorrow, scheduledTimeMinutes: 420, reminderEnabled: true)
+        await store.awaitReminderReconciliation()
+        store.undoLastPlanChange()
+        await store.awaitReminderReconciliation()
+        let fireDate = try XCTUnwrap(reminder.scheduled[scheduled.id])
+        XCTAssertEqual(Calendar.current.startOfDay(for: fireDate), originalDay)
     }
 }

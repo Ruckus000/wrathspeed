@@ -166,6 +166,7 @@ struct MissedWorkSheet: View {
     let situation: MissedWorkSituation
     @State private var selectedChoice: MissedWorkChoice = .skipMissed
     @State private var preview: MissedWorkPreview?
+    @State private var confirmedPreview: MissedWorkPreview?
     @State private var errorMessage: String?
 
     var body: some View {
@@ -202,6 +203,7 @@ struct MissedWorkSheet: View {
 
             WSOutlineButton(title: "PREVIEW") {
                 preview = store.previewMissedWork(choice: selectedChoice, situation: situation)
+                confirmedPreview = preview
                 errorMessage = nil
             }
             .padding(.top, 16)
@@ -209,12 +211,13 @@ struct MissedWorkSheet: View {
 
             WSPrimaryButton(title: "APPLY") {
                 do {
-                    try store.applyMissedWork(choice: selectedChoice, situation: situation)
+                    try store.applyMissedWork(choice: selectedChoice, situation: situation, preview: confirmedPreview)
                     dismiss()
                 } catch {
                     errorMessage = error.localizedDescription
                 }
             }
+            .disabled(confirmedPreview == nil)
             .padding(.top, 10)
             .accessibilityIdentifier("missed_work_apply")
         }
@@ -228,6 +231,7 @@ struct MissedWorkSheet: View {
         WSSelectRow(title: title, selected: selectedChoice == choice) {
             selectedChoice = choice
             preview = nil
+            confirmedPreview = nil
         } accessory: { EmptyView() }
         .accessibilityIdentifier("missed_work_choice_\(choiceAccessibilityID(choice))")
     }

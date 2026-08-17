@@ -19,6 +19,26 @@ final class WorkoutReminderRulesTests: XCTestCase {
         XCTAssertEqual(calendar.component(.minute, from: fire!), 30)
     }
 
+    func testScheduledTimeMinutesFromClockComponents() {
+        XCTAssertEqual(WorkoutReminderRules.scheduledTimeMinutes(hour: 7, minute: 0), 420)
+        XCTAssertEqual(WorkoutReminderRules.scheduledTimeMinutes(hour: 18, minute: 30), 1_110)
+        XCTAssertEqual(WorkoutReminderRules.scheduledTimeMinutes(hour: 0, minute: 0), 0)
+        XCTAssertEqual(WorkoutReminderRules.scheduledTimeMinutes(hour: 23, minute: 59), 1_439)
+    }
+
+    func testScheduledTimeMinutesIgnoresDatePortion() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let originalDay = calendar.date(from: DateComponents(year: 2026, month: 3, day: 10, hour: 7, minute: 0))!
+        let laterDay = calendar.date(from: DateComponents(year: 2026, month: 3, day: 17, hour: 7, minute: 0))!
+        let originalComponents = calendar.dateComponents([.hour, .minute], from: originalDay)
+        let laterComponents = calendar.dateComponents([.hour, .minute], from: laterDay)
+        XCTAssertEqual(
+            WorkoutReminderRules.scheduledTimeMinutes(hour: laterComponents.hour!, minute: laterComponents.minute!),
+            WorkoutReminderRules.scheduledTimeMinutes(hour: originalComponents.hour!, minute: originalComponents.minute!)
+        )
+    }
+
     func testLegacyWorkoutPayloadDecodesWithoutReminderFields() throws {
         struct LegacyPayload: Codable {
             var id: UUID

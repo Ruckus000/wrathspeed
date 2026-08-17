@@ -140,12 +140,29 @@ public struct N100Adjustment: Codable, Equatable, Sendable {
     public var dayCount: Int
     public var mode: N100Mode
     public var returnPace: N100Return
+    public var createdAt: Date?
 
-    public init(start: Date, dayCount: Int, mode: N100Mode, returnPace: N100Return) {
+    public init(
+        start: Date,
+        dayCount: Int,
+        mode: N100Mode,
+        returnPace: N100Return,
+        createdAt: Date? = nil
+    ) {
         self.start = start
         self.dayCount = min(14, max(3, dayCount))
         self.mode = mode
         self.returnPace = returnPace
+        self.createdAt = createdAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        start = try container.decode(Date.self, forKey: .start)
+        dayCount = try container.decode(Int.self, forKey: .dayCount)
+        mode = try container.decode(N100Mode.self, forKey: .mode)
+        returnPace = try container.decode(N100Return.self, forKey: .returnPace)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
     }
 
     public func windowEnd(calendar: Calendar) -> Date {
@@ -191,7 +208,8 @@ public enum NotFeeling100Rules {
         createdOn: Date,
         calendar: Calendar = .current
     ) -> Bool {
-        calendar.isDate(adjustment.start, inSameDayAs: createdOn)
+        guard let createdAt = adjustment.createdAt else { return false }
+        return calendar.isDate(createdAt, inSameDayAs: createdOn)
     }
 
     public static func apply(

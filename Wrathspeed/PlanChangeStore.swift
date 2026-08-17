@@ -3,23 +3,32 @@ import SwiftData
 import WrathspeedCore
 
 enum PlanChangeStore {
-    static func append(_ change: PlanChange, to context: ModelContext) throws {
+    struct Entry {
+        let change: PlanChange
+        let entity: PlanChangeEntity
+    }
+
+    static func stageAppend(_ change: PlanChange, to context: ModelContext) throws {
         let payload = try VersionedPayload.encode(change)
         context.insert(PlanChangeEntity(id: change.id, payloadData: payload, timestamp: change.timestamp))
-        try context.save()
     }
 
-    static func latest(in context: ModelContext) throws -> PlanChange? {
+    static func latestEntry(in context: ModelContext) throws -> Entry? {
         let entities = try context.fetch(FetchDescriptor<PlanChangeEntity>())
-        guard let latest = entities.max(by: { $0.timestamp < $1.timestamp }) else { return nil }
-        return try VersionedPayload.decode(PlanChange.self, from: latest.payloadData)
+        guard let latest = entities.max(by: compareEntities) else { return nil }
+        let change = try VersionedPayload.decode(PlanChange.self, from: latest.payloadData)
+        return Entry(change: change, entity: latest)
     }
 
-    static func removeLatest(in context: ModelContext) throws {
-        let entities = try context.fetch(FetchDescriptor<PlanChangeEntity>())
-        guard let latest = entities.max(by: { $0.timestamp < $1.timestamp }) else { return }
-        context.delete(latest)
-        try context.save()
+    static func stageRemove(_ entity: PlanChangeEntity, in context: ModelContext) {
+        context.delete(entity)
+    }
+
+    private static func compareEntities(_ lhs: PlanChangeEntity, _ rhs: PlanChangeEntity) -> Bool {
+        if lhs.timestamp != rhs.timestamp {
+            return lhs.timestamp < rhs.timestamp
+        }
+        return lhs.id.uuidString < rhs.id.uuidString
     }
 }
 

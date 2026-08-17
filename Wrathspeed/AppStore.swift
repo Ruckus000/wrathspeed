@@ -270,15 +270,6 @@ final class AppStore {
             kind: .move,
             affected: [workout.id],
             successToast: "WORKOUT MOVED",
-            reminderWork: {
-                await self.syncReminder(
-                    workoutID: workout.id,
-                    workoutDay: targetDay,
-                    title: workout.blueprint.title,
-                    scheduledTimeMinutes: reminderEnabled ? scheduledTimeMinutes : nil,
-                    reminderEnabled: reminderEnabled
-                )
-            },
             mutate: {
                 try updateWorkoutInPlan(workout.id) { current in
                     var copy = current
@@ -293,32 +284,33 @@ final class AppStore {
 
     func undoLastPlanChange() {
         guard let context = modelContext,
-              let change = try? PlanChangeStore.latest(in: context),
-              let snapshotData = change.previousSnapshot,
+              let entry = try? PlanChangeStore.latestEntry(in: context),
+              let snapshotData = entry.change.previousSnapshot,
               let snapshot = try? JSONDecoder().decode(PlanUndoSnapshot.self, from: snapshotData)
         else { return }
 
         let previous = capturePlanMutationSnapshot()
+        let workoutsBefore = plan?.workouts ?? []
         plan = snapshot.plan
         n100 = snapshot.n100
         do {
+            PlanChangeStore.stageRemove(entry.entity, in: context)
             try persistThrowing()
-            try PlanChangeStore.removeLatest(in: context)
-            pushWatchWorkouts()
-            showToast("UNDONE")
-            lastUndoDescription = nil
         } catch {
             restorePlanMutationSnapshot(previous)
             errorMessage = "Couldn't undo the last change: \(error.localizedDescription)"
+            return
         }
+
+        pushWatchWorkouts()
+        showToast("UNDONE")
+        lastUndoDescription = nil
+        reconcileReminders(before: workoutsBefore, after: plan?.workouts ?? [])
     }
 
-    private func appendPlanChange(_ change: PlanChange) throws {
+    private func stagePlanChange(_ change: PlanChange) throws {
         guard let context = modelContext else { throw AppPersistenceError.storageUnavailable }
-        if repository?.forcePlanChangeFailure == true {
-            throw NSError(domain: "WrathspeedTests", code: 3, userInfo: [NSLocalizedDescriptionKey: "Simulated plan change failure"])
-        }
-        try PlanChangeStore.append(change, to: context)
+        try PlanChangeStore.stageAppend(change, to: context)
         lastUndoDescription = change.description
     }
 
@@ -340,12 +332,17 @@ final class AppStore {
             kind: .adjustment,
             affected: [],
             successToast: "PLAN ADJUSTED FOR \(adjustment.dayCount) DAYS · RETURN: \(adjustment.returnPace.title.uppercased())",
-            mutate: { n100 = adjustment }
+            mutate: {
+                var stored = adjustment
+                stored.createdAt = n100?.createdAt ?? Date()
+                n100 = stored
+            }
         )
     }
 
-    func endNotFeeling100() {
-        guard n100 != nil else { return }
+    @discardableResult
+    func endNotFeeling100() -> Bool {
+        guard n100 != nil else { return false }
         performPlanMutation(
             description: "Ended not feeling 100%",
             kind: .adjustment,
@@ -353,13 +350,15 @@ final class AppStore {
             successToast: "ADJUSTMENT ENDED",
             mutate: { n100 = nil }
         )
+        return errorMessage == nil
     }
 
-    func discardNotFeeling100IfCreationDay() {
+    @discardableResult
+    func discardNotFeeling100IfCreationDay() -> Bool {
         guard let adjustment = n100,
               NotFeeling100Rules.canDiscardOnCreationDay(adjustment: adjustment, createdOn: Date())
-        else { return }
-        endNotFeeling100()
+        else { return false }
+        return endNotFeeling100()
     }
 
     func previewMissedWork(choice: MissedWorkChoice, situation: MissedWorkSituation) -> MissedWorkPreview? {
@@ -367,8 +366,13 @@ final class AppStore {
         return MissedWorkService.preview(choice: choice, plan: plan, situation: situation)
     }
 
-    func applyMissedWork(choice: MissedWorkChoice, situation: MissedWorkSituation) throws {
+    func applyMissedWork(choice: MissedWorkChoice, situation: MissedWorkSituation, preview: MissedWorkPreview?) throws {
         guard let currentPlan = plan else { return }
+        guard let preview,
+              preview == MissedWorkService.preview(choice: choice, plan: currentPlan, situation: situation)
+        else {
+            throw MissedWorkApplyError.previewRequired
+        }
         switch choice {
         case .skipMissed:
             performPlanMutation(
@@ -416,6 +420,11 @@ final class AppStore {
     private enum MissedWorkExtendError: LocalizedError {
         case racePlan
         var errorDescription: String? { "Race plans can't be extended through missed-work choices." }
+    }
+
+    enum MissedWorkApplyError: LocalizedError {
+        case previewRequired
+        var errorDescription: String? { "Preview missed-work changes before applying." }
     }
 
     func acceptVDOTSuggestion() {
@@ -851,18 +860,19 @@ final class AppStore {
     }
 
     func applyManagePlanSchedule(days: Set<Weekday>, daysPerWeek: Int, longRunDay: Weekday) throws {
-        guard var profile else { throw PlanInputError.invalidWeeklyMileage }
-        profile.availableWeekdays = days.sorted()
-        profile.daysPerWeek = daysPerWeek
-        profile.longRunWeekday = longRunDay
-        self.profile = profile
+        guard profile != nil else { throw PlanInputError.invalidWeeklyMileage }
+        var proposedProfile = profile!
+        proposedProfile.availableWeekdays = days.sorted()
+        proposedProfile.daysPerWeek = daysPerWeek
+        proposedProfile.longRunWeekday = longRunDay
         performPlanMutation(
             description: "Updated schedule",
             kind: .scheduleRegeneration,
             affected: [],
             successToast: nil,
             mutate: {
-                let generated = try buildRegeneratedSchedule(profile: profile)
+                self.profile = proposedProfile
+                let generated = try buildRegeneratedSchedule(profile: proposedProfile)
                 plan = generated.plan
                 strengthSessions = generated.strengthSessions
             }
@@ -1315,6 +1325,12 @@ final class AppStore {
         lastUndoDescription = snapshot.lastUndoDescription
     }
 
+    private var reminderReconciliationTask: Task<Void, Never>?
+
+    func awaitReminderReconciliation() async {
+        await reminderReconciliationTask?.value
+    }
+
     private func performPlanMutation(
         description: String,
         kind: PlanChangeKind,
@@ -1322,46 +1338,34 @@ final class AppStore {
         successToast: String?,
         publishesWatch: Bool = true,
         evaluateAdaptationAfter: Bool = false,
-        reminderWork: (() async -> Void)? = nil,
         mutate: () throws -> Void
     ) {
         guard plan != nil else { return }
         let snapshot = capturePlanMutationSnapshot()
+        let workoutsBefore = plan?.workouts ?? []
         let undoSnapshot = PlanUndoSnapshot(plan: plan!, n100: n100)
         guard let undoData = try? JSONEncoder().encode(undoSnapshot) else {
             errorMessage = "Couldn't record plan change."
             return
         }
 
+        let change = PlanChange(
+            kind: kind,
+            affectedWorkoutIDs: affected,
+            previousSnapshot: undoData,
+            description: description
+        )
+
         do {
             try mutate()
             if evaluateAdaptationAfter {
                 evaluateAdaptation(shouldPersist: false)
             }
+            try stagePlanChange(change)
             try persistThrowing()
         } catch {
             restorePlanMutationSnapshot(snapshot)
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "Couldn't save training data: \(error.localizedDescription)"
-            return
-        }
-
-        do {
-            let change = PlanChange(
-                kind: kind,
-                affectedWorkoutIDs: affected,
-                previousSnapshot: undoData,
-                description: description
-            )
-            try appendPlanChange(change)
-        } catch {
-            restorePlanMutationSnapshot(snapshot)
-            do {
-                try persistThrowing()
-            } catch {
-                errorMessage = "Couldn't restore your plan after a save error."
-                return
-            }
-            errorMessage = "Couldn't record plan change."
             return
         }
 
@@ -1372,9 +1376,7 @@ final class AppStore {
             showToast(successToast)
         }
         offerUndo()
-        if let reminderWork {
-            Task { await reminderWork() }
-        }
+        reconcileReminders(before: workoutsBefore, after: plan?.workouts ?? [])
     }
 
     private func updateWorkoutInPlan(_ id: UUID, transform: (ScheduledWorkout) -> ScheduledWorkout) throws {
@@ -1385,35 +1387,36 @@ final class AppStore {
         plan = currentPlan
     }
 
-    private func syncReminder(
-        workoutID: UUID,
-        workoutDay: Date,
-        title: String,
-        scheduledTimeMinutes: Int?,
-        reminderEnabled: Bool
-    ) async {
-        reminderNotice = nil
-        if !reminderEnabled {
-            await reminderScheduler.cancelReminder(workoutID: workoutID)
-            return
+    private func reconcileReminders(before: [ScheduledWorkout], after: [ScheduledWorkout]) {
+        let operations = WorkoutReminderReconciliation.operations(
+            before: before,
+            after: after,
+            calendar: Calendar.current
+        )
+        guard !operations.isEmpty else { return }
+        reminderReconciliationTask = Task {
+            await executeReminderOperations(operations)
         }
-        guard let minutes = scheduledTimeMinutes,
-              let fireDate = WorkoutReminderRules.fireDate(
-                workoutDay: workoutDay,
-                scheduledTimeMinutes: minutes,
-                calendar: Calendar.current
-              )
-        else { return }
+    }
 
-        let granted = await reminderScheduler.requestAuthorizationIfNeeded()
-        guard granted else {
-            reminderNotice = WorkoutReminderSchedulingError.permissionDenied.errorDescription
-            return
-        }
-        do {
-            try await reminderScheduler.scheduleReminder(workoutID: workoutID, fireDate: fireDate, title: title)
-        } catch {
-            reminderNotice = (error as? LocalizedError)?.errorDescription ?? WorkoutReminderSchedulingError.schedulingFailed.errorDescription
+    private func executeReminderOperations(_ operations: [WorkoutReminderOperation]) async {
+        reminderNotice = nil
+        for operation in operations {
+            switch operation {
+            case .cancel(let workoutID):
+                await reminderScheduler.cancelReminder(workoutID: workoutID)
+            case .schedule(let workoutID, let fireDate, let title):
+                let granted = await reminderScheduler.requestAuthorizationIfNeeded()
+                guard granted else {
+                    reminderNotice = WorkoutReminderSchedulingError.permissionDenied.errorDescription
+                    continue
+                }
+                do {
+                    try await reminderScheduler.scheduleReminder(workoutID: workoutID, fireDate: fireDate, title: title)
+                } catch {
+                    reminderNotice = (error as? LocalizedError)?.errorDescription ?? WorkoutReminderSchedulingError.schedulingFailed.errorDescription
+                }
+            }
         }
     }
 
