@@ -446,7 +446,7 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
     public var state: ActiveSessionState
     public var startedAt: Date?
     /// Stable identity for a single startup attempt before HealthKit recording begins.
-    public var startupAttemptMs: Int64?
+    public var startupAttemptID: String?
     public var elapsedSeconds: TimeInterval
     public var distanceMeters: Double
     public var stepIndex: Int
@@ -460,8 +460,8 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         case source
         case state
         case startedAt
+        case startupAttemptID
         case startupAttemptMs
-        case startupAttemptAt
         case elapsedSeconds
         case distanceMeters
         case stepIndex
@@ -476,7 +476,7 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         source: WorkoutSource,
         state: ActiveSessionState,
         startedAt: Date? = nil,
-        startupAttemptMs: Int64? = nil,
+        startupAttemptID: String? = nil,
         elapsedSeconds: TimeInterval = 0,
         distanceMeters: Double = 0,
         stepIndex: Int = 0,
@@ -489,7 +489,7 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         self.source = source
         self.state = state
         self.startedAt = startedAt
-        self.startupAttemptMs = startupAttemptMs
+        self.startupAttemptID = startupAttemptID
         self.elapsedSeconds = elapsedSeconds
         self.distanceMeters = distanceMeters
         self.stepIndex = stepIndex
@@ -498,8 +498,8 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         self.healthSync = healthSync
     }
 
-    public static func startupAttemptMs(from date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1_000).rounded())
+    public static func legacyStartupAttemptID(fromMs ms: Int64) -> String {
+        "legacy-ms:\(ms)"
     }
 
     public init(from decoder: Decoder) throws {
@@ -509,12 +509,12 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         source = try values.decode(WorkoutSource.self, forKey: .source)
         state = try values.decode(ActiveSessionState.self, forKey: .state)
         startedAt = try values.decodeIfPresent(Date.self, forKey: .startedAt)
-        if let attemptMs = try values.decodeIfPresent(Int64.self, forKey: .startupAttemptMs) {
-            startupAttemptMs = attemptMs
-        } else if let legacyAttempt = try values.decodeIfPresent(Date.self, forKey: .startupAttemptAt) {
-            startupAttemptMs = Self.startupAttemptMs(from: legacyAttempt)
+        if let attemptID = try values.decodeIfPresent(String.self, forKey: .startupAttemptID) {
+            startupAttemptID = attemptID
+        } else if let attemptMs = try values.decodeIfPresent(Int64.self, forKey: .startupAttemptMs) {
+            startupAttemptID = Self.legacyStartupAttemptID(fromMs: attemptMs)
         } else {
-            startupAttemptMs = nil
+            startupAttemptID = nil
         }
         elapsedSeconds = try values.decodeIfPresent(TimeInterval.self, forKey: .elapsedSeconds) ?? 0
         distanceMeters = try values.decodeIfPresent(Double.self, forKey: .distanceMeters) ?? 0
@@ -531,7 +531,7 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         try container.encode(source, forKey: .source)
         try container.encode(state, forKey: .state)
         try container.encodeIfPresent(startedAt, forKey: .startedAt)
-        try container.encodeIfPresent(startupAttemptMs, forKey: .startupAttemptMs)
+        try container.encodeIfPresent(startupAttemptID, forKey: .startupAttemptID)
         try container.encode(elapsedSeconds, forKey: .elapsedSeconds)
         try container.encode(distanceMeters, forKey: .distanceMeters)
         try container.encode(stepIndex, forKey: .stepIndex)

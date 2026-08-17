@@ -49,7 +49,7 @@ final class WorkoutSessionController: NSObject {
     private var splitMarkedDistance = 0.0
     private var splitMarkedElapsed: TimeInterval = 0
     private var activeStartupID: UInt?
-    private var startupAttemptMs: Int64?
+    private var startupAttemptID: String?
     private var pendingStartup: PendingStartup?
 
     private struct PendingStartup {
@@ -217,12 +217,16 @@ final class WorkoutSessionController: NSObject {
         try Task.checkCancellation()
     }
 
-    private func newStartupAttemptMs() -> Int64 {
-        ActiveSessionSnapshot.startupAttemptMs(from: Date())
+    private func newStartupAttemptID() -> String {
+        UUID().uuidString
     }
 
     private func runPostCountdownStartup(configuration: HKWorkoutConfiguration, startupID: UInt?) async throws {
-        startupAttemptMs = newStartupAttemptMs()
+        guard mayContinueStartup(startupID) else {
+            try handleInactiveStartupBeforeCountdown(startupID: startupID)
+            return
+        }
+        startupAttemptID = newStartupAttemptID()
         sessionState = .countdown
         publishSnapshot()
         #if os(iOS)
@@ -266,44 +270,27 @@ final class WorkoutSessionController: NSObject {
         stepper = nil
         launchState = .idle
         sessionState = .preparing
-        startupAttemptMs = nil
+        startupAttemptID = nil
     }
 
-    @discardableResult
-    private func discardIfStartupInactive(
-        _ startupID: UInt?,
-        session sessionToDiscard: HKWorkoutSession,
-        builder builderToDiscard: HKLiveWorkoutBuilder
-    ) -> Bool {
-        guard !mayContinueStartup(startupID) else { return false }
-        discardMatchingPendingStartup(sessionToDiscard, builder: builderToDiscard)
-        if ownsStartup(startupID) {
-            cleanupOwnedStartupFailure(startupID: startupID)
-        } else if pendingStartup == nil, activeStartupID == nil, !isRunning, sessionState != .finishing {
-            emitTerminalStartupClearIfNeeded()
-            clearPendingLaunchState()
+    private func afterHealthKitStartupAwait(
+        startupID: UInt?,
+        session sessionCaptured: HKWorkoutSession,
+        builder builderCaptured: HKLiveWorkoutBuilder
+    ) throws {
+        do {
+            try Task.checkCancellation()
+        } catch {
+            discardMatchingPendingStartup(sessionCaptured, builder: builderCaptured)
+            throw error
         }
-        return true
+        guard ownsStartup(startupID) else {
+            discardMatchingPendingStartup(sessionCaptured, builder: builderCaptured)
+            throw StartupSupersededError()
+        }
     }
 
-    /// Discards this pair if it is still the pending startup. Returns true when startup was cancelled/stale.
-    private func discardPendingStartupForFailure(
-        _ startupID: UInt?,
-        session sessionToDiscard: HKWorkoutSession,
-        builder builderToDiscard: HKLiveWorkoutBuilder
-    ) -> Bool {
-        let superseded = !ownsStartup(startupID)
-        discardMatchingPendingStartup(sessionToDiscard, builder: builderToDiscard)
-        if superseded {
-            if pendingStartup == nil, activeStartupID == nil, !isRunning, sessionState != .finishing {
-                emitTerminalStartupClearIfNeeded()
-                clearPendingLaunchState()
-            }
-            return true
-        }
-        cleanupOwnedStartupFailure(startupID: startupID)
-        return false
-    }
+    private struct StartupSupersededError: Error {}
 
     private func cleanupOwnedStartupFailure(startupID: UInt?) {
         guard ownsStartup(startupID) else { return }
@@ -327,6 +314,9 @@ final class WorkoutSessionController: NSObject {
     ) {
         guard pendingStartup?.session === sessionToDiscard else { return }
         pendingStartup = nil
+        #if DEBUG
+        testing_pendingStartupDiscardCount += 1
+        #endif
         discardPartialSession(sessionToDiscard, builder: builderToDiscard)
     }
 
@@ -361,6 +351,8 @@ final class WorkoutSessionController: NSObject {
     private var testing_forceBeginCollectionError: Error?
     private var testing_skipCountdownSleep = false
     private var testing_forceFinishSessionAvailable = false
+    private(set) var testing_pendingStartupDiscardCount = 0
+    var testing_onPendingStartupCreated: (() -> Void)?
     #endif
 
     var canAcceptMirroredSession: Bool {
@@ -468,19 +460,21 @@ final class WorkoutSessionController: NSObject {
         discardPendingStartup()
         pendingStartup = PendingStartup(session: session, builder: builder)
         #if DEBUG
-        if let testing_forceBeginCollectionError {
-            throw testing_forceBeginCollectionError
-        }
+        testing_onPendingStartupCreated?()
         #endif
         let start = Date()
         #if os(watchOS)
         do {
             try await session.startMirroringToCompanionDevice()
         } catch {
-            if discardPendingStartupForFailure(startupID, session: session, builder: builder) { return }
+            discardMatchingPendingStartup(session, builder: builder)
             throw error
         }
-        if discardIfStartupInactive(startupID, session: session, builder: builder) { return }
+        do {
+            try afterHealthKitStartupAwait(startupID: startupID, session: session, builder: builder)
+        } catch is StartupSupersededError {
+            return
+        }
         #endif
         session.startActivity(with: start)
         do {
@@ -491,15 +485,19 @@ final class WorkoutSessionController: NSObject {
             #endif
             try await builder.beginCollection(at: start)
         } catch {
-            if discardPendingStartupForFailure(startupID, session: session, builder: builder) { return }
+            discardMatchingPendingStartup(session, builder: builder)
             throw error
         }
-        if discardIfStartupInactive(startupID, session: session, builder: builder) { return }
+        do {
+            try afterHealthKitStartupAwait(startupID: startupID, session: session, builder: builder)
+        } catch is StartupSupersededError {
+            return
+        }
         pendingStartup = nil
         self.session = session
         self.builder = builder
         startedAt = start
-        startupAttemptMs = nil
+        startupAttemptID = nil
         isPrimary = true
         isRunning = true
         launchState = .recording
@@ -711,8 +709,8 @@ final class WorkoutSessionController: NSObject {
             source: resultSource,
             state: clear ? .saved : sessionState,
             startedAt: startedAt,
-            startupAttemptMs: (sessionState == .preparing || sessionState == .countdown || (clear && startupAttemptMs != nil))
-                ? startupAttemptMs
+            startupAttemptID: (sessionState == .preparing || sessionState == .countdown || (clear && startupAttemptID != nil))
+                ? startupAttemptID
                 : nil,
             elapsedSeconds: metrics.elapsed,
             distanceMeters: resolvedDistanceMeters(),
@@ -823,9 +821,17 @@ final class WorkoutSessionController: NSObject {
         activeStartupID = startupID
         self.blueprint = blueprint
         stepper = WorkoutStepper(blueprint: blueprint)
-        startupAttemptMs = newStartupAttemptMs()
+        startupAttemptID = newStartupAttemptID()
         sessionState = .countdown
         publishSnapshot()
+    }
+
+    func testing_publishTerminalStartupClear() {
+        publishSnapshot(clear: true)
+    }
+
+    var testing_hasPendingStartup: Bool {
+        pendingStartup != nil
     }
 
     func testing_prepareForPostCountdownStartup(startupID: UInt, blueprint: WorkoutBlueprint) {
@@ -833,6 +839,7 @@ final class WorkoutSessionController: NSObject {
         self.blueprint = blueprint
         stepper = WorkoutStepper(blueprint: blueprint)
         sessionState = .preparing
+        testing_pendingStartupDiscardCount = 0
     }
 
     func testing_runPostCountdownStartup(configuration: HKWorkoutConfiguration, startupID: UInt) async throws {

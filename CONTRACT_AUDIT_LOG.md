@@ -255,7 +255,7 @@ UI tests were not run for this slice.
 
 ## Phase B2 — HealthKit / Watch session lifecycle hardening (Aug 16, 2026)
 
-Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 corrective commit
+Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 final correction
 
 **Phase B2 deterministic lifecycle implementation complete; physical-Watch acceptance remains a release gate.**
 
@@ -263,15 +263,18 @@ Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 corrective commit
 
 1. **Remote End ordering** — `end()` captures `sessionToEnd` once, awaits `sendEndToRemote(through:)` before `localStopEnd`, send failure/cancellation does not block local stop/end/finish, remote-originated End does not echo, overlapping finish paths remain at-most-once via `beginFinishingIfNeeded()`.
 2. **Mirrored-session admission** — rejects pre-countdown local startup ownership (`activeStartupID` while not `.waitingForWatch`); accepts expected mirror during `.waitingForWatch`; rejects current/pending/countdown/recording/finishing/running cases; rejection does not mutate controller state or end the mirror.
-3. **Startup ownership vs liveness** — `ownsStartup(_:)` (generation ownership) is independent of `Task.isCancelled`; `mayContinueStartup(_:)` gates execution. `runPostCountdownStartup` wraps countdown→primary startup and routes all owned failures/cancellations through `handleOwnedPostCountdownError`, which cleans up recovery/controller state idempotently, preserves `CancellationError`, and stays silent for superseded generations.
-4. **Recovery attempt correlation** — optional `startupAttemptMs: Int64?` on `ActiveSessionSnapshot` identifies a single startup attempt before recording; terminal `.saved` clears stored `.preparing`/`.countdown` only when `matchesStartupTerminalClear(from:)` agrees on `workoutID`, `source`, and attempt identity. Legacy payloads without attempt identity match only when both sides lack it; mixed legacy/modern ambiguity does not clear a newer known attempt.
+3. **Single-owner post-countdown error policy** — `runPostCountdownStartup` / `handleOwnedPostCountdownError` are the only owners of global startup cleanup, terminal `.saved` emission, ownership clearing, and error propagation vs superseded silence. Before post-countdown work, `mayContinueStartup` gates attempt identity assignment and `.countdown` publication. Inner HealthKit paths (`startMirroringToCompanionDevice`, `builder.beginCollection`) capture the pending session/builder pair; on failure or post-await cancellation they call `discardMatchingPendingStartup` only and rethrow the original error; on supersession after a successful await they discard the matching pair and return silently via `StartupSupersededError`. Removed `discardPendingStartupForFailure` and `discardIfStartupInactive`.
+4. **UUID startup-attempt identity** — `startupAttemptID: String?` on `ActiveSessionSnapshot` uses `UUID().uuidString` for new attempts. Decode reads `startupAttemptID` directly; legacy `startupAttemptMs` decodes to `legacy-ms:<value>`; payloads with neither remain `nil`. Encode writes only `startupAttemptID`. `matchesStartupTerminalClear(from:)` compares equal non-nil IDs, allows dual-nil legacy match, and rejects nil/non-nil ambiguity. Recording snapshots omit the attempt ID.
+5. **Independent recovery evaluation** — `clearMatchingStartupRecovery` evaluates in-memory `pendingRecoverySnapshot` and persisted `ActiveSessionStore.load` independently; each clears only when `matchesStartupTerminalClear` returns true. No early return because the other representation is `.finishing`, `.recording`, or `.paused`.
 
 ### Tests exercising production policies
 
-- `SessionRecoveryTests` startup ownership cases call `testing_runPostCountdownStartup` (production `runPostCountdownStartup` + error policy), assert exact sentinel rethrows, and cover cancellation, pre-pending throw, pending-pair failure, superseded silence, idempotent cleanup, and explicit `cancelPendingLaunch`.
-- `SessionRecoveryTests` recovery correlation cases call `AppStore.handleSessionSnapshot` via `session.onSnapshot` with attempt-scoped terminals.
+- `SessionRecoveryTests.testCurrentPendingStartFailureCleansUpAndRethrowsOriginalError` and `testCancellationDuringBeginCollectionClearsRecoveryAndPropagates` inject via `testing_forceBeginCollectionError` inside the production `beginCollection` `do/catch` (not before pending-pair creation).
+- `SessionRecoveryTests.testSupersededBeginCollectionFailureIsSilentAndPreservesNewerAttempt` superseded during HealthKit stage via `testing_onPendingStartupCreated`.
+- `SessionRecoveryTests.testMatchingPendingPairDiscardedAtMostOnce` asserts `discardMatchingPendingStartup` runs once via `testing_pendingStartupDiscardCount`.
+- `SessionRecoveryTests.testInMemoryFinishingDoesNotBlockPersistedCountdownClear` covers independent in-memory vs persisted recovery clearing.
+- `WorkoutResultMergeTests` covers UUID attempt matching, legacy `startupAttemptMs` decode, dual-nil legacy match, and nil/non-nil ambiguity.
 - `CoachingMVPHardeningTests` End-ordering cases exercise real `end()` phase ordering; overlapping-finish case exercises production `beginFinishingIfNeeded()` gate (not a synthetic finish duplicate).
-- Removed misleading NSObject end-capture test and `testing_simulateFinishEntry` duplicate.
 
 ### Automated evidence
 
@@ -280,13 +283,13 @@ git diff --check
 # → clean
 
 swift test --package-path WrathspeedCore
-# → 84 tests in 15 suites, 0 failures
+# → 88 tests in 15 suites, 0 failures
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
   test -only-testing:WrathspeedTests/SessionRecoveryTests \
   CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
-# → 16 tests, 0 failures
+# → 22 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
@@ -296,9 +299,27 @@ xcodebuild -scheme Wrathspeed \
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests/WorkoutResultRecordTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 14 tests, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests/WorkoutResultRelaunchTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 10 tests, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
   test -only-testing:WrathspeedTests \
   CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
-# → 122 tests, 0 failures
+# → 128 tests, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedUITests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 2 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed -configuration Debug \
   -destination 'generic/platform=iOS Simulator' build \

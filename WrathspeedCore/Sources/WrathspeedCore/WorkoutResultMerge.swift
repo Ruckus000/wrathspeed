@@ -191,7 +191,7 @@ public extension ActiveSessionSnapshot {
         guard terminal.state == .saved else { return false }
         guard workoutID == terminal.workoutID, source == terminal.source else { return false }
         guard state == .preparing || state == .countdown else { return false }
-        switch (startupAttemptMs, terminal.startupAttemptMs) {
+        switch (startupAttemptID, terminal.startupAttemptID) {
         case let (stored?, terminal?):
             return stored == terminal
         case (nil, nil):

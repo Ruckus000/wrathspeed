@@ -961,19 +961,12 @@ final class AppStore {
     }
 
     private func clearMatchingStartupRecovery(for snapshot: ActiveSessionSnapshot, in context: ModelContext) {
-        if let pending = pendingRecoverySnapshot {
-            if pending.state == .finishing {
-                return
-            }
-            if pending.matchesStartupTerminalClear(from: snapshot) {
-                pendingRecoverySnapshot = nil
-            }
+        if let pending = pendingRecoverySnapshot,
+           pending.matchesStartupTerminalClear(from: snapshot) {
+            pendingRecoverySnapshot = nil
         }
-        guard let stored = try? ActiveSessionStore.load(from: context) else { return }
-        if stored.state == .finishing {
-            return
-        }
-        if stored.matchesStartupTerminalClear(from: snapshot) {
+        if let stored = try? ActiveSessionStore.load(from: context),
+           stored.matchesStartupTerminalClear(from: snapshot) {
             try? ActiveSessionStore.clear(from: context)
         }
     }
