@@ -4,15 +4,47 @@ import WrathspeedCore
 struct NotFeeling100View: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var days = 7
-    @State private var mode: N100Mode = .reducedDifficulty
-    @State private var returnPace: N100Return = .balanced
+    @State private var startDate: Date
+    @State private var days: Int
+    @State private var mode: N100Mode
+    @State private var returnPace: N100Return
+    @State private var errorMessage: String?
+
+    init() {
+        let existing = PersistedState.initial.n100
+        _startDate = State(initialValue: existing?.start ?? Date())
+        _days = State(initialValue: existing?.dayCount ?? 7)
+        _mode = State(initialValue: existing?.mode ?? .reducedDifficulty)
+        _returnPace = State(initialValue: existing?.returnPace ?? .balanced)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("NOT FEELING 100%")
                 .font(WSFont.display(30))
                 .foregroundStyle(WSColor.text)
+            if store.n100 != nil {
+                Text("ACTIVE ADJUSTMENT")
+                    .font(WSFont.mono(10))
+                    .tracking(1.5)
+                    .foregroundStyle(WSColor.accent)
+                    .padding(.top, 12)
+                WSOutlineButton(title: "END ADJUSTMENT") {
+                    store.endNotFeeling100()
+                    dismiss()
+                }
+                .padding(.top, 10)
+                .accessibilityIdentifier("n100_end_adjustment")
+            }
+            DatePicker(
+                "Start date",
+                selection: $startDate,
+                displayedComponents: .date
+            )
+            .datePickerStyle(.compact)
+            .tint(WSColor.accent)
+            .padding(.top, 16)
+            .accessibilityIdentifier("n100_start_date")
             HStack {
                 Text("DAYS")
                     .font(WSFont.ui(14, weight: .heavy))
@@ -46,13 +78,34 @@ struct NotFeeling100View: View {
                 }
             }
             .padding(.top, 10)
-            WSPrimaryButton(title: "APPLY", height: 54, fontSize: 19) {
-                store.applyNotFeeling100(
-                    N100Adjustment(start: Date(), dayCount: days, mode: mode, returnPace: returnPace)
-                )
-                dismiss()
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.accent)
+                    .padding(.top, 8)
+            }
+            WSPrimaryButton(title: store.n100 == nil ? "APPLY" : "UPDATE", height: 54, fontSize: 19) {
+                let adjustment = N100Adjustment(start: startDate, dayCount: days, mode: mode, returnPace: returnPace)
+                guard NotFeeling100Rules.isValidStart(start: startDate, dayCount: days) else {
+                    errorMessage = "That start date isn't valid for this adjustment."
+                    return
+                }
+                store.applyNotFeeling100(adjustment)
+                if store.errorMessage == nil { dismiss() }
+                else { errorMessage = store.errorMessage; store.errorMessage = nil }
             }
             .padding(.top, 20)
+            .accessibilityIdentifier("n100_apply")
+            if store.n100 != nil {
+                Button("DISCARD TODAY") {
+                    store.discardNotFeeling100IfCreationDay()
+                    dismiss()
+                }
+                .font(WSFont.ui(12, weight: .heavy))
+                .foregroundStyle(WSColor.destructive)
+                .padding(.top, 12)
+                .accessibilityIdentifier("n100_discard_today")
+            }
         }
         .padding(.horizontal, 24)
         .padding(.top, 22)
@@ -60,6 +113,14 @@ struct NotFeeling100View: View {
         .background(WSColor.bgSheet.ignoresSafeArea())
         .presentationDetents([.large])
         .presentationBackground(WSColor.bgSheet)
+        .onAppear {
+            if let active = store.n100 {
+                startDate = active.start
+                days = active.dayCount
+                mode = active.mode
+                returnPace = active.returnPace
+            }
+        }
     }
 }
 

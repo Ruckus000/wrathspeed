@@ -6,12 +6,18 @@ struct WorkoutMoveDateSheet: View {
     @Environment(\.dismiss) private var dismiss
     let workout: ScheduledWorkout
     @State private var selectedDate: Date
+    @State private var reminderEnabled: Bool
+    @State private var reminderTime: Date
     @State private var allowOverride = false
     @State private var validationMessage: String?
 
     init(workout: ScheduledWorkout) {
         self.workout = workout
         _selectedDate = State(initialValue: workout.date)
+        _reminderEnabled = State(initialValue: workout.reminderEnabled)
+        let minutes = workout.scheduledTimeMinutes ?? (7 * 60)
+        let base = Calendar.current.startOfDay(for: workout.date)
+        _reminderTime = State(initialValue: Calendar.current.date(byAdding: .minute, value: minutes, to: base) ?? workout.date)
     }
 
     var body: some View {
@@ -32,11 +38,36 @@ struct WorkoutMoveDateSheet: View {
             .datePickerStyle(.graphical)
             .tint(WSColor.accent)
             .padding(.top, 12)
+            .accessibilityIdentifier("move_workout_date_picker")
             .accessibilityLabel("Select new workout date")
+            Toggle(isOn: $reminderEnabled) {
+                Text("REMIND ME")
+                    .font(WSFont.ui(12, weight: .heavy))
+            }
+            .tint(WSColor.accent)
+            .padding(.top, 12)
+            .accessibilityIdentifier("move_workout_reminder_toggle")
+            if reminderEnabled {
+                DatePicker(
+                    "Reminder time",
+                    selection: $reminderTime,
+                    displayedComponents: .hourAndMinute
+                )
+                .datePickerStyle(.compact)
+                .tint(WSColor.accent)
+                .padding(.top, 8)
+                .accessibilityIdentifier("move_workout_time_picker")
+            }
             if let validationMessage {
                 Text(validationMessage)
                     .font(WSFont.mono(12))
                     .foregroundStyle(WSColor.accent)
+                    .padding(.top, 8)
+            }
+            if let notice = store.reminderNotice {
+                Text(notice)
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text70)
                     .padding(.top, 8)
             }
             Toggle(isOn: $allowOverride) {
@@ -45,17 +76,32 @@ struct WorkoutMoveDateSheet: View {
             }
             .tint(WSColor.accent)
             .padding(.top, 12)
+            .accessibilityIdentifier("move_workout_warning_override")
             WSPrimaryButton(title: "MOVE HERE") {
-                store.move(workout, to: selectedDate, allowWarnings: allowOverride)
+                let minutes = reminderEnabled ? reminderMinutes() : nil
+                store.move(
+                    workout,
+                    to: selectedDate,
+                    allowWarnings: allowOverride,
+                    scheduledTimeMinutes: minutes,
+                    reminderEnabled: reminderEnabled
+                )
                 if store.errorMessage == nil { dismiss() }
                 else { validationMessage = store.errorMessage; store.errorMessage = nil }
             }
             .padding(.top, 16)
+            .accessibilityIdentifier("move_workout_confirm")
         }
         .padding(.horizontal, 24)
         .padding(.top, 22)
         .padding(.bottom, 40)
         .background(WSColor.bgSheet.ignoresSafeArea())
+    }
+
+    private func reminderMinutes() -> Int {
+        let day = Calendar.current.startOfDay(for: selectedDate)
+        let delta = reminderTime.timeIntervalSince(day)
+        return max(0, min(Int(delta / 60), (24 * 60) - 1))
     }
 }
 
@@ -163,7 +209,12 @@ struct ManagePlanView: View {
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 20)
+            .accessibilityIdentifier("manage_plan_preview")
             WSPrimaryButton(title: "APPLY SCHEDULE") {
+                guard previewDiff != nil else {
+                    errorMessage = "Preview schedule changes before applying."
+                    return
+                }
                 do {
                     try store.applyManagePlanSchedule(days: days, daysPerWeek: daysPerWeek, longRunDay: longRun)
                     dismiss()
@@ -174,6 +225,7 @@ struct ManagePlanView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 10)
             .padding(.bottom, 40)
+            .accessibilityIdentifier("manage_plan_apply")
         }
     }
 

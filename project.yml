@@ -46,6 +46,7 @@ targets:
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: Wrathspeed saves completed runs and strength sessions to Apple Health.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs.
         INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: Wrathspeed records your outdoor route while a workout is active, including when the screen is locked.
+        INFOPLIST_KEY_NSUserNotificationsUsageDescription: Wrathspeed can remind you before a scheduled run when you enable a workout reminder.
         INFOPLIST_FILE: Wrathspeed/Info.plist
     entitlements:
       path: Wrathspeed/Wrathspeed.entitlements

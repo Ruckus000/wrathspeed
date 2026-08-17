@@ -198,6 +198,7 @@ final class AppStateRepository {
     var forceSaveFailure = false
     var forceSaveFailureAfterMutation = false
     var forceGuidedResultSaveFailure = false
+    var forcePlanChangeFailure = false
 
     init(context: ModelContext) {
         self.context = context

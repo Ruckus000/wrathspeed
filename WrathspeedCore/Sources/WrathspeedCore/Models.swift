@@ -19,6 +19,20 @@ public enum Weekday: Int, Codable, CaseIterable, Sendable, Comparable {
     public static func < (lhs: Weekday, rhs: Weekday) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
+
+    public var calendarWeekday: Int { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .sunday: "Sunday"
+        case .monday: "Monday"
+        case .tuesday: "Tuesday"
+        case .wednesday: "Wednesday"
+        case .thursday: "Thursday"
+        case .friday: "Friday"
+        case .saturday: "Saturday"
+        }
+    }
 }
 
 public enum DistanceUnit: String, Codable, CaseIterable, Sendable {
@@ -325,20 +339,40 @@ public struct ScheduledWorkout: Codable, Equatable, Sendable, Identifiable {
     public var blueprint: WorkoutBlueprint
     public var status: WorkoutStatus
     public var result: WorkoutResult?
+    public var scheduledTimeMinutes: Int?
+    public var reminderEnabled: Bool
 
     public init(
         id: UUID = UUID(),
         blueprint: WorkoutBlueprint,
         status: WorkoutStatus = .scheduled,
-        result: WorkoutResult? = nil
+        result: WorkoutResult? = nil,
+        scheduledTimeMinutes: Int? = nil,
+        reminderEnabled: Bool = false
     ) {
         self.id = id
         self.blueprint = blueprint
         self.status = status
         self.result = result
+        self.scheduledTimeMinutes = scheduledTimeMinutes
+        self.reminderEnabled = reminderEnabled
     }
 
     public var date: Date { blueprint.date }
+
+    enum CodingKeys: String, CodingKey {
+        case id, blueprint, status, result, scheduledTimeMinutes, reminderEnabled
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        blueprint = try values.decode(WorkoutBlueprint.self, forKey: .blueprint)
+        status = try values.decode(WorkoutStatus.self, forKey: .status)
+        result = try values.decodeIfPresent(WorkoutResult.self, forKey: .result)
+        scheduledTimeMinutes = try values.decodeIfPresent(Int.self, forKey: .scheduledTimeMinutes)
+        reminderEnabled = try values.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? false
+    }
 }
 
 public struct WorkoutSplit: Codable, Equatable, Sendable {

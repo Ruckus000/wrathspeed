@@ -5,6 +5,7 @@ struct PlanView: View {
     @Environment(AppStore.self) private var store
     @State private var selectedWorkout: ScheduledWorkout?
     @State private var selectedWeek: Date?
+    @State private var showMissedWork = false
 
     var body: some View {
         NavigationStack {
@@ -25,6 +26,19 @@ struct PlanView: View {
                         .accessibilityLabel("Undo last plan change")
                 }
                 NavigationLink {
+                    WeeklyCalendarView()
+                } label: {
+                    Text("WEEKLY CALENDAR")
+                        .font(WSFont.ui(12, weight: .heavy))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.text50)
+                }
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("plan_weekly_calendar")
+                .accessibilityLabel("Open weekly calendar")
+                NavigationLink {
                     if let profile = store.profile {
                         ManagePlanView(profile: profile)
                     }
@@ -39,6 +53,18 @@ struct PlanView: View {
                 .frame(minHeight: 44)
                 .accessibilityLabel("Manage plan schedule")
                 weekCalendar
+                if let situation = store.missedWorkSituation {
+                    Button("REVIEW MISSED WORK (\(situation.missedWorkouts.count))") {
+                        showMissedWork = true
+                    }
+                    .font(WSFont.ui(12, weight: .heavy))
+                    .tracking(1)
+                    .foregroundStyle(WSColor.accent)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 10)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("plan_missed_work")
+                }
                 WSProgressBar(progress: weekProgress)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
@@ -96,6 +122,11 @@ struct PlanView: View {
             }
             .sheet(item: $selectedWorkout) { workout in
                 WorkoutDetailSheet(workout: workout)
+            }
+            .sheet(isPresented: $showMissedWork) {
+                if let situation = store.missedWorkSituation {
+                    MissedWorkSheet(situation: situation)
+                }
             }
         }
     }
@@ -383,6 +414,7 @@ struct WorkoutDetailSheet: View {
             }
             HStack(spacing: 10) {
                 outline("MOVE DATE") { showMoveSheet = true }
+                    .accessibilityIdentifier("workout_move_date")
                 Button("SKIP") {
                     store.skip(workout)
                     dismiss()

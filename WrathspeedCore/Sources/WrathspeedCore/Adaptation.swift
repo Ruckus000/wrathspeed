@@ -76,13 +76,23 @@ public enum AdaptationRules {
         abs(to.timeIntervalSince(from)) <= 48 * 3600
     }
 
-    public static func wouldStackQuality(existing: [ScheduledWorkout], moving: ScheduledWorkout, to date: Date, calendar: Calendar) -> Bool {
+    public static func wouldCreateAdjacentQuality(
+        existing: [ScheduledWorkout],
+        moving: ScheduledWorkout,
+        to date: Date,
+        calendar: Calendar
+    ) -> Bool {
         guard moving.blueprint.kind.isQuality else { return false }
+        let target = calendar.startOfDay(for: date)
+        let adjacent = [
+            calendar.date(byAdding: .day, value: -1, to: target),
+            calendar.date(byAdding: .day, value: 1, to: target),
+        ].compactMap { $0 }
         return existing.contains { other in
             other.id != moving.id
                 && other.blueprint.kind.isQuality
-                && other.status == .scheduled
-                && calendar.isDate(other.date, inSameDayAs: date)
+                && (other.status == .scheduled || other.status == .convertedToEasy)
+                && adjacent.contains { calendar.isDate(other.date, inSameDayAs: $0) }
         }
     }
 }
@@ -150,6 +160,38 @@ public struct N100Adjustment: Codable, Equatable, Sendable {
 public enum NotFeeling100Rules {
     public static func isValidDayCount(_ count: Int) -> Bool {
         (3...14).contains(count)
+    }
+
+    public static func isValidStart(
+        start: Date,
+        dayCount: Int,
+        calendar: Calendar = .current,
+        asOf: Date = Date()
+    ) -> Bool {
+        guard isValidDayCount(dayCount) else { return false }
+        let startDay = calendar.startOfDay(for: start)
+        let today = calendar.startOfDay(for: asOf)
+        if startDay >= today { return true }
+        let windowEnd = adjustmentWindowEnd(start: startDay, dayCount: dayCount, calendar: calendar)
+        guard today >= startDay && today < windowEnd else { return false }
+        let earliest = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+        return startDay >= earliest
+    }
+
+    public static func adjustmentWindowEnd(
+        start: Date,
+        dayCount: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(byAdding: .day, value: dayCount, to: calendar.startOfDay(for: start)) ?? start
+    }
+
+    public static func canDiscardOnCreationDay(
+        adjustment: N100Adjustment,
+        createdOn: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        calendar.isDate(adjustment.start, inSameDayAs: createdOn)
     }
 
     public static func apply(
