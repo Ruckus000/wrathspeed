@@ -301,4 +301,75 @@ struct WorkoutResultMergeTests {
         mobilityCorrected.startedAt = startedAt.addingTimeInterval(30)
         #expect(MobilitySessionResult.matches(mobility, mobilityCorrected))
     }
+
+    @Test func startupTerminalClearRequiresMatchingAttemptIdentity() {
+        let workoutID = UUID()
+        let attemptA: Int64 = 1_700_001_000_000
+        let attemptB: Int64 = 1_700_002_000_000
+        let stored = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .countdown,
+            startupAttemptMs: attemptB
+        )
+        let staleTerminal = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .saved,
+            startupAttemptMs: attemptA
+        )
+        let matchingTerminal = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .saved,
+            startupAttemptMs: attemptB
+        )
+        #expect(!stored.matchesStartupTerminalClear(from: staleTerminal))
+        #expect(stored.matchesStartupTerminalClear(from: matchingTerminal))
+    }
+
+    @Test func legacySnapshotsWithoutStartupAttemptAtStillMatchEachOther() {
+        let workoutID = UUID()
+        let stored = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .preparing
+        )
+        let terminal = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .saved
+        )
+        #expect(stored.matchesStartupTerminalClear(from: terminal))
+    }
+
+    @Test func legacyAmbiguityDoesNotClearKnownAttempt() throws {
+        let workoutID = UUID()
+        let attemptB: Int64 = 1_700_002_000_000
+        let stored = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .countdown,
+            startupAttemptMs: attemptB
+        )
+        let legacyTerminal = ActiveSessionSnapshot(
+            workoutID: workoutID,
+            blueprintData: Data(),
+            source: .wrathspeedPhone,
+            state: .saved
+        )
+        #expect(!stored.matchesStartupTerminalClear(from: legacyTerminal))
+
+        let legacyJSON = """
+        {"workoutID":"\(workoutID.uuidString)","blueprintData":"","source":"wrathspeedPhone","state":"countdown"}
+        """
+        let decoded = try JSONDecoder().decode(ActiveSessionSnapshot.self, from: Data(legacyJSON.utf8))
+        #expect(decoded.startupAttemptMs == nil)
+    }
 }

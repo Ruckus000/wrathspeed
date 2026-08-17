@@ -445,6 +445,8 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
     public var source: WorkoutSource
     public var state: ActiveSessionState
     public var startedAt: Date?
+    /// Stable identity for a single startup attempt before HealthKit recording begins.
+    public var startupAttemptMs: Int64?
     public var elapsedSeconds: TimeInterval
     public var distanceMeters: Double
     public var stepIndex: Int
@@ -452,12 +454,29 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
     public var updatedAt: Date
     public var healthSync: HealthSyncMetadata
 
+    enum CodingKeys: String, CodingKey {
+        case workoutID
+        case blueprintData
+        case source
+        case state
+        case startedAt
+        case startupAttemptMs
+        case startupAttemptAt
+        case elapsedSeconds
+        case distanceMeters
+        case stepIndex
+        case isPaused
+        case updatedAt
+        case healthSync
+    }
+
     public init(
         workoutID: UUID,
         blueprintData: Data,
         source: WorkoutSource,
         state: ActiveSessionState,
         startedAt: Date? = nil,
+        startupAttemptMs: Int64? = nil,
         elapsedSeconds: TimeInterval = 0,
         distanceMeters: Double = 0,
         stepIndex: Int = 0,
@@ -470,12 +489,55 @@ public struct ActiveSessionSnapshot: Codable, Equatable, Sendable {
         self.source = source
         self.state = state
         self.startedAt = startedAt
+        self.startupAttemptMs = startupAttemptMs
         self.elapsedSeconds = elapsedSeconds
         self.distanceMeters = distanceMeters
         self.stepIndex = stepIndex
         self.isPaused = isPaused
         self.updatedAt = updatedAt
         self.healthSync = healthSync
+    }
+
+    public static func startupAttemptMs(from date: Date) -> Int64 {
+        Int64((date.timeIntervalSince1970 * 1_000).rounded())
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        workoutID = try values.decode(UUID.self, forKey: .workoutID)
+        blueprintData = try values.decode(Data.self, forKey: .blueprintData)
+        source = try values.decode(WorkoutSource.self, forKey: .source)
+        state = try values.decode(ActiveSessionState.self, forKey: .state)
+        startedAt = try values.decodeIfPresent(Date.self, forKey: .startedAt)
+        if let attemptMs = try values.decodeIfPresent(Int64.self, forKey: .startupAttemptMs) {
+            startupAttemptMs = attemptMs
+        } else if let legacyAttempt = try values.decodeIfPresent(Date.self, forKey: .startupAttemptAt) {
+            startupAttemptMs = Self.startupAttemptMs(from: legacyAttempt)
+        } else {
+            startupAttemptMs = nil
+        }
+        elapsedSeconds = try values.decodeIfPresent(TimeInterval.self, forKey: .elapsedSeconds) ?? 0
+        distanceMeters = try values.decodeIfPresent(Double.self, forKey: .distanceMeters) ?? 0
+        stepIndex = try values.decodeIfPresent(Int.self, forKey: .stepIndex) ?? 0
+        isPaused = try values.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+        updatedAt = try values.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        healthSync = try values.decodeIfPresent(HealthSyncMetadata.self, forKey: .healthSync) ?? HealthSyncMetadata()
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(workoutID, forKey: .workoutID)
+        try container.encode(blueprintData, forKey: .blueprintData)
+        try container.encode(source, forKey: .source)
+        try container.encode(state, forKey: .state)
+        try container.encodeIfPresent(startedAt, forKey: .startedAt)
+        try container.encodeIfPresent(startupAttemptMs, forKey: .startupAttemptMs)
+        try container.encode(elapsedSeconds, forKey: .elapsedSeconds)
+        try container.encode(distanceMeters, forKey: .distanceMeters)
+        try container.encode(stepIndex, forKey: .stepIndex)
+        try container.encode(isPaused, forKey: .isPaused)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(healthSync, forKey: .healthSync)
     }
 }
 

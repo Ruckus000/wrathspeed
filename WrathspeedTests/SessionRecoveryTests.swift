@@ -1,7 +1,13 @@
+import HealthKit
 import SwiftData
 import XCTest
 @testable import Wrathspeed
 import WrathspeedCore
+
+private enum StartupSentinelError: Error, Equatable {
+    case prePending
+    case beginCollection
+}
 
 @MainActor
 final class SessionRecoveryTests: XCTestCase {
@@ -25,6 +31,24 @@ final class SessionRecoveryTests: XCTestCase {
         let store = AppStore()
         store.attach(context: context)
         return (store, context)
+    }
+
+    private func makeBlueprint() -> WorkoutBlueprint {
+        WorkoutBlueprint(
+            date: Date(),
+            kind: .easy,
+            title: "Easy",
+            steps: [],
+            plannedDistanceMeters: 5_000,
+            usesPaceTargets: true
+        )
+    }
+
+    private func makeConfiguration() -> HKWorkoutConfiguration {
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .running
+        configuration.locationType = .outdoor
+        return configuration
     }
 
     func testPartialRecoveryCreatesResultWithoutCompletingPlannedWorkout() throws {
@@ -81,14 +105,7 @@ final class SessionRecoveryTests: XCTestCase {
 
     func testMatchingCancellationClearsCountdownRecovery() throws {
         let (store, context) = try makeStore()
-        let blueprint = WorkoutBlueprint(
-            date: Date(),
-            kind: .easy,
-            title: "Easy",
-            steps: [],
-            plannedDistanceMeters: 5_000,
-            usesPaceTargets: true
-        )
+        let blueprint = makeBlueprint()
         let startupID = store.session.testing_beginOwnedStartup()
         store.session.testing_simulateCountdownOwnership(startupID: startupID, blueprint: blueprint)
         XCTAssertEqual(store.session.sessionState, .countdown)
@@ -101,21 +118,23 @@ final class SessionRecoveryTests: XCTestCase {
         XCTAssertNil(store.pendingRecoverySnapshot)
     }
 
-    func testCurrentStartupFailureClearsCountdownAndRethrows() throws {
+    func testCurrentStartupFailureClearsCountdownAndRethrows() async throws {
         let (store, context) = try makeStore()
-        let blueprint = WorkoutBlueprint(
-            date: Date(),
-            kind: .easy,
-            title: "Easy",
-            steps: [],
-            plannedDistanceMeters: 5_000,
-            usesPaceTargets: true
-        )
+        let blueprint = makeBlueprint()
         let startupID = store.session.testing_beginOwnedStartup()
-        store.session.testing_simulateCountdownOwnership(startupID: startupID, blueprint: blueprint)
-        XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, .countdown)
+        store.session.testing_prepareForPostCountdownStartup(startupID: startupID, blueprint: blueprint)
 
-        store.session.testing_cleanupCurrentStartupFailure(startupID: startupID)
+        store.session.testing_setSkipCountdownSleep(true)
+        store.session.testing_setForcePrePendingStartupError(StartupSentinelError.prePending)
+        do {
+            try await store.session.testing_runPostCountdownStartup(
+                configuration: makeConfiguration(),
+                startupID: startupID
+            )
+            XCTFail("expected startup failure")
+        } catch let error as StartupSentinelError {
+            XCTAssertEqual(error, .prePending)
+        }
 
         XCTAssertEqual(store.session.sessionState, .preparing)
         XCTAssertNil(try ActiveSessionStore.load(from: context))
@@ -124,29 +143,139 @@ final class SessionRecoveryTests: XCTestCase {
         let staleID = startupID
         let newID = store.session.testing_beginOwnedStartup()
         store.session.testing_simulateCountdownOwnership(startupID: newID, blueprint: blueprint)
-        store.session.testing_cleanupCurrentStartupFailure(startupID: staleID)
+        store.session.testing_setForcePrePendingStartupError(StartupSentinelError.prePending)
+        try await store.session.testing_runPostCountdownStartup(
+            configuration: makeConfiguration(),
+            startupID: staleID
+        )
         XCTAssertEqual(store.session.sessionState, .countdown)
         XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, .countdown)
     }
 
+    func testCancellationDuringOwnedCountdownClearsRecovery() async throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let startupID = store.session.testing_beginOwnedStartup()
+        store.session.testing_prepareForPostCountdownStartup(startupID: startupID, blueprint: blueprint)
+
+        store.session.testing_setSkipCountdownSleep(false)
+        let task = Task { @MainActor in
+            try await store.session.testing_runPostCountdownStartup(
+                configuration: makeConfiguration(),
+                startupID: startupID
+            )
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        task.cancel()
+        do {
+            _ = try await task.value
+            XCTFail("expected cancellation")
+        } catch is CancellationError {
+        }
+
+        XCTAssertEqual(store.session.sessionState, .preparing)
+        XCTAssertNil(store.session.blueprint)
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+        XCTAssertNil(store.pendingRecoverySnapshot)
+    }
+
+    func testOwnedThrowBeforePendingPairClearsRecoveryAndRethrows() async throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let startupID = store.session.testing_beginOwnedStartup()
+        store.session.testing_prepareForPostCountdownStartup(startupID: startupID, blueprint: blueprint)
+        store.session.testing_setSkipCountdownSleep(true)
+        store.session.testing_setForcePrePendingStartupError(StartupSentinelError.prePending)
+
+        do {
+            try await store.session.testing_runPostCountdownStartup(
+                configuration: makeConfiguration(),
+                startupID: startupID
+            )
+            XCTFail("expected sentinel error")
+        } catch let error as StartupSentinelError {
+            XCTAssertEqual(error, .prePending)
+        }
+
+        XCTAssertEqual(store.session.sessionState, .preparing)
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+    }
+
+    func testCurrentPendingStartFailureCleansUpAndRethrowsOriginalError() async throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let startupID = store.session.testing_beginOwnedStartup()
+        store.session.testing_prepareForPostCountdownStartup(startupID: startupID, blueprint: blueprint)
+        store.session.testing_setSkipCountdownSleep(true)
+        store.session.testing_setForceBeginCollectionError(StartupSentinelError.beginCollection)
+
+        do {
+            try await store.session.testing_runPostCountdownStartup(
+                configuration: makeConfiguration(),
+                startupID: startupID
+            )
+            XCTFail("expected beginCollection failure")
+        } catch let error as StartupSentinelError {
+            XCTAssertEqual(error, .beginCollection)
+        }
+
+        XCTAssertEqual(store.session.sessionState, .preparing)
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+    }
+
+    func testSupersededStartupThrowIsSilentAndPreservesNewerCountdown() async throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let staleID = store.session.testing_beginOwnedStartup()
+        store.session.testing_simulateCountdownOwnership(startupID: staleID, blueprint: blueprint)
+
+        let newID = store.session.testing_beginOwnedStartup()
+        store.session.testing_simulateCountdownOwnership(startupID: newID, blueprint: blueprint)
+        XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, .countdown)
+
+        store.session.testing_setSkipCountdownSleep(true)
+        store.session.testing_setForcePrePendingStartupError(StartupSentinelError.prePending)
+        try await store.session.testing_runPostCountdownStartup(
+            configuration: makeConfiguration(),
+            startupID: staleID
+        )
+
+        XCTAssertEqual(store.session.sessionState, .countdown)
+        XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, .countdown)
+    }
+
+    func testRepeatedStartupCleanupIsNoOp() async throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let startupID = store.session.testing_beginOwnedStartup()
+        store.session.testing_prepareForPostCountdownStartup(startupID: startupID, blueprint: blueprint)
+        store.session.testing_setSkipCountdownSleep(true)
+        store.session.testing_setForcePrePendingStartupError(StartupSentinelError.prePending)
+
+        try? await store.session.testing_runPostCountdownStartup(
+            configuration: makeConfiguration(),
+            startupID: startupID
+        )
+        XCTAssertEqual(store.session.sessionState, .preparing)
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+
+        store.session.cancelPendingLaunch()
+        store.session.cancelPendingLaunch()
+        XCTAssertEqual(store.session.sessionState, .preparing)
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+    }
+
     func testMatchingTerminalSavedClearsCountdownRecovery() throws {
         let (store, context) = try makeStore()
-        let blueprint = WorkoutBlueprint(
-            date: Date(),
-            kind: .easy,
-            title: "Easy",
-            steps: [],
-            plannedDistanceMeters: 5_000,
-            usesPaceTargets: true
-        )
-        let startedAt = Date(timeIntervalSince1970: 1_700_001_050)
+        let blueprint = makeBlueprint()
+        let attemptMs: Int64 = 1_700_001_050_000
         try ActiveSessionStore.save(
             ActiveSessionSnapshot(
                 workoutID: blueprint.id,
                 blueprintData: try JSONEncoder().encode(blueprint),
                 source: .wrathspeedPhone,
                 state: .countdown,
-                startedAt: startedAt
+                startupAttemptMs: attemptMs
             ),
             to: context
         )
@@ -156,23 +285,45 @@ final class SessionRecoveryTests: XCTestCase {
                 blueprintData: try JSONEncoder().encode(blueprint),
                 source: .wrathspeedPhone,
                 state: .saved,
-                startedAt: startedAt
+                startupAttemptMs: attemptMs
             )
         )
         XCTAssertNil(try ActiveSessionStore.load(from: context))
         XCTAssertNil(store.pendingRecoverySnapshot)
     }
 
+    func testStaleTerminalDoesNotClearNewerAttemptSameWorkout() throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let attemptB: Int64 = 1_700_002_000_000
+        let attemptA: Int64 = 1_700_001_000_000
+        try ActiveSessionStore.save(
+            ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: try JSONEncoder().encode(blueprint),
+                source: .wrathspeedPhone,
+                state: .countdown,
+                startupAttemptMs: attemptB
+            ),
+            to: context
+        )
+        store.session.onSnapshot?(
+            ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: try JSONEncoder().encode(blueprint),
+                source: .wrathspeedPhone,
+                state: .saved,
+                startupAttemptMs: attemptA
+            )
+        )
+        let loaded = try ActiveSessionStore.load(from: context)
+        XCTAssertEqual(loaded?.state, .countdown)
+        XCTAssertEqual(loaded?.startupAttemptMs, attemptB)
+    }
+
     func testTerminalSavedClearsMatchingStartupRecoveryOnly() throws {
         let (store, context) = try makeStore()
-        let blueprint = WorkoutBlueprint(
-            date: Date(),
-            kind: .easy,
-            title: "Easy",
-            steps: [],
-            plannedDistanceMeters: 5_000,
-            usesPaceTargets: true
-        )
+        let blueprint = makeBlueprint()
         let otherBlueprint = WorkoutBlueprint(
             date: Date(),
             kind: .easy,
@@ -181,14 +332,14 @@ final class SessionRecoveryTests: XCTestCase {
             plannedDistanceMeters: 5_000,
             usesPaceTargets: true
         )
-        let startedAt = Date(timeIntervalSince1970: 1_700_001_000)
+        let attemptMs: Int64 = 1_700_001_000_000
         try ActiveSessionStore.save(
             ActiveSessionSnapshot(
                 workoutID: blueprint.id,
                 blueprintData: try JSONEncoder().encode(blueprint),
                 source: .wrathspeedPhone,
                 state: .countdown,
-                startedAt: startedAt
+                startupAttemptMs: attemptMs
             ),
             to: context
         )
@@ -198,12 +349,100 @@ final class SessionRecoveryTests: XCTestCase {
                 blueprintData: try JSONEncoder().encode(otherBlueprint),
                 source: .wrathspeedPhone,
                 state: .saved,
-                startedAt: startedAt.addingTimeInterval(60)
+                startupAttemptMs: attemptMs
             )
         )
         let loaded = try ActiveSessionStore.load(from: context)
         XCTAssertEqual(loaded?.workoutID, blueprint.id)
         XCTAssertEqual(loaded?.state, .countdown)
+    }
+
+    func testDifferentSourceDoesNotClearStartupRecovery() throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let attemptMs: Int64 = 1_700_001_500_000
+        try ActiveSessionStore.save(
+            ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: try JSONEncoder().encode(blueprint),
+                source: .wrathspeedPhone,
+                state: .countdown,
+                startupAttemptMs: attemptMs
+            ),
+            to: context
+        )
+        store.session.onSnapshot?(
+            ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: try JSONEncoder().encode(blueprint),
+                source: .wrathspeedWatch,
+                state: .saved,
+                startupAttemptMs: attemptMs
+            )
+        )
+        XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, .countdown)
+    }
+
+    func testTerminalSavedDoesNotClearRecordingPausedOrFinishing() throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let attemptMs: Int64 = 1_700_001_600_000
+        let startedAt = Date(timeIntervalSince1970: 1_700_001_000)
+        for state in [ActiveSessionState.recording, .paused, .finishing] {
+            try ActiveSessionStore.clear(from: context)
+            try ActiveSessionStore.save(
+                ActiveSessionSnapshot(
+                    workoutID: blueprint.id,
+                    blueprintData: try JSONEncoder().encode(blueprint),
+                    source: .wrathspeedPhone,
+                    state: state,
+                    startedAt: startedAt,
+                    startupAttemptMs: attemptMs
+                ),
+                to: context
+            )
+            store.session.onSnapshot?(
+                ActiveSessionSnapshot(
+                    workoutID: blueprint.id,
+                    blueprintData: try JSONEncoder().encode(blueprint),
+                    source: .wrathspeedPhone,
+                    state: .saved,
+                    startedAt: startedAt,
+                    startupAttemptMs: attemptMs
+                )
+            )
+            XCTAssertEqual(try ActiveSessionStore.load(from: context)?.state, state)
+        }
+    }
+
+    func testSuccessfulResultPersistenceClearsFinishingRecovery() throws {
+        let (store, context) = try makeStore()
+        let blueprint = makeBlueprint()
+        let startedAt = Date(timeIntervalSince1970: 1_700_001_700)
+        try ActiveSessionStore.save(
+            ActiveSessionSnapshot(
+                workoutID: blueprint.id,
+                blueprintData: try JSONEncoder().encode(blueprint),
+                source: .wrathspeedPhone,
+                state: .finishing,
+                startedAt: startedAt
+            ),
+            to: context
+        )
+        try store.record(
+            WorkoutResult(
+                workoutID: blueprint.id,
+                startedAt: startedAt,
+                duration: 1_800,
+                distanceMeters: 5_000,
+                averagePaceSecPerKm: 360,
+                location: .outdoor,
+                source: .wrathspeedPhone,
+                healthSync: HealthSyncMetadata(state: .pending)
+            )
+        )
+        XCTAssertNil(try ActiveSessionStore.load(from: context))
+        XCTAssertNil(store.pendingRecoverySnapshot)
     }
 
     func testTerminalSavedDoesNotClearStoredFinishingWithoutPersistedResult() throws {

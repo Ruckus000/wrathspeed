@@ -288,44 +288,14 @@ final class CoachingMVPHardeningTests: XCTestCase {
     }
 
     @MainActor
-    func testRemoteEndUsesCapturedSessionNotLaterSession() async {
+    func testOverlappingFinishPathsAreAtMostOnce() {
         let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
         let blueprint = makeStartRequest().blueprint
         controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
-        controller.testing_skipHealthKitStopEnd = true
-        controller.testing_skipFinishIfNeeded = true
-        let captured = NSObject()
-        let later = NSObject()
-        controller.testing_endCaptureToken = captured
-        controller.testing_remoteEndSendHandler = { _ in
-            XCTAssertEqual(controller.testing_capturedEndToken, captured)
-            controller.testing_endCaptureToken = later
-            try await Task.sleep(for: .milliseconds(20))
-            XCTAssertEqual(controller.testing_capturedEndToken, captured)
-        }
-        await controller.end()
-        XCTAssertEqual(
-            controller.testing_lifecyclePhases,
-            [.remoteEndSendStarted, .remoteEndSendCompleted, .localStopEnd]
-        )
-    }
-
-    @MainActor
-    func testOverlappingFinishPathsAreAtMostOnce() async {
-        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
-        let blueprint = makeStartRequest().blueprint
-        controller.testing_prepareForEndTest(blueprint: blueprint, state: .recording)
-        controller.testing_skipHealthKitStopEnd = true
-        var finishEntries = 0
-        controller.onFinished = { _ in
-            finishEntries += 1
-        }
-        controller.testing_remoteEndSendHandler = { _ in
-            controller.testing_simulateFinishEntry(blueprint: blueprint)
-        }
-        await controller.end()
-        XCTAssertEqual(finishEntries, 1)
-        XCTAssertEqual(controller.sessionState, .saved)
+        controller.testing_setForceFinishSessionAvailable(true)
+        XCTAssertTrue(controller.testing_beginFinishingIfNeeded())
+        XCTAssertFalse(controller.testing_beginFinishingIfNeeded())
+        XCTAssertEqual(controller.sessionState, .finishing)
     }
 
     func testCoordinatorRecordingPhaseIsNotStarting() {

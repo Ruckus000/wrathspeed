@@ -185,6 +185,21 @@ public extension ActiveSessionSnapshot {
         guard workoutID == result.workoutID else { return false }
         return result.startedAt == estimatedStartedAt()
     }
+
+    /// Whether a terminal `.saved` snapshot may clear a stored startup recovery snapshot.
+    func matchesStartupTerminalClear(from terminal: ActiveSessionSnapshot) -> Bool {
+        guard terminal.state == .saved else { return false }
+        guard workoutID == terminal.workoutID, source == terminal.source else { return false }
+        guard state == .preparing || state == .countdown else { return false }
+        switch (startupAttemptMs, terminal.startupAttemptMs) {
+        case let (stored?, terminal?):
+            return stored == terminal
+        case (nil, nil):
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 public extension StrengthSessionResult {

@@ -255,15 +255,23 @@ UI tests were not run for this slice.
 
 ## Phase B2 — HealthKit / Watch session lifecycle hardening (Aug 16, 2026)
 
-Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 commit
+Branch: `recovery/phase-a-repo-reconciliation` @ post-B2 corrective commit
 
 **Phase B2 deterministic lifecycle implementation complete; physical-Watch acceptance remains a release gate.**
 
 ### Implemented behavior
 
-1. **Remote End ordering** — `end()` captures `sessionToEnd` once, awaits `sendEndToRemote(through:)` before `localStopEnd`, send failure/cancellation does not block local stop/end/finish, remote-originated End does not echo, overlapping finish paths remain at-most-once.
+1. **Remote End ordering** — `end()` captures `sessionToEnd` once, awaits `sendEndToRemote(through:)` before `localStopEnd`, send failure/cancellation does not block local stop/end/finish, remote-originated End does not echo, overlapping finish paths remain at-most-once via `beginFinishingIfNeeded()`.
 2. **Mirrored-session admission** — rejects pre-countdown local startup ownership (`activeStartupID` while not `.waitingForWatch`); accepts expected mirror during `.waitingForWatch`; rejects current/pending/countdown/recording/finishing/running cases; rejection does not mutate controller state or end the mirror.
-3. **Startup cleanup / recovery** — matching cancellation or current startup failure discards only the pending pair, resets out of `.countdown`, emits terminal `.saved` snapshot for AppStore clear, stale generations remain silent; AppStore clears only matching `.preparing`/`countdown` recovery on terminal `.saved` and never clears stored `.finishing` without persisted result.
+3. **Startup ownership vs liveness** — `ownsStartup(_:)` (generation ownership) is independent of `Task.isCancelled`; `mayContinueStartup(_:)` gates execution. `runPostCountdownStartup` wraps countdown→primary startup and routes all owned failures/cancellations through `handleOwnedPostCountdownError`, which cleans up recovery/controller state idempotently, preserves `CancellationError`, and stays silent for superseded generations.
+4. **Recovery attempt correlation** — optional `startupAttemptMs: Int64?` on `ActiveSessionSnapshot` identifies a single startup attempt before recording; terminal `.saved` clears stored `.preparing`/`.countdown` only when `matchesStartupTerminalClear(from:)` agrees on `workoutID`, `source`, and attempt identity. Legacy payloads without attempt identity match only when both sides lack it; mixed legacy/modern ambiguity does not clear a newer known attempt.
+
+### Tests exercising production policies
+
+- `SessionRecoveryTests` startup ownership cases call `testing_runPostCountdownStartup` (production `runPostCountdownStartup` + error policy), assert exact sentinel rethrows, and cover cancellation, pre-pending throw, pending-pair failure, superseded silence, idempotent cleanup, and explicit `cancelPendingLaunch`.
+- `SessionRecoveryTests` recovery correlation cases call `AppStore.handleSessionSnapshot` via `session.onSnapshot` with attempt-scoped terminals.
+- `CoachingMVPHardeningTests` End-ordering cases exercise real `end()` phase ordering; overlapping-finish case exercises production `beginFinishingIfNeeded()` gate (not a synthetic finish duplicate).
+- Removed misleading NSObject end-capture test and `testing_simulateFinishEntry` duplicate.
 
 ### Automated evidence
 
@@ -272,21 +280,25 @@ git diff --check
 # → clean
 
 swift test --package-path WrathspeedCore
-# → 81 Swift Testing + 18 XCTest, 0 failures
+# → 84 tests in 15 suites, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests/SessionRecoveryTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 16 tests, 0 failures
+
+xcodebuild -scheme Wrathspeed \
+  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
+  test -only-testing:WrathspeedTests/CoachingMVPHardeningTests \
+  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
+# → 24 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed \
   -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
   test -only-testing:WrathspeedTests \
   CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
-# → 114 tests, 0 failures
-# CoachingMVPHardeningTests 25 (includes mirrored admission table + End ordering)
-# SessionRecoveryTests 7
-
-xcodebuild -scheme Wrathspeed \
-  -destination 'platform=iOS Simulator,id=C7B52543-2B29-4CE4-9AE6-1A79B9B05A9F' \
-  test -only-testing:WrathspeedUITests \
-  CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
-# → 2 tests, 0 failures
+# → 122 tests, 0 failures
 
 xcodebuild -scheme Wrathspeed -configuration Debug \
   -destination 'generic/platform=iOS Simulator' build \
@@ -296,9 +308,9 @@ xcodebuild -scheme Wrathspeed -configuration Debug \
 xcodebuild -scheme Wrathspeed -configuration Release \
   -destination 'generic/platform=iOS Simulator' build \
   CODE_SIGNING_ALLOWED=NO -derivedDataPath /tmp/wrathspeed-b2-derived
-# → BUILD SUCCEEDED (embedded WrathspeedWatch compile gate; no separate Watch Simulator scheme)
+# → BUILD SUCCEEDED (embedded WrathspeedWatch compile gate)
 
-nm Release-iphonesimulator/Wrathspeed.app/Wrathspeed | grep testing_
+nm /tmp/wrathspeed-b2-derived/Build/Products/Release-iphonesimulator/Wrathspeed.app/Wrathspeed | grep testing_
 # → no DEBUG seam symbols
 ```
 
