@@ -436,4 +436,91 @@ final class HealthImportTests: XCTestCase {
         XCTAssertEqual(second[0].healthKitUUID, uuid)
         XCTAssertEqual(second[0].healthSync.healthKitUUID, uuid)
     }
+
+    func testEnrichedImportCarriesRouteAndOptionalMetrics() {
+        let startedAt = Date(timeIntervalSince1970: 1_730_200_000)
+        let route = [
+            RoutePoint(latitude: 40.7128, longitude: -74.0060, timestamp: startedAt),
+            RoutePoint(latitude: 40.7130, longitude: -74.0055, timestamp: startedAt.addingTimeInterval(600)),
+        ]
+        let imported = ImportedHealthWorkout(
+            healthKitUUID: UUID(),
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(1_800),
+            duration: 1_800,
+            distanceMeters: 5_000,
+            location: .outdoor,
+            heartRateAverage: 152,
+            energyKilocalories: 420,
+            cadenceAverage: 168,
+            route: route
+        )
+
+        let result = imported.asWorkoutResult()
+
+        XCTAssertEqual(result.heartRateAverage, 152)
+        XCTAssertEqual(result.energyKilocalories, 420)
+        XCTAssertEqual(result.cadenceAverage, 168)
+        XCTAssertEqual(result.route, route)
+        XCTAssertEqual(result.matchInfo.state, .unmatched)
+    }
+
+    func testPartialEnrichmentPreservesBaseWorkoutOnMerge() {
+        let uuid = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_730_200_100)
+        let imported = ImportedHealthWorkout(
+            healthKitUUID: uuid,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(1_800),
+            duration: 1_800,
+            distanceMeters: 5_000,
+            location: .outdoor
+        )
+
+        let merged = HealthImportMerge.merge(existing: [], imports: [imported])
+
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged[0].distanceMeters, 5_000, accuracy: 0.01)
+        XCTAssertEqual(merged[0].duration, 1_800, accuracy: 0.01)
+        XCTAssertNil(merged[0].heartRateAverage)
+        XCTAssertNil(merged[0].energyKilocalories)
+        XCTAssertNil(merged[0].cadenceAverage)
+        XCTAssertNil(merged[0].route)
+        XCTAssertEqual(merged[0].healthKitUUID, uuid)
+        XCTAssertEqual(merged[0].matchInfo.state, .unmatched)
+    }
+
+    func testHealthDeletionMarksUnavailableWithoutErasingLocalHistory() {
+        let uuid = UUID()
+        let scheduledID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_730_200_200)
+        let route = [RoutePoint(latitude: 40.7, longitude: -74.0, timestamp: startedAt)]
+        let matchInfo = WorkoutMatchInfo(state: .matched, scheduledWorkoutID: scheduledID)
+        let existing = WorkoutResult(
+            workoutID: UUID(),
+            startedAt: startedAt,
+            duration: 1_800,
+            distanceMeters: 6_200,
+            averagePaceSecPerKm: (1_800 / 6_200) * 1_000,
+            heartRateAverage: 148,
+            location: .treadmill,
+            healthKitUUID: uuid,
+            route: route,
+            source: .wrathspeedPhone,
+            matchInfo: matchInfo,
+            energyKilocalories: 410,
+            cadenceAverage: 172,
+            healthSync: HealthSyncMetadata(state: .synced, healthKitUUID: uuid)
+        )
+
+        let marked = HealthImportMerge.markUnavailable(existing: [existing], missingHealthIDs: [uuid])
+
+        XCTAssertEqual(marked.count, 1)
+        XCTAssertTrue(marked[0].isUnavailableInHealth)
+        XCTAssertEqual(marked[0].distanceMeters, 6_200, accuracy: 0.01)
+        XCTAssertEqual(marked[0].matchInfo, matchInfo)
+        XCTAssertEqual(marked[0].route, route)
+        XCTAssertEqual(marked[0].source, .wrathspeedPhone)
+        XCTAssertEqual(marked[0].heartRateAverage, 148)
+    }
 }
