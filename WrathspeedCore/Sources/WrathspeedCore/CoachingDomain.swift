@@ -262,6 +262,12 @@ public struct StrengthSessionResult: Codable, Equatable, Sendable, Identifiable 
     public var setLogs: [StrengthSetLog]
     public var difficultyRPE: Int?
     public var healthSync: HealthSyncMetadata
+    public var lifecycle: GuidedSessionLifecycle
+    public var progress: StrengthSessionProgress?
+
+    enum CodingKeys: String, CodingKey {
+        case id, sessionID, startedAt, endedAt, setLogs, difficultyRPE, healthSync, lifecycle, progress
+    }
 
     public init(
         id: UUID = UUID(),
@@ -270,7 +276,9 @@ public struct StrengthSessionResult: Codable, Equatable, Sendable, Identifiable 
         endedAt: Date,
         setLogs: [StrengthSetLog],
         difficultyRPE: Int? = nil,
-        healthSync: HealthSyncMetadata = HealthSyncMetadata()
+        healthSync: HealthSyncMetadata = HealthSyncMetadata(),
+        lifecycle: GuidedSessionLifecycle = .completed,
+        progress: StrengthSessionProgress? = nil
     ) {
         self.id = id
         self.sessionID = sessionID
@@ -279,6 +287,34 @@ public struct StrengthSessionResult: Codable, Equatable, Sendable, Identifiable 
         self.setLogs = setLogs
         self.difficultyRPE = difficultyRPE
         self.healthSync = healthSync
+        self.lifecycle = lifecycle
+        self.progress = progress
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        sessionID = try values.decode(UUID.self, forKey: .sessionID)
+        startedAt = try values.decode(Date.self, forKey: .startedAt)
+        endedAt = try values.decode(Date.self, forKey: .endedAt)
+        setLogs = try values.decode([StrengthSetLog].self, forKey: .setLogs)
+        difficultyRPE = try values.decodeIfPresent(Int.self, forKey: .difficultyRPE)
+        healthSync = try values.decodeIfPresent(HealthSyncMetadata.self, forKey: .healthSync) ?? HealthSyncMetadata()
+        lifecycle = try values.decodeIfPresent(GuidedSessionLifecycle.self, forKey: .lifecycle) ?? .completed
+        progress = try values.decodeIfPresent(StrengthSessionProgress.self, forKey: .progress)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(sessionID, forKey: .sessionID)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(endedAt, forKey: .endedAt)
+        try container.encode(setLogs, forKey: .setLogs)
+        try container.encodeIfPresent(difficultyRPE, forKey: .difficultyRPE)
+        try container.encode(healthSync, forKey: .healthSync)
+        try container.encode(lifecycle, forKey: .lifecycle)
+        try container.encodeIfPresent(progress, forKey: .progress)
     }
 }
 
@@ -348,6 +384,11 @@ public struct MobilitySession: Codable, Equatable, Sendable, Identifiable {
     public var title: String
     public var movements: [MobilityMovement]
     public var durationMinutes: Int
+    public var routineID: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, date, category, title, movements, durationMinutes, routineID
+    }
 
     public init(
         id: UUID = UUID(),
@@ -355,7 +396,8 @@ public struct MobilitySession: Codable, Equatable, Sendable, Identifiable {
         category: MobilityCategory,
         title: String,
         movements: [MobilityMovement],
-        durationMinutes: Int
+        durationMinutes: Int,
+        routineID: String = ""
     ) {
         self.id = id
         self.date = date
@@ -363,6 +405,29 @@ public struct MobilitySession: Codable, Equatable, Sendable, Identifiable {
         self.title = title
         self.movements = movements
         self.durationMinutes = durationMinutes
+        self.routineID = routineID
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        date = try values.decode(Date.self, forKey: .date)
+        category = try values.decode(MobilityCategory.self, forKey: .category)
+        title = try values.decode(String.self, forKey: .title)
+        movements = try values.decode([MobilityMovement].self, forKey: .movements)
+        durationMinutes = try values.decode(Int.self, forKey: .durationMinutes)
+        routineID = try values.decodeIfPresent(String.self, forKey: .routineID) ?? ""
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(date, forKey: .date)
+        try container.encode(category, forKey: .category)
+        try container.encode(title, forKey: .title)
+        try container.encode(movements, forKey: .movements)
+        try container.encode(durationMinutes, forKey: .durationMinutes)
+        try container.encode(routineID, forKey: .routineID)
     }
 }
 
@@ -372,19 +437,56 @@ public struct MobilitySessionResult: Codable, Equatable, Sendable, Identifiable 
     public var startedAt: Date
     public var endedAt: Date
     public var completedMovementIDs: [String]
+    public var routineID: String
+    public var lifecycle: GuidedSessionLifecycle
+    public var progress: MobilitySessionProgress?
+
+    enum CodingKeys: String, CodingKey {
+        case id, sessionID, startedAt, endedAt, completedMovementIDs, routineID, lifecycle, progress
+    }
 
     public init(
         id: UUID = UUID(),
         sessionID: UUID,
         startedAt: Date,
         endedAt: Date,
-        completedMovementIDs: [String]
+        completedMovementIDs: [String],
+        routineID: String = "",
+        lifecycle: GuidedSessionLifecycle = .completed,
+        progress: MobilitySessionProgress? = nil
     ) {
         self.id = id
         self.sessionID = sessionID
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.completedMovementIDs = completedMovementIDs
+        self.routineID = routineID
+        self.lifecycle = lifecycle
+        self.progress = progress
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        sessionID = try values.decode(UUID.self, forKey: .sessionID)
+        startedAt = try values.decode(Date.self, forKey: .startedAt)
+        endedAt = try values.decode(Date.self, forKey: .endedAt)
+        completedMovementIDs = try values.decode([String].self, forKey: .completedMovementIDs)
+        routineID = try values.decodeIfPresent(String.self, forKey: .routineID) ?? ""
+        lifecycle = try values.decodeIfPresent(GuidedSessionLifecycle.self, forKey: .lifecycle) ?? .completed
+        progress = try values.decodeIfPresent(MobilitySessionProgress.self, forKey: .progress)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(sessionID, forKey: .sessionID)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encode(endedAt, forKey: .endedAt)
+        try container.encode(completedMovementIDs, forKey: .completedMovementIDs)
+        try container.encode(routineID, forKey: .routineID)
+        try container.encode(lifecycle, forKey: .lifecycle)
+        try container.encodeIfPresent(progress, forKey: .progress)
     }
 }
 

@@ -17,6 +17,14 @@ enum GuidedSessionResultStore {
             .sorted { $0.startedAt > $1.startedAt }
     }
 
+    static func inProgressStrengthResult(sessionID: UUID, from context: ModelContext) throws -> StrengthSessionResult? {
+        try loadStrengthResults(from: context).first { $0.sessionID == sessionID && $0.lifecycle == .inProgress }
+    }
+
+    static func inProgressMobilityResult(routineID: String, from context: ModelContext) throws -> MobilitySessionResult? {
+        try loadMobilityResults(from: context).first { $0.routineID == routineID && $0.lifecycle == .inProgress }
+    }
+
     static func upsertStrengthResult(_ result: StrengthSessionResult, to context: ModelContext) throws {
         let payload = try VersionedPayload.encode(result)
         let existing = try context.fetch(FetchDescriptor<StrengthSessionResultEntity>())

@@ -209,6 +209,9 @@ public extension StrengthSessionResult {
 
     static func matches(_ lhs: StrengthSessionResult, _ rhs: StrengthSessionResult) -> Bool {
         if lhs.id == rhs.id { return true }
+        if lhs.lifecycle == .inProgress, rhs.lifecycle == .inProgress, lhs.sessionID == rhs.sessionID {
+            return true
+        }
         return lhs.sessionID == rhs.sessionID && lhs.startedAt == rhs.startedAt
     }
 }
@@ -220,6 +223,12 @@ public extension MobilitySessionResult {
 
     static func matches(_ lhs: MobilitySessionResult, _ rhs: MobilitySessionResult) -> Bool {
         if lhs.id == rhs.id { return true }
+        if lhs.lifecycle == .inProgress, rhs.lifecycle == .inProgress, !lhs.routineID.isEmpty, lhs.routineID == rhs.routineID {
+            return true
+        }
+        if lhs.lifecycle == .inProgress, rhs.lifecycle == .inProgress, lhs.sessionID == rhs.sessionID {
+            return true
+        }
         return lhs.sessionID == rhs.sessionID && lhs.startedAt == rhs.startedAt
     }
 }

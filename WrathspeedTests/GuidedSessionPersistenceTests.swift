@@ -299,4 +299,138 @@ final class GuidedSessionPersistenceTests: XCTestCase {
         XCTAssertEqual(try context.fetch(FetchDescriptor<MobilitySessionResultEntity>()).count, 0)
         XCTAssertNotNil(store.errorMessage)
     }
+
+    func testLegacyStrengthResultDecodesAsCompleted() throws {
+        let id = UUID()
+        let sessionID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_700_570_000)
+        let endedAt = startedAt.addingTimeInterval(900)
+        let json = """
+        {"id":"\(id.uuidString)","sessionID":"\(sessionID.uuidString)","startedAt":"\(ISO8601DateFormatter().string(from: startedAt))","endedAt":"\(ISO8601DateFormatter().string(from: endedAt))","setLogs":[{"id":"\(UUID().uuidString)","exerciseID":"squat","completed":true,"skipped":false}]}
+        """
+        let result = try VersionedPayload.decode(StrengthSessionResult.self, from: Data(json.utf8))
+        XCTAssertEqual(result.lifecycle, .completed)
+        XCTAssertNil(result.progress)
+    }
+
+    func testStrengthPartialResumeAndComplete() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let store = AppStore()
+        store.attach(context: context)
+
+        let sessionID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_700_600_000)
+        let partialID = UUID()
+        let partial = StrengthSessionResult(
+            id: partialID,
+            sessionID: sessionID,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(300),
+            setLogs: [StrengthSetLog(exerciseID: "squat", completed: true, reps: 10)],
+            lifecycle: .inProgress,
+            progress: StrengthSessionProgress(exerciseIndex: 1, setIndex: 0, restRemainingSeconds: 30)
+        )
+        try store.recordStrengthResult(partial)
+
+        let restored = AppStore()
+        restored.attach(context: context)
+        let resumed = GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: restored.strengthResults)
+        XCTAssertEqual(resumed?.id, partialID)
+        XCTAssertEqual(resumed?.progress?.exerciseIndex, 1)
+
+        var completed = partial
+        completed.lifecycle = .completed
+        completed.progress = nil
+        completed.difficultyRPE = 8
+        completed.endedAt = startedAt.addingTimeInterval(1_800)
+        try store.recordStrengthResult(completed)
+
+        XCTAssertNil(GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: store.strengthResults))
+        XCTAssertEqual(GuidedSessionPolicy.completedStrength(store.strengthResults).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<StrengthSessionResultEntity>()).count, 1)
+    }
+
+    func testMobilityPartialResumeAndComplete() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let store = AppStore()
+        store.attach(context: context)
+
+        let sessionID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_700_610_000)
+        let partialID = UUID()
+        let partial = MobilitySessionResult(
+            id: partialID,
+            sessionID: sessionID,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(120),
+            completedMovementIDs: ["leg_swings"],
+            routineID: "pre_run",
+            lifecycle: .inProgress,
+            progress: MobilitySessionProgress(movementIndex: 1, remainingSeconds: 20)
+        )
+        try store.recordMobilityResult(partial)
+
+        let restored = AppStore()
+        restored.attach(context: context)
+        let resumed = GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: restored.mobilityResults)
+        XCTAssertEqual(resumed?.id, partialID)
+        XCTAssertEqual(resumed?.progress?.movementIndex, 1)
+
+        var completed = partial
+        completed.lifecycle = .completed
+        completed.progress = nil
+        completed.completedMovementIDs = ["leg_swings", "ankle_circles", "hip_openers"]
+        completed.endedAt = startedAt.addingTimeInterval(360)
+        try store.recordMobilityResult(completed)
+
+        XCTAssertNil(GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: store.mobilityResults))
+        XCTAssertEqual(GuidedSessionPolicy.completedMobility(store.mobilityResults).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<MobilitySessionResultEntity>()).count, 1)
+    }
+
+    func testStrengthHealthFailurePreservesCompletedLocalResult() throws {
+        let container = try makeContainer()
+        let context = ModelContext(container)
+        let store = AppStore()
+        store.attach(context: context)
+
+        let sessionID = UUID()
+        let startedAt = Date(timeIntervalSince1970: 1_700_620_000)
+        let resultID = UUID()
+        var result = StrengthSessionResult(
+            id: resultID,
+            sessionID: sessionID,
+            startedAt: startedAt,
+            endedAt: startedAt.addingTimeInterval(1_200),
+            setLogs: [StrengthSetLog(exerciseID: "squat", completed: true, reps: 8)],
+            difficultyRPE: 7,
+            healthSync: HealthSyncMetadata(state: .failed, failureMessage: "Denied", lastAttemptAt: startedAt.addingTimeInterval(1_200)),
+            lifecycle: .completed
+        )
+        try store.recordStrengthResult(result)
+
+        result.healthSync = HealthSyncMetadata(state: .synced, lastAttemptAt: startedAt.addingTimeInterval(1_500), healthKitUUID: UUID())
+        try store.recordStrengthResult(result)
+
+        XCTAssertEqual(store.strengthResults.count, 1)
+        XCTAssertEqual(store.strengthResults.first?.lifecycle, .completed)
+        XCTAssertEqual(store.strengthResults.first?.healthSync.state, .synced)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<StrengthSessionResultEntity>()).count, 1)
+    }
+
+    func testMobilityCatalogLoaderBuildsStableSessionsForAllRoutineIDs() throws {
+        let date = Date(timeIntervalSince1970: 1_700_630_000)
+        let routines = [
+            MobilityRoutineTemplate(id: "pre_run", category: .preRun, title: "Pre-Run Primer", durationMinutes: 6, movements: []),
+            MobilityRoutineTemplate(id: "post_run", category: .postRun, title: "Post-Run Reset", durationMinutes: 8, movements: []),
+            MobilityRoutineTemplate(id: "recovery", category: .recovery, title: "Recovery Flow", durationMinutes: 15, movements: []),
+        ]
+        let sessions = routines.map { MobilityCatalogLoader.makeSession(from: $0, date: date) }
+        XCTAssertEqual(sessions.count, 3)
+        XCTAssertEqual(Set(sessions.map(\.routineID)), Set(["pre_run", "post_run", "recovery"]))
+        let preRunAgain = MobilityCatalogLoader.makeSession(from: routines[0], date: date)
+        XCTAssertEqual(preRunAgain.id, sessions.first(where: { $0.routineID == "pre_run" })?.id)
+    }
 }
