@@ -10,6 +10,7 @@ public struct ImportedHealthWorkout: Equatable, Sendable {
     public var heartRateAverage: Double?
     public var energyKilocalories: Double?
     public var cadenceAverage: Double?
+    public var route: [RoutePoint]?
     public var source: WorkoutSource
 
     public init(
@@ -22,6 +23,7 @@ public struct ImportedHealthWorkout: Equatable, Sendable {
         heartRateAverage: Double? = nil,
         energyKilocalories: Double? = nil,
         cadenceAverage: Double? = nil,
+        route: [RoutePoint]? = nil,
         source: WorkoutSource = .appleHealth
     ) {
         self.healthKitUUID = healthKitUUID
@@ -33,6 +35,7 @@ public struct ImportedHealthWorkout: Equatable, Sendable {
         self.heartRateAverage = heartRateAverage
         self.energyKilocalories = energyKilocalories
         self.cadenceAverage = cadenceAverage
+        self.route = route
         self.source = source
     }
 
@@ -47,6 +50,7 @@ public struct ImportedHealthWorkout: Equatable, Sendable {
             heartRateAverage: heartRateAverage,
             location: location,
             healthKitUUID: healthKitUUID,
+            route: route,
             source: source,
             matchInfo: WorkoutMatchInfo(state: .unmatched),
             energyKilocalories: energyKilocalories,
@@ -137,6 +141,12 @@ public enum HealthImportMerge {
                 current.heartRateAverage = imported.heartRateAverage ?? current.heartRateAverage
                 current.energyKilocalories = imported.energyKilocalories ?? current.energyKilocalories
                 current.cadenceAverage = imported.cadenceAverage ?? current.cadenceAverage
+                if let route = imported.route {
+                    let preserveLocalRoute = current.source != .appleHealth && current.route != nil
+                    if !preserveLocalRoute {
+                        current.route = route
+                    }
+                }
                 current.isUnavailableInHealth = false
                 current.healthKitUUID = imported.healthKitUUID
                 current.healthSync = HealthSyncMetadata(state: .synced, healthKitUUID: imported.healthKitUUID)
@@ -150,10 +160,21 @@ public enum HealthImportMerge {
 
     public static func markUnavailable(existing: [WorkoutResult], missingHealthIDs: Set<UUID>) -> [WorkoutResult] {
         existing.map { result in
-            guard let uuid = result.healthKitUUID, missingHealthIDs.contains(uuid) else { return result }
+            guard let uuid = WorkoutResultMerge.resolvedHealthKitUUID(for: result),
+                  missingHealthIDs.contains(uuid) else { return result }
             var copy = result
             copy.isUnavailableInHealth = true
             return copy
         }
+    }
+}
+
+public enum HealthImportApply {
+    public static func apply(
+        existing: [WorkoutResult],
+        importResult: HealthImportResult
+    ) -> [WorkoutResult] {
+        let merged = HealthImportMerge.merge(existing: existing, imports: importResult.workouts)
+        return HealthImportMerge.markUnavailable(existing: merged, missingHealthIDs: importResult.deletedHealthKitUUIDs)
     }
 }
