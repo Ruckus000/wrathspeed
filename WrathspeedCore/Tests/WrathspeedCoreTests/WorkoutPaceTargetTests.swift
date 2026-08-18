@@ -52,4 +52,27 @@ struct WorkoutPaceTargetTests {
         )
         #expect(WorkoutPaceTarget.representativeZone(in: blueprint) == .threshold)
     }
+
+    @Test(arguments: [
+        (360.0, 1_000.0 / 360.0),
+        (300.0, 1_000.0 / 300.0),
+        (420.0, 1_000.0 / 420.0),
+    ] as [(TimeInterval, Double)])
+    func treadmillSpeedFromRepresentativePace(paceSecPerKm: TimeInterval, expectedMetersPerSecond: Double) {
+        let speed = WorkoutPaceTarget.treadmillSpeedMetersPerSecond(paceSecPerKm: paceSecPerKm)
+        #expect(speed == expectedMetersPerSecond)
+    }
+
+    @Test func treadmillSpeedFallbackWhenPaceUnavailable() {
+        let blueprint = WorkoutBlueprint(
+            date: Date(),
+            kind: .freeRun,
+            title: "Free run",
+            location: .treadmill,
+            steps: [WorkoutStep(name: "Main", target: .duration(seconds: 1_800), intensity: .rpe(3))],
+            plannedDistanceMeters: 0,
+            usesPaceTargets: false
+        )
+        #expect(WorkoutPaceTarget.treadmillSpeedMetersPerSecond(blueprint: blueprint, zones: zones) == nil)
+    }
 }

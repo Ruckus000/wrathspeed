@@ -21,6 +21,7 @@ final class WorkoutSessionCoordinator {
     private var pendingZones: PaceZones?
     private var pendingCuesEnabled = true
     private var pendingSource: WorkoutSource = .wrathspeedPhone
+    private var pendingTreadmillSpeed: Double?
 
     func configure(
         cuesEnabled: Bool,
@@ -62,7 +63,8 @@ final class WorkoutSessionCoordinator {
         zones: PaceZones?,
         cuesEnabled: Bool,
         source: WorkoutSource = .wrathspeedPhone,
-        unit: DistanceUnit? = nil
+        unit: DistanceUnit? = nil,
+        treadmillSpeedMetersPerSecond: Double? = nil
     ) async throws {
         guard session.sessionState != .finishing else { return }
         pendingBlueprint = blueprint
@@ -71,6 +73,7 @@ final class WorkoutSessionCoordinator {
         pendingZones = zones
         pendingCuesEnabled = cuesEnabled
         pendingSource = source
+        pendingTreadmillSpeed = treadmillSpeedMetersPerSecond
         session.resultSource = source
         session.zones = zones
         session.cuesEnabled = cuesEnabled
@@ -86,7 +89,11 @@ final class WorkoutSessionCoordinator {
                     self.watchLaunchPhase = .timedOut
                 }
             }
-            try await session.start(blueprint: blueprint, zones: zones)
+            try await session.start(
+                blueprint: blueprint,
+                zones: zones,
+                treadmillSpeedMetersPerSecond: treadmillSpeedMetersPerSecond
+            )
             if session.isRunning {
                 watchTimeoutTask?.cancel()
                 watchLaunchPhase = .recording
@@ -94,7 +101,11 @@ final class WorkoutSessionCoordinator {
             return
         }
 
-        try await session.start(blueprint: blueprint, zones: zones)
+        try await session.start(
+            blueprint: blueprint,
+            zones: zones,
+            treadmillSpeedMetersPerSecond: treadmillSpeedMetersPerSecond
+        )
         watchLaunchPhase = session.isRunning ? .recording : .idle
     }
 
@@ -116,7 +127,11 @@ final class WorkoutSessionCoordinator {
         guard let blueprint = pendingBlueprint else { return }
         watchTimeoutTask?.cancel()
         do {
-            try await session.startOnPhoneOnly(blueprint: blueprint, zones: pendingZones)
+            try await session.startOnPhoneOnly(
+                blueprint: blueprint,
+                zones: pendingZones,
+                treadmillSpeedMetersPerSecond: pendingTreadmillSpeed
+            )
             watchLaunchPhase = session.isRunning ? .recording : .idle
         } catch {
             watchLaunchPhase = .failed(error.localizedDescription)

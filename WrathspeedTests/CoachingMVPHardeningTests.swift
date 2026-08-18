@@ -288,6 +288,25 @@ final class CoachingMVPHardeningTests: XCTestCase {
     }
 
     @MainActor
+    func testTreadmillEstimationUsesConfiguredSpeedNotHardcodedDefault() {
+        let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
+        let blueprint = WorkoutBlueprint(
+            date: Date(),
+            kind: .freeRun,
+            title: "Free run",
+            location: .treadmill,
+            steps: [WorkoutStep(name: "Main", target: .duration(seconds: 600), intensity: .rpe(3))],
+            plannedDistanceMeters: 0,
+            usesPaceTargets: false
+        )
+        controller.preparePreflightTreadmill(blueprint: blueprint, speedMetersPerSecond: 4.0)
+        controller.testing_applyTreadmillConfiguration(for: blueprint)
+        controller.testing_setElapsedForTreadmillEstimation(100)
+        XCTAssertEqual(controller.estimatedTreadmillDistanceMeters(), 400)
+        XCTAssertNotEqual(controller.estimatedTreadmillDistanceMeters(), 277.7)
+    }
+
+    @MainActor
     func testOverlappingFinishPathsAreAtMostOnce() {
         let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
         let blueprint = makeStartRequest().blueprint

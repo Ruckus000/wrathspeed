@@ -5,6 +5,7 @@ struct LiveRunView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let blueprint: WorkoutBlueprint
+    @State private var confirmEnd = false
 
     var body: some View {
         let session = store.session
@@ -59,6 +60,14 @@ struct LiveRunView: View {
                 .padding(.bottom, 40)
         }
         .background(WSColor.bg.ignoresSafeArea())
+        .confirmationDialog("End this workout?", isPresented: $confirmEnd, titleVisibility: .visible) {
+            Button("End workout", role: .destructive) {
+                Task { await store.session.end() }
+            }
+            Button("Keep running", role: .cancel) {}
+        } message: {
+            Text("Your workout will finish and save locally.")
+        }
         .onChange(of: store.celebration?.id) { _, value in
             if value != nil { dismiss() }
         }
@@ -181,7 +190,7 @@ struct LiveRunView: View {
             }
             .buttonStyle(.plain)
             circle("END", size: 62) {
-                Task { await store.session.end() }
+                confirmEnd = true
             }
         }
         .frame(maxWidth: .infinity)

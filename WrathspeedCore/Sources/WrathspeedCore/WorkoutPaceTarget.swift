@@ -38,4 +38,35 @@ public enum WorkoutPaceTarget {
         default: nil
         }
     }
+
+  /// Converts a target pace into treadmill belt speed (metres per second).
+    public static func treadmillSpeedMetersPerSecond(paceSecPerKm: TimeInterval) -> Double? {
+        guard paceSecPerKm.isFinite, paceSecPerKm > 0 else { return nil }
+        return 1_000 / paceSecPerKm
+    }
+
+    public static func treadmillSpeedMetersPerSecond(
+        blueprint: WorkoutBlueprint,
+        zones: PaceZones?
+    ) -> Double? {
+        guard let pace = targetPaceSecPerKm(blueprint: blueprint, zones: zones) else { return nil }
+        return treadmillSpeedMetersPerSecond(paceSecPerKm: pace)
+    }
+
+    public static func treadmillSpeedFromDisplay(_ value: Double, unit: DistanceUnit) -> Double {
+        switch unit {
+        case .kilometers: value / 3.6
+        case .miles: value / 2.23694
+        }
+    }
+
+    public static func treadmillSpeedDisplay(
+        metersPerSecond: Double,
+        unit: DistanceUnit
+    ) -> Double {
+        switch unit {
+        case .kilometers: metersPerSecond * 3.6
+        case .miles: metersPerSecond * 2.23694
+        }
+    }
 }

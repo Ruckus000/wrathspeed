@@ -5,24 +5,20 @@ struct PendingTreadmillDistance: Identifiable, Equatable {
     let id: UUID
     var result: WorkoutResult
     let estimateMeters: Double
+    let displayUnit: DistanceUnit
 
-    init(result: WorkoutResult, estimateMeters: Double) {
+    init(result: WorkoutResult, estimateMeters: Double, displayUnit: DistanceUnit = .kilometers) {
         self.id = result.workoutID
         self.result = result
         self.estimateMeters = estimateMeters
+        self.displayUnit = displayUnit
     }
 }
 
 struct TreadmillDistanceSheet: View {
     @Environment(AppStore.self) private var store
     let pending: PendingTreadmillDistance
-    @State private var actualDisplay: Double
-
-    init(pending: PendingTreadmillDistance) {
-        self.pending = pending
-        let unit = DistanceUnit.default()
-        _actualDisplay = State(initialValue: Units.display(fromMeters: pending.estimateMeters, unit: unit))
-    }
+    @State private var actualDisplay: Double = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -79,7 +75,8 @@ struct TreadmillDistanceSheet: View {
             }
         }
         .onAppear {
-            actualDisplay = Units.display(fromMeters: pending.estimateMeters, unit: store.unit)
+            let unit = store.unit
+            actualDisplay = Units.display(fromMeters: pending.estimateMeters, unit: unit)
         }
     }
 }
