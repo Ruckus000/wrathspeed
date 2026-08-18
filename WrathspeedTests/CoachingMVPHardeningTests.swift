@@ -301,9 +301,11 @@ final class CoachingMVPHardeningTests: XCTestCase {
         )
         controller.preparePreflightTreadmill(blueprint: blueprint, speedMetersPerSecond: 4.0)
         controller.testing_applyTreadmillConfiguration(for: blueprint)
+        controller.testing_applyTreadmillConfiguration(for: blueprint)
         controller.testing_setElapsedForTreadmillEstimation(100)
         XCTAssertEqual(controller.estimatedTreadmillDistanceMeters(), 400)
         XCTAssertNotEqual(controller.estimatedTreadmillDistanceMeters(), 277.7)
+        XCTAssertEqual(controller.treadmillTargetSpeedMetersPerSecond, 4.0)
     }
 
     @MainActor

@@ -1048,9 +1048,8 @@ extension WorkoutSessionController: HKWorkoutSessionDelegate, HKLiveWorkoutBuild
                 zones: zones
             ) {
                 treadmillTargetSpeedMetersPerSecond = derived
-            } else {
-                treadmillTargetSpeedMetersPerSecond = nil
             }
+            // Else keep existing treadmillTargetSpeedMetersPerSecond (e.g. after watch timeout → start on phone).
         } else {
             treadmillTargetSpeedMetersPerSecond = nil
         }
