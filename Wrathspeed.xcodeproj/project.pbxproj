@@ -619,6 +619,7 @@
 						ProvisioningStyle = Automatic;
 					};
 					237C48BB19F31E39DA1697EB = {
+						DevelopmentTeam = XJ3KNK4F29;
 						ProvisioningStyle = Automatic;
 					};
 					6875D54BBF5A89532BB6B62D = {
@@ -951,6 +952,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Wrathspeed/Wrathspeed.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = XJ3KNK4F29;
 				INFOPLIST_FILE = Wrathspeed/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Wrathspeed;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wrathspeed reads heart rate and workout data to coach your runs.";
@@ -978,6 +980,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Wrathspeed/Wrathspeed.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = XJ3KNK4F29;
 				INFOPLIST_FILE = Wrathspeed/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Wrathspeed;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Wrathspeed reads heart rate and workout data to coach your runs.";

@@ -36,6 +36,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app
         PRODUCT_NAME: Wrathspeed
+        DEVELOPMENT_TEAM: XJ3KNK4F29
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_ENTITLEMENTS: Wrathspeed/Wrathspeed.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: Wrathspeed
