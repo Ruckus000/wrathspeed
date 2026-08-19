@@ -12,7 +12,10 @@ let package = Package(
         .library(name: "WrathspeedCore", targets: ["WrathspeedCore"]),
     ],
     targets: [
-        .target(name: "WrathspeedCore"),
+        .target(
+            name: "WrathspeedCore",
+            exclude: ["InstantWorkoutFactory.swift"]
+        ),
         .testTarget(
             name: "WrathspeedCoreTests",
             dependencies: ["WrathspeedCore"]

@@ -5,63 +5,82 @@ struct TodayView: View {
     @Environment(AppStore.self) private var store
     @State private var showN100 = false
     @State private var showInstant = false
-    @State private var strengthSession: StrengthSession?
-    @State private var mobilitySession: MobilitySession?
+    @State private var guidedPlayer: GuidedPlayer?
+
+    private enum GuidedPlayer: Identifiable {
+        case strength(StrengthSession)
+        case mobility(MobilitySession)
+
+        var id: String {
+            switch self {
+            case .strength(let session):
+                return "strength-\(session.id)"
+            case .mobility(let session):
+                return "mobility-\(session.routineID)"
+            }
+        }
+    }
 
     var body: some View {
-        WSScreen {
-            header
-            if let pending = store.pendingSuggestion {
-                suggestionCard(pending)
-            }
-            WSEyebrow(text: orderEyebrow)
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 26)
-            Text(orderTitle)
-                .font(WSFont.display(58))
-                .foregroundStyle(WSColor.text)
-                .lineSpacing(-2)
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 6)
-            Text(orderMeta)
-                .font(WSFont.ui(14, weight: .semibold))
-                .foregroundStyle(WSColor.text70)
+        ZStack {
+            WSScreen {
+                header
+                if let pending = store.pendingSuggestion {
+                    suggestionCard(pending)
+                }
+                WSEyebrow(text: orderEyebrow)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 26)
+                Text(orderTitle)
+                    .font(WSFont.display(58))
+                    .foregroundStyle(WSColor.text)
+                    .lineSpacing(-2)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 6)
+                Text(orderMeta)
+                    .font(WSFont.ui(14, weight: .semibold))
+                    .foregroundStyle(WSColor.text70)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 14)
+                if store.dataDensity == .detailed, let steps = stepsLine {
+                    Text(steps)
+                        .font(WSFont.mono(12, weight: .medium))
+                        .foregroundStyle(WSColor.text40)
+                        .padding(.horizontal, WSSpace.gutter)
+                        .padding(.top, 8)
+                }
+                primaryAction
+                if let strength = store.resumableStrengthSession ?? store.todaysStrength.first {
+                    strengthRow(strength, isResume: store.resumableStrengthSession != nil)
+                }
+                mobilitySection
+                HStack {
+                    Button("NOT FEELING 100%?") { showN100 = true }
+                        .font(WSFont.ui(11, weight: .bold))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.text45)
+                    Spacer()
+                    Button("+ INSTANT RUN") { showInstant = true }
+                        .font(WSFont.ui(11, weight: .heavy))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.accent)
+                }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 14)
-            if store.dataDensity == .detailed, let steps = stepsLine {
-                Text(steps)
-                    .font(WSFont.mono(12, weight: .medium))
-                    .foregroundStyle(WSColor.text40)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 8)
+                weekBar
             }
-            primaryAction
-            if let strength = store.todaysStrength.first {
-                strengthRow(strength)
-            }
-            HStack {
-                Button("NOT FEELING 100%?") { showN100 = true }
-                    .font(WSFont.ui(11, weight: .bold))
-                    .tracking(1)
-                    .foregroundStyle(WSColor.text45)
-                Spacer()
-                Button("+ INSTANT RUN") { showInstant = true }
-                    .font(WSFont.ui(11, weight: .heavy))
-                    .tracking(1)
-                    .foregroundStyle(WSColor.accent)
-            }
-            .padding(.horizontal, WSSpace.gutter)
-            .padding(.top, 14)
-            weekBar
         }
         .sheet(isPresented: $showN100) { NotFeeling100View() }
         .sheet(isPresented: $showInstant) { InstantRunView() }
-        .fullScreenCover(item: $strengthSession) { session in
-            StrengthPlayerView(session: session)
+        .fullScreenCover(item: $guidedPlayer) { player in
+            switch player {
+            case .strength(let session):
+                StrengthPlayerView(session: session)
+            case .mobility(let session):
+                MobilityPlayerView(session: session)
+            }
         }
-        .fullScreenCover(item: $mobilitySession) { session in
-            MobilityPlayerView(session: session)
-        }
+        .onAppear { presentMobilityPreRunForUITestingIfNeeded() }
     }
 
     private var header: some View {
@@ -173,9 +192,9 @@ struct TodayView: View {
         }
     }
 
-    private func strengthRow(_ session: StrengthSession) -> some View {
+    private func strengthRow(_ session: StrengthSession, isResume: Bool) -> some View {
         Button {
-            strengthSession = session
+            guidedPlayer = .strength(session)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
@@ -188,7 +207,7 @@ struct TodayView: View {
                         .foregroundStyle(WSColor.text45)
                 }
                 Spacer()
-                Text("GO →")
+                Text(isResume ? "RESUME →" : "GO →")
                     .font(WSFont.ui(13, weight: .heavy))
                     .tracking(1)
                     .foregroundStyle(WSColor.accent)
@@ -201,8 +220,59 @@ struct TodayView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(isResume ? "Resume \(session.title)" : "Start \(session.title)")
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 12)
+    }
+
+    private var mobilitySection: some View {
+        let sessions = store.mobilitySessionsForToday()
+        return Group {
+            if !sessions.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    WSEyebrow(text: "MOBILITY")
+                        .padding(.horizontal, WSSpace.gutter)
+                    ForEach(sessions) { session in
+                        mobilityRow(session)
+                    }
+                }
+                .padding(.top, 12)
+            }
+        }
+    }
+
+    private func mobilityRow(_ session: MobilitySession) -> some View {
+        let isResume = store.isMobilityRoutineResumable(session)
+        return HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(session.title.uppercased())
+                    .font(WSFont.ui(13, weight: .heavy))
+                    .tracking(0.5)
+                    .foregroundStyle(WSColor.text)
+                Text("\(session.durationMinutes) MIN · \(session.movements.count) MOVEMENTS")
+                    .font(WSFont.ui(11, weight: .medium))
+                    .foregroundStyle(WSColor.text45)
+            }
+            Spacer()
+            Button(isResume ? "RESUME →" : "GO →") {
+                guidedPlayer = .mobility(session)
+            }
+            .font(WSFont.ui(13, weight: .heavy))
+            .tracking(1)
+            .foregroundStyle(WSColor.accent)
+            .frame(minHeight: 44)
+            .accessibilityLabel(isResume ? "Resume \(session.title)" : "Start \(session.title)")
+            .accessibilityIdentifier("mobility-row-\(session.routineID)")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .overlay(
+            RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
+                .stroke(WSColor.border, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { guidedPlayer = .mobility(session) }
+        .padding(.horizontal, WSSpace.gutter)
     }
 
     private var weekBar: some View {
@@ -230,6 +300,7 @@ struct TodayView: View {
                             .foregroundStyle(cell.isToday ? WSColor.accent : WSColor.text40)
                     }
                     .frame(maxWidth: .infinity)
+                    .accessibilityLabel("\(cell.letter), \(cell.completed ? "completed" : cell.scheduled ? "scheduled" : "rest")")
                 }
             }
         }
@@ -280,6 +351,17 @@ struct TodayView: View {
         name.uppercased()
     }
 
+#if DEBUG
+    private func presentMobilityPreRunForUITestingIfNeeded() {
+        guard UITestingSupport.shouldPresentMobilityPreRun else { return }
+        guard guidedPlayer == nil else { return }
+        guard let session = store.mobilitySessionsForToday().first(where: { $0.routineID == "pre_run" }) else { return }
+        guidedPlayer = .mobility(session)
+    }
+#else
+    private func presentMobilityPreRunForUITestingIfNeeded() {}
+#endif
+
     private var isRestDay: Bool {
         store.todaysRuns.isEmpty && store.todaysCompletedRuns.isEmpty
     }
@@ -292,18 +374,7 @@ struct TodayView: View {
     }
 
     private func targetPace(for workout: ScheduledWorkout) -> TimeInterval? {
-        guard workout.blueprint.usesPaceTargets, let zone = zone(for: workout.blueprint.kind) else { return nil }
-        return store.zones?.secondsPerKilometer(for: zone)
-    }
-
-    private func zone(for kind: WorkoutKind) -> PaceZone? {
-        switch kind {
-        case .easy, .longRun, .freeRun: .easy
-        case .tempo: .threshold
-        case .intervals: .interval
-        case .race: .marathon
-        default: nil
-        }
+        WorkoutPaceTarget.targetPaceSecPerKm(blueprint: workout.blueprint, zones: store.zones)
     }
 
     private var weekMileage: (done: Double, planned: Double) {
@@ -331,7 +402,7 @@ struct TodayView: View {
                 return WSColor.surface3
             }()
             let stroke: Color = isToday && !completed ? WSColor.accent : .clear
-            return WeekCell(id: offset, letter: letter, fill: fill, stroke: stroke, isToday: isToday)
+            return WeekCell(id: offset, letter: letter, completed: completed, scheduled: scheduled, fill: fill, stroke: stroke, isToday: isToday)
         }
     }
 }
@@ -339,6 +410,8 @@ struct TodayView: View {
 private struct WeekCell: Identifiable {
     var id: Int
     var letter: String
+    var completed: Bool
+    var scheduled: Bool
     var fill: Color
     var stroke: Color
     var isToday: Bool

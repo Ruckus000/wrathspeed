@@ -39,7 +39,6 @@ struct RootView: View {
         .sheet(item: $store.pendingPreflight) { request in
             WorkoutPreflightView(blueprint: request.blueprint, source: request.source) {
                 store.pendingPreflight = nil
-                Task { await store.start(request.blueprint, source: request.source) }
             }
         }
         .fullScreenCover(item: $store.pendingRecoverySnapshot) { snapshot in

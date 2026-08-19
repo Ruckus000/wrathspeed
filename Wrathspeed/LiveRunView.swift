@@ -42,11 +42,15 @@ struct LiveRunView: View {
                     .tracking(3)
                     .foregroundStyle(WSColor.text50)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Current pace \(paceHero) per \(WSFormat.unitSuffix(store.unit))")
             .frame(maxWidth: .infinity)
             .padding(.top, 20)
-            zoneBand
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 24)
+            if targetPace != nil {
+                zoneBand
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 24)
+            }
             metricsRow
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 24)
@@ -105,6 +109,7 @@ struct LiveRunView: View {
                         : WSColor.surface1
                 )
             )
+            .accessibilityLabel(model.text)
     }
 
     private var targetPace: TimeInterval? {
@@ -115,7 +120,7 @@ struct LiveRunView: View {
     }
 
     private var zoneBand: some View {
-        let target = targetPace ?? 360
+        let target = targetPace ?? 0
         let current = store.session.metrics.currentPaceSecPerKm ?? target
         let low = target * 0.85
         let high = target * 1.20
@@ -189,7 +194,8 @@ struct LiveRunView: View {
                 .frame(width: 88, height: 88)
             }
             .buttonStyle(.plain)
-            circle("END", size: 62) {
+            .accessibilityLabel(store.session.isPaused ? "Resume" : "Pause")
+            circle("END", size: 62, accessibilityLabel: "End workout") {
                 confirmEnd = true
             }
         }
@@ -197,7 +203,7 @@ struct LiveRunView: View {
         .padding(.bottom, 8)
     }
 
-    private func circle(_ title: String, size: CGFloat, action: @escaping () -> Void) -> some View {
+    private func circle(_ title: String, size: CGFloat, accessibilityLabel: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(WSFont.ui(12, weight: .heavy))
@@ -207,6 +213,7 @@ struct LiveRunView: View {
                 .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 1.5))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel ?? title)
     }
 
     private var statusText: String {

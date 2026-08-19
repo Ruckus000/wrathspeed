@@ -41,6 +41,8 @@ struct InstantRunView: View {
                     .font(WSFont.mono(12))
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 8)
+                    .accessibilityLabel(buildError)
+                    .accessibilityAddTraits(.isStaticText)
             }
             WSOutlineButton(title: "PREVIEW WORKOUT") { rebuildPreview() }
                 .padding(.top, 16)
@@ -71,7 +73,11 @@ struct InstantRunView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(kinds, id: \.self) { item in
-                    WSChip(title: item.instantLabel, selected: kind == item) { kind = item; rebuildPreview() }
+                    WSChip(title: item.instantLabel, selected: kind == item) {
+                        kind = item
+                        if item == .race { targetMode = .distance }
+                        rebuildPreview()
+                    }
                 }
             }
         }
@@ -92,8 +98,10 @@ struct InstantRunView: View {
     @ViewBuilder
     private var kindControls: some View {
         switch kind {
-        case .easy, .longRun, .freeRun, .race:
+        case .easy, .longRun, .freeRun:
             distanceOrDurationControls
+        case .race:
+            raceDistanceControls
         case .tempo:
             tempoControls
         case .intervals:
@@ -118,10 +126,21 @@ struct InstantRunView: View {
             }
             .padding(.top, 10)
             if targetMode == .distance {
-                displayDistanceStepper(label: "DISTANCE", value: $distanceDisplay, range: kind == .race ? 1...42 : 1...42)
+                displayDistanceStepper(label: "DISTANCE", value: $distanceDisplay, range: 1...42)
             } else {
                 durationStepper
             }
+        }
+    }
+
+    private var raceDistanceControls: some View {
+        Group {
+            Text("TARGET")
+                .font(WSFont.mono(10))
+                .tracking(1.5)
+                .foregroundStyle(WSColor.accent)
+                .padding(.top, 16)
+            displayDistanceStepper(label: "DISTANCE", value: $distanceDisplay, range: 1...42)
         }
     }
 
@@ -196,12 +215,20 @@ struct InstantRunView: View {
                 .font(WSFont.ui(14, weight: .heavy))
             Spacer()
             WSStepperControl(
-                valueText: String(format: "%.0f MIN", value.wrappedValue),
+                valueText: minuteLabel(value.wrappedValue),
                 decrement: { value.wrappedValue = max(range.lowerBound, value.wrappedValue - 0.5); rebuildPreview() },
                 increment: { value.wrappedValue = min(range.upperBound, value.wrappedValue + 0.5); rebuildPreview() }
             )
         }
         .padding(.top, 12)
+    }
+
+    private func minuteLabel(_ minutes: Double) -> String {
+        let tenths = (minutes * 10).rounded() / 10
+        if tenths.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f MIN", tenths)
+        }
+        return String(format: "%.1f MIN", tenths)
     }
 
     private func repsStepper(label: String, value: Binding<Int>) -> some View {
@@ -269,12 +296,13 @@ struct InstantRunView: View {
 
     private func buildInput() -> InstantWorkoutBuildInput {
         let meters = Units.meters(fromDisplay: distanceDisplay, unit: store.unit)
+        let resolvedMode: InstantTargetMode = kind == .race ? .distance : targetMode
         var request = InstantWorkoutRequest(
             kind: kind,
             location: location,
-            targetMode: targetMode,
-            distanceMeters: targetMode == .distance ? meters : nil,
-            durationSeconds: targetMode == .duration ? durationMinutes * 60 : nil
+            targetMode: resolvedMode,
+            distanceMeters: resolvedMode == .distance ? meters : nil,
+            durationSeconds: resolvedMode == .duration ? durationMinutes * 60 : nil
         )
         switch kind {
         case .tempo:

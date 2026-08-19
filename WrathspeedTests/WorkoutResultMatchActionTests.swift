@@ -133,7 +133,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let startedAt = Date(timeIntervalSince1970: 1_720_000_010)
         let uuidA = UUID()
         let uuidB = UUID()
-        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+        _ = try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
 
         var resultA = try result(store, uuid: uuidA)
         var resultB = try result(store, uuid: uuidB)
@@ -160,7 +160,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let startedAt = Date(timeIntervalSince1970: 1_720_000_020)
         let uuidA = UUID()
         let uuidB = UUID()
-        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+        _ = try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
 
         var resultA = try result(store, uuid: uuidA)
         var resultB = try result(store, uuid: uuidB)
@@ -410,7 +410,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let startedAt = Date(timeIntervalSince1970: 1_720_000_110)
         let uuidA = UUID()
         let uuidB = UUID()
-        try seedConflictingResults(
+        _ = try seedConflictingResults(
             store,
             workoutID: importedID,
             startedAt: startedAt,
@@ -448,7 +448,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let startedAt = Date(timeIntervalSince1970: 1_720_000_120)
         let uuidA = UUID()
         let uuidB = UUID()
-        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+        _ = try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
 
         var resultA = try result(store, uuid: uuidA)
         var resultB = try result(store, uuid: uuidB)
@@ -505,7 +505,7 @@ final class WorkoutResultMatchActionTests: XCTestCase {
         let startedAt = Date(timeIntervalSince1970: 1_720_000_130)
         let uuidA = UUID()
         let uuidB = UUID()
-        try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
+        _ = try seedConflictingResults(store, workoutID: importedID, startedAt: startedAt, firstUUID: uuidA, secondUUID: uuidB)
 
         var resultA = try result(store, uuid: uuidA)
         var resultB = try result(store, uuid: uuidB)

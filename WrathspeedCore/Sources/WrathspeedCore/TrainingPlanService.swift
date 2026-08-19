@@ -20,7 +20,7 @@ public enum TrainingPlanService {
         strengthCatalog: StrengthCatalog
     ) throws -> GeneratedTrainingSchedule {
         let basePlan = try PlanGenerator.generateValidated(request)
-        var plan = PlanReconciler.reconcile(
+        let plan = PlanReconciler.reconcile(
             existing: existingPlan,
             generated: basePlan,
             calendar: request.calendar,

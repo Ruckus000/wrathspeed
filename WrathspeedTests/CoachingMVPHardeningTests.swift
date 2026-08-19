@@ -218,7 +218,6 @@ final class CoachingMVPHardeningTests: XCTestCase {
     @MainActor
     func testMirroredRejectionLeavesControllerStateUnchanged() async {
         let controller = WorkoutSessionController(routeRecorder: NoopRouteRecorder())
-        let blueprint = makeStartRequest().blueprint
         controller.testing_configureMirroredAdmissionContext(
             launchState: .idle,
             sessionState: .preparing,

@@ -35,6 +35,16 @@ final class AppStore {
     var showHealthPermissionPrimer = false
     var healthImportDenied = false
     var healthImportInProgress = false
+    var healthImportLastSuccessAt: Date?
+    var healthImportErrorMessage: String?
+    var healthImportStatus: HealthImportStatusSnapshot {
+        HealthImportStatusDeriver.derive(
+            isImporting: healthImportInProgress,
+            authorizationDenied: healthImportDenied,
+            lastSuccessfulImportAt: healthImportLastSuccessAt,
+            errorMessage: healthImportErrorMessage
+        )
+    }
     var lastUndoDescription: String?
     var toastMessage: String?
     var celebration: CelebrationPayload?
@@ -42,8 +52,14 @@ final class AppStore {
     var pendingRecoverySnapshot: ActiveSessionSnapshot?
     var pendingPreflight: PreflightRequest?
     var showWatchLaunchTimeout = false
-    var strengthResults: [StrengthSessionResult] = []
-    var mobilityResults: [MobilitySessionResult] = []
+    private(set) var guidedStrengthResults: [StrengthSessionResult] = []
+    private(set) var guidedMobilityResults: [MobilitySessionResult] = []
+    var strengthResults: [StrengthSessionResult] {
+        GuidedSessionPolicy.completedStrength(guidedStrengthResults)
+    }
+    var mobilityResults: [MobilitySessionResult] {
+        GuidedSessionPolicy.completedMobility(guidedMobilityResults)
+    }
     var pendingWorkoutSource: WorkoutSource = .wrathspeedPhone
     var pendingTreadmillDistance: PendingTreadmillDistance?
 #if DEBUG
@@ -99,6 +115,31 @@ final class AppStore {
 
     var todaysStrength: [StrengthSession] {
         strengthSessions.filter { Calendar.current.isDateInToday($0.date) }
+    }
+
+    var resumableStrengthSession: StrengthSession? {
+        guard let inProgress = guidedStrengthResults.first(where: { $0.lifecycle == .inProgress }) else { return nil }
+        return strengthSessions.first { $0.id == inProgress.sessionID }
+    }
+
+    var resumableMobilitySessions: [MobilitySession] {
+        let routineIDs = Set(
+            guidedMobilityResults
+                .filter { $0.lifecycle == .inProgress }
+                .map(\.routineID)
+                .filter { !$0.isEmpty }
+        )
+        guard !routineIDs.isEmpty else { return [] }
+        guard let sessions = try? MobilityCatalogLoader.allSessions() else { return [] }
+        return sessions.filter { routineIDs.contains($0.routineID) }
+    }
+
+    func mobilitySessionsForToday() -> [MobilitySession] {
+        (try? MobilityCatalogLoader.allSessions()) ?? []
+    }
+
+    func isMobilityRoutineResumable(_ session: MobilitySession) -> Bool {
+        GuidedSessionPolicy.inProgressMobility(routineID: session.routineID, in: guidedMobilityResults) != nil
     }
 
     var upcomingRuns: [ScheduledWorkout] {
@@ -185,8 +226,17 @@ final class AppStore {
             hasOnboarded = true
             try repository.save(currentPersistedState())
             pushWatchWorkouts()
+#if DEBUG
+            if !UITestingSupport.shouldResetStore {
+                showHealthPermissionPrimer = true
+            }
+#else
             showHealthPermissionPrimer = true
+#endif
             showToast("PLAN READY — \(draft.plan.goal.weekCount) WEEKS")
+#if DEBUG
+            seedInProgressMobilityForUITestingIfNeeded()
+#endif
         } catch {
             hasOnboarded = false
             plan = nil
@@ -557,18 +607,20 @@ final class AppStore {
         do {
             try await healthImporter.requestAuthorization()
             importResult = try await healthImporter.importWorkouts(anchor: anchor, since: since)
-            results = HealthImportMerge.merge(existing: results, imports: importResult.workouts)
+            results = HealthImportApply.apply(existing: results, importResult: importResult)
             for result in results {
                 reconcilePlanEmbeddedResult(result)
             }
             applyMatchSuggestions()
             try persistThrowing()
+            healthImportLastSuccessAt = Date()
+            healthImportErrorMessage = nil
         } catch {
             results = previousResults
             plan = previousPlan
             healthImportDenied = healthImporter.authorizationDenied
             if !healthImportDenied {
-                errorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
+                healthImportErrorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
             }
             return
         }
@@ -580,7 +632,7 @@ final class AppStore {
         } catch {
             healthImportDenied = healthImporter.authorizationDenied
             if !healthImportDenied {
-                errorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
+                healthImportErrorMessage = "Couldn’t import Apple Health workouts: \(error.localizedDescription)"
             }
         }
     }
@@ -786,7 +838,7 @@ final class AppStore {
             errorMessage = "Couldn't save strength session: \(error.localizedDescription)"
             throw error
         }
-        upsertGuidedResult(&strengthResults, result, matches: StrengthSessionResult.matches)
+        upsertGuidedResult(&guidedStrengthResults, result, matches: StrengthSessionResult.matches)
     }
 
     func recordMobilityResult(_ result: MobilitySessionResult) throws {
@@ -796,16 +848,18 @@ final class AppStore {
             errorMessage = "Couldn't save mobility session: \(error.localizedDescription)"
             throw error
         }
-        upsertGuidedResult(&mobilityResults, result, matches: MobilitySessionResult.matches)
+        upsertGuidedResult(&guidedMobilityResults, result, matches: MobilitySessionResult.matches)
     }
 
     private func persistStrengthResult(_ result: StrengthSessionResult) throws {
         guard let context = modelContext else {
             throw AppPersistenceError.storageUnavailable
         }
+#if DEBUG
         if repository?.forceGuidedResultSaveFailure == true {
             throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated guided result save failure"])
         }
+#endif
         try GuidedSessionResultStore.upsertStrengthResult(result, to: context)
     }
 
@@ -813,9 +867,11 @@ final class AppStore {
         guard let context = modelContext else {
             throw AppPersistenceError.storageUnavailable
         }
+#if DEBUG
         if repository?.forceGuidedResultSaveFailure == true {
             throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated guided result save failure"])
         }
+#endif
         try GuidedSessionResultStore.upsertMobilityResult(result, to: context)
     }
 
@@ -960,8 +1016,7 @@ final class AppStore {
         let vsDistance = delta >= 0 ? "+\(distance) VS PLAN" : "-\(distance) VS PLAN"
         guard workout.blueprint.usesPaceTargets,
               let actual = result.averagePaceSecPerKm,
-              let zone = targetZone(for: workout.blueprint.kind),
-              let target = zones?.secondsPerKilometer(for: zone)
+              let target = WorkoutPaceTarget.targetPaceSecPerKm(blueprint: workout.blueprint, zones: zones)
         else { return vsDistance }
         let faster = actual < target
         return "\(vsDistance) · PACE \(faster ? "FASTER" : "SLOWER") THAN TARGET"
@@ -1044,8 +1099,8 @@ final class AppStore {
     private func loadGuidedSessionResults() {
         guard let context = modelContext else { return }
         do {
-            strengthResults = try GuidedSessionResultStore.loadStrengthResults(from: context)
-            mobilityResults = try GuidedSessionResultStore.loadMobilityResults(from: context)
+            guidedStrengthResults = try GuidedSessionResultStore.loadStrengthResults(from: context)
+            guidedMobilityResults = try GuidedSessionResultStore.loadMobilityResults(from: context)
         } catch {
             errorMessage = "Couldn't load guided session history: \(error.localizedDescription)"
         }
@@ -1228,16 +1283,6 @@ final class AppStore {
         return "FASTEST \(label) \(unitLabel) — \(WSFormat.paceClock(newBest, unit: unit))"
     }
 
-    private func targetZone(for kind: WorkoutKind) -> PaceZone? {
-        switch kind {
-        case .easy, .longRun, .freeRun: .easy
-        case .tempo: .threshold
-        case .intervals: .interval
-        case .race: .marathon
-        default: nil
-        }
-    }
-
     private func pushWatchWorkouts() {
 #if DEBUG
         watchPublicationCountForTesting += 1
@@ -1250,6 +1295,7 @@ final class AppStore {
         persist()
     }
 
+#if DEBUG
     func setForceSaveFailureForTesting(_ value: Bool) {
         repository?.forceSaveFailure = value
     }
@@ -1265,6 +1311,25 @@ final class AppStore {
     func setForcePlanChangeFailureForTesting(_ value: Bool) {
         repository?.forcePlanChangeFailure = value
     }
+
+    func seedInProgressMobilityForUITestingIfNeeded() {
+        guard UITestingSupport.shouldSeedInProgressMobility else { return }
+        guard GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: guidedMobilityResults) == nil else { return }
+        guard let session = (try? MobilityCatalogLoader.allSessions())?.first(where: { $0.routineID == "pre_run" }),
+              let firstMovement = session.movements.first else { return }
+        let result = MobilitySessionResult(
+            id: UUID(),
+            sessionID: session.id,
+            startedAt: Date(),
+            endedAt: Date(),
+            completedMovementIDs: [firstMovement.id],
+            routineID: session.routineID,
+            lifecycle: .inProgress,
+            progress: MobilitySessionProgress(movementIndex: 1, remainingSeconds: 30)
+        )
+        try? recordMobilityResult(result)
+    }
+#endif
 
     func setReminderSchedulerForTesting(_ scheduler: any WorkoutReminderScheduling) {
         reminderScheduler = scheduler

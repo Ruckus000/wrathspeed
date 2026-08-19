@@ -55,6 +55,7 @@ struct WSOutlineButton: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
 
@@ -81,6 +82,8 @@ struct WSChip: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -121,27 +124,28 @@ struct WSStepperControl: View {
 
     var body: some View {
         HStack(spacing: 18) {
-            circleButton("−", outlined: true, action: decrement)
+            circleButton("−", outlined: true, label: "Decrease", action: decrement)
             Text(valueText)
                 .font(WSFont.display(30))
                 .foregroundStyle(WSColor.text)
                 .frame(minWidth: 28)
                 .multilineTextAlignment(.center)
-            circleButton("+", outlined: false, action: increment)
+            circleButton("+", outlined: false, label: "Increase", action: increment)
         }
     }
 
-    private func circleButton(_ title: String, outlined: Bool, action: @escaping () -> Void) -> some View {
+    private func circleButton(_ title: String, outlined: Bool, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(WSFont.ui(18, weight: .heavy))
                 .foregroundStyle(outlined ? WSColor.text : WSColor.accent)
-                .frame(width: 38, height: 38)
+                .frame(minWidth: 44, minHeight: 44)
                 .overlay(
                     Circle().stroke(outlined ? Color.white.opacity(0.3) : WSColor.accent, lineWidth: 1.5)
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 }
 

@@ -4,6 +4,7 @@ import WrathspeedCore
 struct MobilityPlayerView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     let session: MobilitySession
     @State private var resultID = UUID()
     @State private var index = 0
@@ -21,11 +22,14 @@ struct MobilityPlayerView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Button("← CLOSE") {
-                    persistProgress(force: true)
-                    dismiss()
+                    do {
+                        try persistProgress(force: true)
+                        dismiss()
+                    } catch {}
                 }
                 .font(WSFont.ui(13, weight: .heavy))
                 .foregroundStyle(WSColor.text50)
+                .accessibilityLabel("Close")
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)
@@ -42,16 +46,17 @@ struct MobilityPlayerView: View {
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 24)
                     .accessibilityHidden(true)
-                Text(movement.name.uppercased())
-                    .font(WSFont.ui(18, weight: .heavy))
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 12)
-                    .accessibilityLabel("Current movement \(movement.name)")
-                Text(movement.cue)
-                    .font(WSFont.ui(15))
-                    .foregroundStyle(WSColor.text50)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 8)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(movement.name.uppercased())
+                        .font(WSFont.ui(18, weight: .heavy))
+                    Text(movement.cue)
+                        .font(WSFont.ui(15))
+                        .foregroundStyle(WSColor.text50)
+                }
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 12)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Current movement \(movement.name). \(movement.cue)")
                 Text(timerLabel)
                     .font(WSFont.mono(24, weight: .bold))
                     .foregroundStyle(WSColor.accent)
@@ -77,6 +82,16 @@ struct MobilityPlayerView: View {
             startTimer()
         }
         .onDisappear { timer?.invalidate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                try? persistProgress(force: true)
+            }
+        }
+        .overlay {
+            if let message = store.errorMessage {
+                WSAlert(message: message) { store.errorMessage = nil }
+            }
+        }
     }
 
     private var timerLabel: String {
@@ -85,7 +100,7 @@ struct MobilityPlayerView: View {
     }
 
     private func restoreOrStart() {
-        if let existing = GuidedSessionPolicy.inProgressMobility(routineID: session.routineID, in: store.mobilityResults) {
+        if let existing = GuidedSessionPolicy.inProgressMobility(routineID: session.routineID, in: store.guidedMobilityResults) {
             resultID = existing.id
             startedAt = existing.startedAt
             completedMovementIDs = existing.completedMovementIDs
@@ -103,7 +118,7 @@ struct MobilityPlayerView: View {
         completedMovementIDs = []
         index = 0
         remaining = session.movements.first?.durationSeconds ?? 30
-        persistProgress(force: true)
+        try? persistProgress(force: true)
     }
 
     private func startTimer() {
@@ -128,7 +143,7 @@ struct MobilityPlayerView: View {
         }
         index += 1
         remaining = session.movements[index].durationSeconds ?? 30
-        persistProgress(force: true)
+        try? persistProgress(force: true)
         startTimer()
     }
 
@@ -149,8 +164,8 @@ struct MobilityPlayerView: View {
         } catch {}
     }
 
-    private func persistProgress(force: Bool = false) {
-        _ = force
+    private func persistProgress(force: Bool = false) throws {
+        guard force else { return }
         let result = MobilitySessionResult(
             id: resultID,
             sessionID: session.id,
@@ -161,9 +176,7 @@ struct MobilityPlayerView: View {
             lifecycle: .inProgress,
             progress: MobilitySessionProgress(movementIndex: index, remainingSeconds: remaining)
         )
-        do {
-            try store.recordMobilityResult(result)
-        } catch {}
+        try store.recordMobilityResult(result)
     }
 }
 

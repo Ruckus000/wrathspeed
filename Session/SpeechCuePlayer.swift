@@ -38,11 +38,13 @@ final class SpeechCuePlayer: @unchecked Sendable {
         }()
         WKInterfaceDevice.current().play(type)
         #elseif os(iOS)
-        switch cue {
-        case .speedUp, .slowDown:
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-        default:
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        Task { @MainActor in
+            switch cue {
+            case .speedUp, .slowDown:
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            default:
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
         }
         #endif
     }

@@ -48,7 +48,7 @@ public final class LiveHealthImportService: HealthImporting, @unchecked Sendable
                     return
                 }
                 let workouts = (samples as? [HKWorkout]) ?? []
-                let deletedUUIDs = Set((deletedObjects as? [HKWorkout])?.map(\.uuid) ?? [])
+                let deletedUUIDs = Set((deletedObjects ?? []).map(\.uuid))
                 let filtered = workouts.filter { $0.startDate >= since }
                 Task {
                     var imports: [ImportedHealthWorkout] = []
@@ -74,7 +74,9 @@ public final class LiveHealthImportService: HealthImporting, @unchecked Sendable
     }
 
     private static func mapWorkout(_ workout: HKWorkout) -> ImportedHealthWorkout? {
-        let distance = workout.totalDistance?.doubleValue(for: .meter()) ?? 0
+        let distance = workout.statistics(for: HKQuantityType(.distanceWalkingRunning))?
+            .sumQuantity()?
+            .doubleValue(for: .meter()) ?? 0
         guard distance > 0 || workout.duration > 60 else { return nil }
         let location: RunLocation = workout.metadata?[HKMetadataKeyIndoorWorkout] as? Bool == true ? .treadmill : .outdoor
         return ImportedHealthWorkout(
@@ -91,7 +93,7 @@ public final class LiveHealthImportService: HealthImporting, @unchecked Sendable
     private static func enrich(workout: HKWorkout, base: ImportedHealthWorkout, store: HKHealthStore) async -> ImportedHealthWorkout {
         var enriched = base
         enriched.heartRateAverage = await averageHeartRate(for: workout, store: store)
-        enriched.energyKilocalories = workout.totalEnergyBurned?.doubleValue(for: .kilocalorie())
+        enriched.energyKilocalories = await activeEnergyKilocalories(for: workout, store: store)
         enriched.cadenceAverage = await averageCadence(for: workout, store: store)
         enriched.route = await routePoints(for: workout, store: store)
         return enriched
@@ -112,6 +114,28 @@ public final class LiveHealthImportService: HealthImporting, @unchecked Sendable
             ) { _, statistics, _ in
                 let unit = HKUnit.count().unitDivided(by: .minute())
                 continuation.resume(returning: statistics?.averageQuantity()?.doubleValue(for: unit))
+            }
+            store.execute(query)
+        }
+    }
+
+    private static func activeEnergyKilocalories(for workout: HKWorkout, store: HKHealthStore) async -> Double? {
+        let energyType = HKQuantityType(.activeEnergyBurned)
+        if let quantity = workout.statistics(for: energyType)?.sumQuantity() {
+            return quantity.doubleValue(for: .kilocalorie())
+        }
+        let predicate = HKQuery.predicateForSamples(
+            withStart: workout.startDate,
+            end: workout.endDate,
+            options: .strictStartDate
+        )
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: energyType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, statistics, _ in
+                continuation.resume(returning: statistics?.sumQuantity()?.doubleValue(for: .kilocalorie()))
             }
             store.execute(query)
         }
@@ -154,25 +178,21 @@ public final class LiveHealthImportService: HealthImporting, @unchecked Sendable
         }
         guard let route = routes.first else { return nil }
 
-        var points: [RoutePoint] = []
-        return await withCheckedContinuation { continuation in
-            let routeQuery = HKWorkoutRouteQuery(route: route) { _, locations, done, _ in
-                if let locations {
-                    for location in locations {
-                        points.append(
-                            RoutePoint(
-                                latitude: location.coordinate.latitude,
-                                longitude: location.coordinate.longitude,
-                                timestamp: location.timestamp
-                            )
-                        )
-                    }
-                }
-                if done {
-                    continuation.resume(returning: points.isEmpty ? nil : points)
-                }
+        do {
+            let descriptor = HKWorkoutRouteQueryDescriptor(route)
+            var points: [RoutePoint] = []
+            for try await location in descriptor.results(for: store) {
+                points.append(
+                    RoutePoint(
+                        latitude: location.coordinate.latitude,
+                        longitude: location.coordinate.longitude,
+                        timestamp: location.timestamp
+                    )
+                )
             }
-            store.execute(routeQuery)
+            return points.isEmpty ? nil : points
+        } catch {
+            return nil
         }
     }
 }

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HealthPermissionPrimerView: View {
     @Environment(AppStore.self) private var store
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -19,7 +18,7 @@ struct HealthPermissionPrimerView: View {
             Spacer()
             WSPrimaryButton(title: "ALLOW HEALTH ACCESS") {
                 Task {
-                    try? await store.session.requestAuthorization()
+                    await store.importHealthWorkouts()
                     store.showHealthPermissionPrimer = false
                 }
             }

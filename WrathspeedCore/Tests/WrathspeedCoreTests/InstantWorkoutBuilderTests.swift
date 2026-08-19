@@ -114,15 +114,25 @@ final class InstantWorkoutBuilderTests: XCTestCase {
                 request: InstantWorkoutRequest(kind: .tempo, location: .outdoor),
                 tempoWorkMeters: 0
             ),
+            InstantWorkoutBuildInput(
+                request: InstantWorkoutRequest(
+                    kind: .race,
+                    location: .outdoor,
+                    targetMode: .duration,
+                    durationSeconds: 1_800
+                )
+            ),
         ]
 
         for input in inputs {
             XCTAssertThrowsError(try InstantWorkoutValidation.validate(input))
+            XCTAssertThrowsError(try InstantWorkoutBuilder.build(input))
         }
     }
 
     func testRejectsOversizedDistance() {
         let request = InstantWorkoutRequest(kind: .easy, location: .outdoor, distanceMeters: 200_000)
         XCTAssertThrowsError(try InstantWorkoutValidation.validate(request))
+        XCTAssertThrowsError(try InstantWorkoutBuilder.build(request))
     }
 }

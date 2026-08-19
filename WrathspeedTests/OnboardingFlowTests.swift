@@ -7,7 +7,7 @@ import XCTest
 final class OnboardingFlowTests: XCTestCase {
     func testImperialAndMetricProduceEquivalentStoredMeters() throws {
         let catalog = try makeCatalog()
-        var imperial = OnboardingInputs(
+        let imperial = OnboardingInputs(
             goalMode: .distance,
             goalKind: .tenK,
             weekCount: 10,
@@ -32,7 +32,7 @@ final class OnboardingFlowTests: XCTestCase {
 
     func testRecentPerformanceChangesVDOT() throws {
         let catalog = try makeCatalog()
-        var withRace = OnboardingInputs(
+        let withRace = OnboardingInputs(
             goalMode: .distance,
             goalKind: .tenK,
             weekCount: 10,
@@ -64,7 +64,7 @@ final class OnboardingFlowTests: XCTestCase {
     }
 
     func testLongRunMustBeAvailableDay() {
-        var inputs = OnboardingInputs(
+        let inputs = OnboardingInputs(
             availableDays: [.monday, .wednesday, .friday],
             longRunDay: .saturday
         )
@@ -74,7 +74,7 @@ final class OnboardingFlowTests: XCTestCase {
     }
 
     func testRaceDateTooSoonBlocked() {
-        var inputs = OnboardingInputs(
+        let inputs = OnboardingInputs(
             goalMode: .race,
             goalKind: .marathon,
             raceDate: Calendar.current.date(byAdding: .day, value: 14, to: Date()),

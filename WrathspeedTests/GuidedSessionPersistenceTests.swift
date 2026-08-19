@@ -327,17 +327,25 @@ final class GuidedSessionPersistenceTests: XCTestCase {
             sessionID: sessionID,
             startedAt: startedAt,
             endedAt: startedAt.addingTimeInterval(300),
-            setLogs: [StrengthSetLog(exerciseID: "squat", completed: true, reps: 10)],
+            setLogs: [StrengthSetLog(exerciseID: "squat", completed: true, reps: 10, loadValue: 40, loadUnit: "lb")],
             lifecycle: .inProgress,
-            progress: StrengthSessionProgress(exerciseIndex: 1, setIndex: 0, restRemainingSeconds: 30)
+            progress: StrengthSessionProgress(
+                exerciseIndex: 1,
+                setIndex: 0,
+                restRemainingSeconds: 30,
+                currentLoadValue: 42.5,
+                currentLoadUnit: "lb"
+            )
         )
         try store.recordStrengthResult(partial)
 
         let restored = AppStore()
         restored.attach(context: context)
-        let resumed = GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: restored.strengthResults)
+        let resumed = GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: restored.guidedStrengthResults)
         XCTAssertEqual(resumed?.id, partialID)
         XCTAssertEqual(resumed?.progress?.exerciseIndex, 1)
+        XCTAssertEqual(resumed?.progress?.currentLoadUnit, "lb")
+        XCTAssertEqual(resumed?.setLogs.first?.loadUnit, "lb")
 
         var completed = partial
         completed.lifecycle = .completed
@@ -346,8 +354,8 @@ final class GuidedSessionPersistenceTests: XCTestCase {
         completed.endedAt = startedAt.addingTimeInterval(1_800)
         try store.recordStrengthResult(completed)
 
-        XCTAssertNil(GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: store.strengthResults))
-        XCTAssertEqual(GuidedSessionPolicy.completedStrength(store.strengthResults).count, 1)
+        XCTAssertNil(GuidedSessionPolicy.inProgressStrength(sessionID: sessionID, in: store.guidedStrengthResults))
+        XCTAssertEqual(store.strengthResults.count, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<StrengthSessionResultEntity>()).count, 1)
     }
 
@@ -374,7 +382,7 @@ final class GuidedSessionPersistenceTests: XCTestCase {
 
         let restored = AppStore()
         restored.attach(context: context)
-        let resumed = GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: restored.mobilityResults)
+        let resumed = GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: restored.guidedMobilityResults)
         XCTAssertEqual(resumed?.id, partialID)
         XCTAssertEqual(resumed?.progress?.movementIndex, 1)
 
@@ -385,8 +393,8 @@ final class GuidedSessionPersistenceTests: XCTestCase {
         completed.endedAt = startedAt.addingTimeInterval(360)
         try store.recordMobilityResult(completed)
 
-        XCTAssertNil(GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: store.mobilityResults))
-        XCTAssertEqual(GuidedSessionPolicy.completedMobility(store.mobilityResults).count, 1)
+        XCTAssertNil(GuidedSessionPolicy.inProgressMobility(routineID: "pre_run", in: store.guidedMobilityResults))
+        XCTAssertEqual(store.mobilityResults.count, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<MobilitySessionResultEntity>()).count, 1)
     }
 

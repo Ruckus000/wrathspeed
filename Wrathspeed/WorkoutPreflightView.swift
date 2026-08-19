@@ -11,6 +11,7 @@ struct WorkoutPreflightView: View {
 
     @State private var draftLocation: RunLocation
     @State private var manualTreadmillSpeedDisplay: Double
+    @State private var didStart = false
 
     init(blueprint: WorkoutBlueprint, source: WorkoutSource, onStart: @escaping () -> Void) {
         self.blueprint = blueprint
@@ -73,7 +74,7 @@ struct WorkoutPreflightView: View {
             WSPrimaryButton(title: "START WORKOUT") {
                 startWorkout()
             }
-            .disabled(!canStart)
+            .disabled(!canStart || didStart)
             .accessibilityLabel("Start workout")
             .padding(.top, 12)
             Button("CANCEL") { dismiss() }
@@ -187,7 +188,8 @@ struct WorkoutPreflightView: View {
         guard draftLocation == .outdoor else {
             return ("NOT NEEDED", "Treadmill workouts do not record a GPS route.")
         }
-        switch CLLocationManager().authorizationStatus {
+        let status = CLLocationManager().authorizationStatus
+        switch status {
         case .authorizedAlways, .authorizedWhenInUse:
             return ("AVAILABLE", "Outdoor route recording is enabled.")
         case .notDetermined:
@@ -233,6 +235,8 @@ struct WorkoutPreflightView: View {
     }
 
     private func startWorkout() {
+        guard !didStart else { return }
+        didStart = true
         let resolved = resolvedBlueprint
         store.session.preparePreflightTreadmill(
             blueprint: resolved,

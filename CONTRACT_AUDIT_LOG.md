@@ -1,5 +1,7 @@
 # Wrathspeed Contract Audit Log — Pass 2 (Aug 12, 2026)
 
+> Historical record only. Current remaining scope, execution order, and release gates live in `CURSOR_IMPLEMENTATION_PLAN.md`. Later entries in this log supersede some earlier risk statements; do not treat this file as a backlog.
+
 ## Closed in pass 2
 
 ### M3 — Anchored Health import

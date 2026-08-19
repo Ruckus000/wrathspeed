@@ -81,7 +81,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(store.results, previousResults)
         XCTAssertEqual(store.plan, previousPlan)
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
-        XCTAssertNotNil(store.errorMessage)
+        XCTAssertNotNil(store.healthImportErrorMessage)
         XCTAssertEqual(mock.importCallCount, 1)
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 0)
     }
@@ -128,7 +128,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 0)
         XCTAssertFalse(context.hasChanges)
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
-        XCTAssertNotNil(store.errorMessage)
+        XCTAssertNotNil(store.healthImportErrorMessage)
         XCTAssertEqual(store.toastMessage, previousToast)
         XCTAssertEqual(store.celebration, previousCelebration)
         XCTAssertEqual(mock.importCallCount, 1)
@@ -138,7 +138,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
 
         store.setForceSaveFailureAfterMutationForTesting(false)
-        store.errorMessage = nil
+        store.healthImportErrorMessage = nil
         await store.importHealthWorkouts()
 
         XCTAssertEqual(mock.importCallCount, 2)
@@ -146,7 +146,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(store.results.first?.healthKitUUID, uuid)
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), mock.anchor)
-        XCTAssertNil(store.errorMessage)
+        XCTAssertNil(store.healthImportErrorMessage)
 
         let restored = AppStore()
         restored.attach(context: context)
@@ -265,6 +265,18 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(restored.results.first?.id, store.results.first?.id)
         XCTAssertEqual(restored.plan?.workouts.first?.result?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
         XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
+
+        let planStatusBeforeDeletion = store.plan?.workouts.first?.status
+        mock.workouts = []
+        mock.deletedHealthKitUUIDs = [uuid]
+        await store.importHealthWorkouts()
+
+        XCTAssertEqual(store.results.count, 1)
+        XCTAssertEqual(store.results.first?.id, restored.results.first?.id)
+        XCTAssertTrue(store.results.first?.isUnavailableInHealth == true)
+        XCTAssertEqual(store.results.first?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
+        XCTAssertEqual(store.plan?.workouts.first?.status, planStatusBeforeDeletion)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<WorkoutResultEntity>()).count, 1)
     }
 
     func testAutomaticImportPreservesConfirmedInstantTreadmillDistanceWithoutPlanCopy() async throws {
@@ -326,13 +338,13 @@ final class HealthImportPersistenceTests: XCTestCase {
         XCTAssertEqual(store.plan, previousPlan)
         XCTAssertEqual(store.results.first?.distanceMeters ?? 0, 6_200, accuracy: 0.01)
         XCTAssertEqual(try HealthImportAnchorStore.load(from: context), previousAnchor)
-        XCTAssertNotNil(store.errorMessage)
+        XCTAssertNotNil(store.healthImportErrorMessage)
         XCTAssertEqual(store.celebration, previousCelebration)
         XCTAssertEqual(store.watchPublicationCountForTesting, watchBefore)
         XCTAssertEqual(mock.importCallCount, 1)
 
         store.setForceSaveFailureAfterMutationForTesting(false)
-        store.errorMessage = nil
+        store.healthImportErrorMessage = nil
         await store.importHealthWorkouts()
 
         XCTAssertEqual(mock.importCallCount, 2)

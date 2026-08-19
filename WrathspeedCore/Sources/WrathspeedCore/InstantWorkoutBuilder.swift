@@ -28,6 +28,7 @@ public enum InstantWorkoutBuilder {
     }
 
     public static func build(_ input: InstantWorkoutBuildInput, date: Date = Date()) throws -> WorkoutBlueprint {
+        try InstantWorkoutValidation.validate(input)
         let request = input.request
         switch request.kind {
         case .easy, .freeRun:
@@ -204,7 +205,7 @@ public enum InstantWorkoutValidation {
             }
         }
         switch request.kind {
-        case .easy, .freeRun, .longRun, .race:
+        case .easy, .freeRun, .longRun:
             if request.targetMode == .distance {
                 guard let meters = request.distanceMeters else {
                     throw validationError("Distance is required.")
@@ -216,6 +217,14 @@ public enum InstantWorkoutValidation {
                 }
                 try validateDuration(seconds)
             }
+        case .race:
+            guard request.targetMode != .duration else {
+                throw validationError("Race workouts are distance-only.")
+            }
+            guard let meters = request.distanceMeters else {
+                throw validationError("Distance is required.")
+            }
+            try validateDistance(meters)
         case .tempo:
             try validateDistance(input.tempoWarmupMeters ?? 1_500)
             try validateDistance(input.tempoWorkMeters ?? 5_000)
@@ -241,6 +250,8 @@ public enum InstantWorkoutValidation {
             guard let reps = request.walkRunReps, reps > 0, reps <= 30 else {
                 throw validationError("Repetitions must be between 1 and 30.")
             }
+            let walkIntervals = max(reps - 1, 0)
+            try validateDuration(run * Double(reps) + walk * Double(walkIntervals))
         case .strength:
             throw validationError("Use strength player for strength sessions.")
         }

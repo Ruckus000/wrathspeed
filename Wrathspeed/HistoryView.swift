@@ -29,85 +29,194 @@ struct HistoryView: View {
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
+                healthImportStatusCard
                 if let recap = lastWeekRecap {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(recap.eyebrow)
-                            .font(WSFont.ui(11, weight: .heavy))
-                            .tracking(2)
-                            .foregroundStyle(Color.white.opacity(0.75))
-                        Text(recap.headline)
-                            .font(WSFont.display(26))
-                            .foregroundStyle(.white)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 18)
+                    weeklyRecapCard(eyebrow: recap.eyebrow, headline: recap.headline)
                 }
-                VStack(spacing: 0) {
-                    if filter == .runs {
-                        if store.results.isEmpty {
-                            emptyState("NO RUNS YET. COMPLETE A WORKOUT OR IMPORT FROM APPLE HEALTH.")
-                        } else {
-                            ForEach(historyRunRows) { row in
-                        let result = row.result
-                        NavigationLink {
-                            RunDetailView(result: result)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 0) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    Text(title(for: result))
-                                        .font(WSFont.ui(15, weight: .heavy))
-                                        .foregroundStyle(WSColor.text)
-                                    Spacer()
-                                    Text("\(WSFormat.weekdayDate(result.startedAt)) ›")
-                                        .font(WSFont.mono(10))
-                                        .foregroundStyle(WSColor.text40)
-                                }
-                                HStack(spacing: 16) {
-                                    Text(WSFormat.distance(result.distanceMeters, unit: store.unit))
-                                    if let pace = result.averagePaceSecPerKm {
-                                        Text(WSFormat.pace(pace, unit: store.unit))
-                                    }
-                                }
-                                .font(WSFont.mono(13))
-                                .foregroundStyle(Color.white.opacity(0.75))
-                                .padding(.top, 6)
-                                if let comparison = store.comparison(for: result) {
-                                    Text(comparison)
-                                        .font(WSFont.mono(11, weight: .medium))
-                                        .foregroundStyle(WSColor.accent)
-                                        .padding(.top, 5)
-                                }
-                            }
-                            .padding(.vertical, 16)
-                        }
-                        .buttonStyle(.plain)
-                        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
-                        }
-                        }
-                    } else if filter == .strength {
-                        if store.strengthResults.isEmpty {
-                            emptyState("STRENGTH HISTORY BUILDS FROM COMPLETED SESSIONS.")
-                        } else {
-                            ForEach(store.strengthResults) { result in
-                                strengthResultRow(result)
-                            }
-                        }
-                    } else if store.mobilityResults.isEmpty {
-                        emptyState("MOBILITY HISTORY BUILDS FROM COMPLETED ROUTINES.")
-                    } else {
-                        ForEach(store.mobilityResults) { result in
-                            mobilityResultRow(result)
-                        }
-                    }
-                }
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.bottom, 24)
+                fourWeekSummarySection
+                historyList
             }
             .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    @ViewBuilder
+    private var healthImportStatusCard: some View {
+        let status = store.healthImportStatus
+        switch status.presentation {
+        case .idle:
+            healthImportManualAction
+        case .importing:
+            healthImportBanner(
+                title: "IMPORTING FROM APPLE HEALTH",
+                message: nil,
+                showsProgress: true
+            )
+        case .succeeded:
+            VStack(alignment: .leading, spacing: 10) {
+                if let lastSuccess = status.lastSuccessfulImportAt {
+                    healthImportBanner(
+                        title: "LAST IMPORT",
+                        message: WSFormat.importTimestamp(lastSuccess),
+                        showsProgress: false
+                    )
+                }
+                healthImportManualAction
+            }
+        case .failed(let failure):
+            VStack(alignment: .leading, spacing: 10) {
+                healthImportBanner(
+                    title: "APPLE HEALTH IMPORT FAILED",
+                    message: failure.message.uppercased(),
+                    showsProgress: false
+                )
+                HStack(spacing: 8) {
+                    if failure.canRetry {
+                        WSPrimaryButton(title: "RETRY IMPORT", height: 44, fontSize: 16) {
+                            Task { await store.importHealthWorkouts() }
+                        }
+                        .accessibilityLabel("Retry Apple Health import")
+                    }
+                    if failure.canOpenSettings {
+                        WSOutlineButton(title: "OPEN SETTINGS", height: 44) {
+                            store.openHealthSettings()
+                        }
+                        .accessibilityLabel("Open Settings for Apple Health access")
+                    }
+                }
+            }
+            .padding(.horizontal, WSSpace.gutter)
+            .padding(.top, 18)
+        }
+    }
+
+    private var healthImportManualAction: some View {
+        WSOutlineButton(title: "IMPORT FROM APPLE HEALTH", height: 44) {
+            Task { await store.importHealthWorkouts() }
+        }
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.top, 18)
+        .accessibilityLabel("Import from Apple Health")
+    }
+
+    private func healthImportBanner(title: String, message: String?, showsProgress: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                if showsProgress {
+                    ProgressView()
+                        .tint(.white)
+                        .accessibilityHidden(true)
+                }
+                Text(title)
+                    .font(WSFont.ui(11, weight: .heavy))
+                    .tracking(1.5)
+                    .foregroundStyle(Color.white.opacity(0.85))
+            }
+            if let message {
+                Text(message)
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WSColor.surface1, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(WSColor.border, lineWidth: 1)
+        )
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.top, 18)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel([title, message].compactMap { $0 }.joined(separator: ", "))
+    }
+
+    private func weeklyRecapCard(eyebrow: String, headline: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(eyebrow)
+                .font(WSFont.ui(11, weight: .heavy))
+                .tracking(2)
+                .foregroundStyle(Color.white.opacity(0.75))
+            Text(headline)
+                .font(WSFont.display(26))
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.75)
+                .lineLimit(3)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.top, 18)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(eyebrow), \(headline)")
+    }
+
+    @ViewBuilder
+    private var fourWeekSummarySection: some View {
+        let summaries = store.rollingFourWeekSummaries()
+        if summaries.count >= 2 {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("FOUR-WEEK LOAD")
+                    .font(WSFont.mono(10))
+                    .tracking(1.5)
+                    .foregroundStyle(WSColor.text40)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 18)
+                VStack(spacing: 0) {
+                    ForEach(Array(summaries.enumerated()), id: \.offset) { _, summary in
+                        HStack {
+                            Text(WSFormat.weekdayDate(summary.weekStart))
+                                .font(WSFont.mono(11))
+                                .foregroundStyle(WSColor.text50)
+                                .frame(width: 88, alignment: .leading)
+                            Text(WSFormat.weeklyLoadLine(summary, unit: store.unit))
+                                .font(WSFont.mono(11))
+                                .foregroundStyle(WSColor.text)
+                                .multilineTextAlignment(.trailing)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(.vertical, 10)
+                        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("Week of \(WSFormat.weekdayDate(summary.weekStart)), \(WSFormat.weeklyLoadLine(summary, unit: store.unit))")
+                    }
+                }
+                .padding(.horizontal, WSSpace.gutter)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var historyList: some View {
+        VStack(spacing: 0) {
+            if filter == .runs {
+                if store.results.isEmpty {
+                    emptyState("NO RUNS YET. COMPLETE A WORKOUT OR IMPORT FROM APPLE HEALTH.")
+                } else {
+                    ForEach(historyRunRows) { row in
+                        runResultRow(row.result)
+                    }
+                }
+            } else if filter == .strength {
+                if store.strengthResults.isEmpty {
+                    emptyState("STRENGTH HISTORY BUILDS FROM COMPLETED SESSIONS.")
+                } else {
+                    ForEach(store.strengthResults) { result in
+                        strengthResultRow(result)
+                    }
+                }
+            } else if store.mobilityResults.isEmpty {
+                emptyState("MOBILITY HISTORY BUILDS FROM COMPLETED ROUTINES.")
+            } else {
+                ForEach(store.mobilityResults) { result in
+                    mobilityResultRow(result)
+                }
+            }
+        }
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.top, 18)
+        .padding(.bottom, 24)
     }
 
     private var historyRunRows: [HistoryRunRow] {
@@ -117,6 +226,70 @@ struct HistoryView: View {
                 result: result
             )
         }
+    }
+
+    private func runResultRow(_ result: WorkoutResult) -> some View {
+        NavigationLink {
+            RunDetailView(result: result)
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(title(for: result))
+                        .font(WSFont.ui(15, weight: .heavy))
+                        .foregroundStyle(WSColor.text)
+                    Spacer()
+                    Text("\(WSFormat.weekdayDate(result.startedAt)) ›")
+                        .font(WSFont.mono(10))
+                        .foregroundStyle(WSColor.text40)
+                }
+                HStack(spacing: 16) {
+                    Text(WSFormat.distance(result.distanceMeters, unit: store.unit))
+                    Text(result.location.historyLabel)
+                    if let pace = result.averagePaceSecPerKm {
+                        Text(WSFormat.pace(pace, unit: store.unit))
+                    }
+                }
+                .font(WSFont.mono(13))
+                .foregroundStyle(Color.white.opacity(0.75))
+                .padding(.top, 6)
+                if result.isUnavailableInHealth {
+                    Text("UNAVAILABLE IN HEALTH")
+                        .font(WSFont.mono(10, weight: .bold))
+                        .foregroundStyle(WSColor.text50)
+                        .padding(.top, 5)
+                }
+                if let comparison = store.comparison(for: result) {
+                    Text(comparison)
+                        .font(WSFont.mono(11, weight: .medium))
+                        .foregroundStyle(WSColor.accent)
+                        .padding(.top, 5)
+                }
+            }
+            .padding(.vertical, 16)
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(runRowAccessibilityLabel(for: result))
+    }
+
+    private func runRowAccessibilityLabel(for result: WorkoutResult) -> String {
+        var parts = [
+            title(for: result),
+            WSFormat.weekdayDate(result.startedAt),
+            WSFormat.distance(result.distanceMeters, unit: store.unit),
+            result.location.title
+        ]
+        if let pace = result.averagePaceSecPerKm {
+            parts.append(WSFormat.pace(pace, unit: store.unit))
+        }
+        if result.isUnavailableInHealth {
+            parts.append("Unavailable in Health")
+        }
+        if let comparison = store.comparison(for: result) {
+            parts.append(comparison)
+        }
+        return parts.joined(separator: ", ")
     }
 
     private func title(for result: WorkoutResult) -> String {
@@ -133,38 +306,59 @@ struct HistoryView: View {
     }
 
     private func strengthResultRow(_ result: StrengthSessionResult) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("STRENGTH SESSION")
-                .font(WSFont.ui(15, weight: .heavy))
-            Text("\(result.setLogs.filter(\.completed).count) sets · \(WSFormat.weekdayDate(result.startedAt))")
-                .font(WSFont.mono(12))
-                .foregroundStyle(WSColor.text50)
+        NavigationLink {
+            StrengthDetailView(result: result)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(strengthSessionTitle(for: result))
+                    .font(WSFont.ui(15, weight: .heavy))
+                Text("\(result.setLogs.filter(\.completed).count) sets · \(WSFormat.weekdayDate(result.startedAt))")
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text50)
+            }
+            .padding(.vertical, 16)
         }
-        .padding(.vertical, 16)
+        .buttonStyle(.plain)
         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(strengthSessionTitle(for: result)), \(result.setLogs.filter(\.completed).count) sets, \(WSFormat.weekdayDate(result.startedAt))")
+    }
+
+    private func strengthSessionTitle(for result: StrengthSessionResult) -> String {
+        store.strengthSessions.first { $0.id == result.sessionID }?.title.uppercased() ?? "STRENGTH SESSION"
     }
 
     private func mobilityResultRow(_ result: MobilitySessionResult) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("MOBILITY ROUTINE")
-                .font(WSFont.ui(15, weight: .heavy))
-            Text("\(result.completedMovementIDs.count) movements · \(WSFormat.weekdayDate(result.startedAt))")
-                .font(WSFont.mono(12))
-                .foregroundStyle(WSColor.text50)
+        NavigationLink {
+            MobilityDetailView(result: result)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(mobilityRoutineTitle(for: result))
+                    .font(WSFont.ui(15, weight: .heavy))
+                Text("\(result.completedMovementIDs.count) movements · \(WSFormat.weekdayDate(result.startedAt))")
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text50)
+            }
+            .padding(.vertical, 16)
         }
-        .padding(.vertical, 16)
+        .buttonStyle(.plain)
         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(mobilityRoutineTitle(for: result)), \(result.completedMovementIDs.count) movements, \(WSFormat.weekdayDate(result.startedAt))")
+    }
+
+    private func mobilityRoutineTitle(for result: MobilitySessionResult) -> String {
+        (try? MobilityCatalogLoader.routine(id: result.routineID))?.title.uppercased() ?? "MOBILITY ROUTINE"
     }
 
     private var lastWeekRecap: (eyebrow: String, headline: String)? {
         guard let summary = store.rollingFourWeekSummaries().dropLast().last ?? store.currentWeekSummary() else {
             return nil
         }
-        let planned = WSFormat.distance(summary.plannedMeters, unit: store.unit)
-        let actual = WSFormat.distance(summary.actualMeters, unit: store.unit)
+        let loadLine = WSFormat.weeklyLoadLine(summary, unit: store.unit)
         return (
             "WEEKLY LOAD",
-            "\(summary.confirmedAdherenceCount)/\(summary.plannedRunCount) RUNS · \(actual) / \(planned) PLANNED"
+            "\(loadLine) PLANNED"
         )
     }
 }
@@ -177,6 +371,7 @@ private struct HistoryRunRow: Identifiable {
 struct RunDetailView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let result: WorkoutResult
 
     private var currentResult: WorkoutResult {
@@ -190,6 +385,8 @@ struct RunDetailView: View {
                     .font(WSFont.ui(13, weight: .heavy))
                     .tracking(1)
                     .foregroundStyle(WSColor.text50)
+                    .frame(minHeight: 44, alignment: .leading)
+                    .accessibilityLabel("Back to history")
                 Spacer()
                 Text(WSFormat.weekdayDate(currentResult.startedAt))
                     .font(WSFont.mono(11))
@@ -200,12 +397,18 @@ struct RunDetailView: View {
             Text(title)
                 .font(WSFont.display(46))
                 .foregroundStyle(WSColor.text)
+                .minimumScaleFactor(0.7)
+                .lineLimit(2)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 18)
             HStack {
                 stat("DISTANCE", WSFormat.distanceValue(currentResult.distanceMeters, unit: store.unit))
                 stat("TIME", WSFormat.duration(currentResult.duration))
-                stat("AVG PACE", currentResult.averagePaceSecPerKm.map { WSFormat.paceClock($0, unit: store.unit) } ?? "—", accent: true)
+                stat(
+                    "AVG PACE",
+                    currentResult.averagePaceSecPerKm.map { WSFormat.paceClock($0, unit: store.unit) } ?? WSFormat.missingValue,
+                    accent: currentResult.averagePaceSecPerKm != nil
+                )
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.vertical, 14)
@@ -220,31 +423,59 @@ struct RunDetailView: View {
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
             }
-            if let route = currentResult.route, route.count > 1 {
-                Map(initialPosition: .region(region(for: route))) {
-                    MapPolyline(coordinates: route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) })
-                        .stroke(WSColor.accent, lineWidth: 4)
-                }
-                .frame(height: 160)
-                .clipShape(RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous))
+            routeSection
+            splitsSection
+            sessionSection
+            matchActions
+            Spacer(minLength: 30)
+        }
+        .toolbar(.hidden, for: .navigationBar)
+        .background(WSColor.bg.ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private var routeSection: some View {
+        if let route = currentResult.route, route.count > 1 {
+            Map(initialPosition: .region(region(for: route))) {
+                MapPolyline(coordinates: route.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) })
+                    .stroke(WSColor.accent, lineWidth: 4)
+            }
+            .frame(height: 160)
+            .clipShape(RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous))
+            .padding(.horizontal, WSSpace.gutter)
+            .padding(.top, 16)
+            .accessibilityHidden(true)
+        } else if currentResult.location == .outdoor {
+            Text("ROUTE UNAVAILABLE")
+                .font(WSFont.mono(11))
+                .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 16)
-            }
-            let splits = store.resolvedSplits(for: currentResult)
-            if !splits.isEmpty {
-                Text("SPLITS · VS TARGET")
-                    .font(WSFont.mono(10))
-                    .tracking(1.5)
-                    .foregroundStyle(WSColor.text40)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 22)
-                VStack(spacing: 0) {
-                    ForEach(splits, id: \.index) { split in
-                        splitRow(split)
-                    }
-                }
+                .accessibilityLabel("Route unavailable")
+        }
+    }
+
+    @ViewBuilder
+    private var splitsSection: some View {
+        let splits = store.resolvedSplits(for: currentResult)
+        if !splits.isEmpty {
+            Text(targetPace == nil ? "SPLITS" : "SPLITS · VS TARGET")
+                .font(WSFont.mono(10))
+                .tracking(1.5)
+                .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 22)
+            VStack(spacing: 0) {
+                ForEach(splits, id: \.index) { split in
+                    splitRow(split)
+                }
             }
+            .padding(.horizontal, WSSpace.gutter)
+        }
+    }
+
+    private var sessionSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
             Text("SESSION")
                 .font(WSFont.mono(10))
                 .tracking(1.5)
@@ -254,29 +485,61 @@ struct RunDetailView: View {
             VStack(spacing: 0) {
                 WSHairlineRow(label: "SOURCE", value: currentResult.source.displayName.uppercased())
                 WSHairlineRow(label: "MATCH", value: matchLabel)
-                WSHairlineRow(label: "AVG HR", value: currentResult.heartRateAverage.map { "\(Int($0.rounded()))" } ?? "—")
-                WSHairlineRow(label: "LOCATION", value: currentResult.location.title.uppercased())
-                WSHairlineRow(label: "HEALTH SYNC", value: currentResult.healthSync.state.title.uppercased(), valueColor: WSColor.accent, showDivider: false)
+                WSHairlineRow(label: "LOCATION", value: currentResult.location.historyLabel)
+                WSHairlineRow(label: "AVG HR", value: WSFormat.heartRate(bpm: currentResult.heartRateAverage))
+                WSHairlineRow(label: "ACTIVE ENERGY", value: WSFormat.activeEnergy(kilocalories: currentResult.energyKilocalories))
+                WSHairlineRow(label: "CADENCE", value: WSFormat.cadence(stepsPerMinute: currentResult.cadenceAverage))
+                WSHairlineRow(
+                    label: "HEALTH SYNC",
+                    value: healthSyncLabel,
+                    valueColor: WSColor.text,
+                    showDivider: !currentResult.isUnavailableInHealth
+                )
+                if currentResult.isUnavailableInHealth {
+                    WSHairlineRow(
+                        label: "APPLE HEALTH",
+                        value: "UNAVAILABLE IN HEALTH",
+                        valueColor: WSColor.text50,
+                        showDivider: false
+                    )
+                }
             }
             .padding(.horizontal, WSSpace.gutter)
-            if currentResult.matchInfo.state == .suggested, let suggestedID = currentResult.matchInfo.suggestedWorkoutID {
-                matchSuggestionCard(suggestedID: suggestedID)
-            } else if currentResult.matchInfo.state == .matched {
-                WSOutlineButton(title: "UNMATCH FROM PLAN") {
-                    store.unmatchHealthResult(currentResult)
-                }
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 12)
+            if currentResult.isUnavailableInHealth {
+                Text("LOCAL RUN RECORD KEPT. APPLE HEALTH EVIDENCE WAS REMOVED OR IS NO LONGER AVAILABLE.")
+                    .font(WSFont.mono(11))
+                    .foregroundStyle(WSColor.text45)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 10)
+                    .accessibilityLabel("Local run record kept. Apple Health evidence was removed or is no longer available.")
             }
-            Spacer(minLength: 30)
         }
-        .toolbar(.hidden, for: .navigationBar)
-        .background(WSColor.bg.ignoresSafeArea())
+    }
+
+    private var healthSyncLabel: String {
+        WSFormat.healthSyncLabel(
+            state: currentResult.healthSync.state,
+            failureMessage: currentResult.healthSync.failureMessage
+        )
+    }
+
+    @ViewBuilder
+    private var matchActions: some View {
+        if currentResult.matchInfo.state == .suggested, let suggestedID = currentResult.matchInfo.suggestedWorkoutID {
+            matchSuggestionCard(suggestedID: suggestedID)
+        } else if currentResult.matchInfo.state == .matched {
+            WSOutlineButton(title: "UNMATCH FROM PLAN") {
+                store.unmatchHealthResult(currentResult)
+            }
+            .padding(.horizontal, WSSpace.gutter)
+            .padding(.top, 12)
+            .accessibilityLabel("Unmatch from plan")
+        }
     }
 
     private var title: String {
         store.plan?.workouts.first { $0.blueprint.id == currentResult.workoutID || $0.id == currentResult.workoutID }?
-            .blueprint.title.uppercased() ?? "RUN"
+            .blueprint.title.uppercased() ?? (currentResult.source == .instant ? "INSTANT RUN" : "RUN")
     }
 
     private var matchLabel: String {
@@ -300,14 +563,17 @@ struct RunDetailView: View {
                 WSPrimaryButton(title: "CONFIRM", height: 44, fontSize: 16) {
                     store.confirmHealthMatch(currentResult, scheduledWorkoutID: suggestedID)
                 }
+                .accessibilityLabel("Confirm match to plan")
                 WSOutlineButton(title: "KEEP UNMATCHED", height: 44) {
                     store.keepHealthUnmatched(currentResult)
                 }
+                .accessibilityLabel("Keep unmatched")
             }
             if let candidates = store.alternateMatchCandidates(for: currentResult).dropFirst().first {
                 WSOutlineButton(title: "CHOOSE ANOTHER") {
                     store.rejectHealthMatch(currentResult, suggestedWorkoutID: suggestedID)
                 }
+                .accessibilityLabel("Choose another planned run")
                 .overlay {
                     if candidates.scheduledWorkoutID != suggestedID {
                         EmptyView()
@@ -320,46 +586,61 @@ struct RunDetailView: View {
     }
 
     private var targetPace: TimeInterval? {
-        guard let workout = store.plan?.workouts.first(where: { $0.blueprint.id == currentResult.workoutID || $0.id == currentResult.workoutID }),
-              workout.blueprint.usesPaceTargets
-        else { return currentResult.averagePaceSecPerKm }
-        switch workout.blueprint.kind {
-        case .easy, .longRun, .freeRun: return store.zones?.secondsPerKilometer(for: .easy)
-        case .tempo: return store.zones?.secondsPerKilometer(for: .threshold)
-        case .intervals: return store.zones?.secondsPerKilometer(for: .interval)
-        case .race: return store.zones?.secondsPerKilometer(for: .marathon)
-        default: return currentResult.averagePaceSecPerKm
+        guard let workout = store.plan?.workouts.first(where: { $0.blueprint.id == currentResult.workoutID || $0.id == currentResult.workoutID }) else {
+            return nil
         }
+        return WorkoutPaceTarget.targetPaceSecPerKm(blueprint: workout.blueprint, zones: store.zones)
     }
 
     private func splitRow(_ split: WorkoutSplit) -> some View {
-        let target = targetPace ?? split.paceSecPerKm
-        let faster = split.paceSecPerKm <= target
-        let ratio = min(1, target / max(split.paceSecPerKm, 1))
+        let paceLabel = WSFormat.paceClock(split.paceSecPerKm, unit: store.unit)
+        let comparison = targetPace.map { target -> (faster: Bool, delta: String, ratio: CGFloat) in
+            let faster = split.paceSecPerKm <= target
+            let delta = WSFormat.signedPaceDelta(split.paceSecPerKm - target)
+            let ratio = CGFloat(min(1, target / max(split.paceSecPerKm, 1)))
+            return (faster, delta, ratio)
+        }
         return HStack(spacing: 12) {
             Text(String(format: "%02d", split.index))
                 .font(WSFont.mono(11, weight: .bold))
                 .foregroundStyle(WSColor.text50)
                 .frame(width: 26, alignment: .leading)
-            Text(WSFormat.paceClock(split.paceSecPerKm, unit: store.unit))
+            Text(paceLabel)
                 .font(WSFont.ui(15, weight: .heavy))
                 .frame(width: 64, alignment: .leading)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(WSColor.surface2)
-                    Capsule()
-                        .fill(faster ? WSColor.accent : Color.white.opacity(0.28))
-                        .frame(width: geo.size.width * ratio)
+            if let comparison {
+                if reduceMotion {
+                    Text(comparison.faster ? "FASTER" : "SLOWER")
+                        .font(WSFont.mono(10, weight: .bold))
+                        .foregroundStyle(comparison.faster ? WSColor.accent : WSColor.text50)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(WSColor.surface2)
+                            Capsule()
+                                .fill(comparison.faster ? WSColor.accent : Color.white.opacity(0.28))
+                                .frame(width: geo.size.width * comparison.ratio)
+                        }
+                    }
+                    .frame(height: 8)
                 }
+                Text(comparison.delta)
+                    .font(WSFont.mono(11))
+                    .foregroundStyle(comparison.faster ? WSColor.accent : WSColor.text50)
+                    .frame(width: 48, alignment: .trailing)
+            } else {
+                Spacer()
             }
-            .frame(height: 8)
-            Text(WSFormat.signedPaceDelta(split.paceSecPerKm - target))
-                .font(WSFont.mono(11))
-                .foregroundStyle(faster ? WSColor.accent : WSColor.text50)
-                .frame(width: 48, alignment: .trailing)
         }
         .padding(.vertical, 11)
         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            comparison.map {
+                "Split \(split.index), pace \(paceLabel), \($0.faster ? "faster" : "slower") than target, delta \($0.delta)"
+            } ?? "Split \(split.index), pace \(paceLabel)"
+        )
     }
 
     private func stat(_ label: String, _ value: String, accent: Bool = false) -> some View {
@@ -367,11 +648,17 @@ struct RunDetailView: View {
             Text(label)
                 .font(WSFont.mono(10))
                 .foregroundStyle(WSColor.text40)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
             Text(value)
                 .font(WSFont.display(32))
                 .foregroundStyle(accent ? WSColor.accent : WSColor.text)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label), \(value)")
     }
 
     private func region(for route: [RoutePoint]) -> MKCoordinateRegion {

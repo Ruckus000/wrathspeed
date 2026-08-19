@@ -95,6 +95,16 @@ final class WorkoutSessionController: NSObject {
 
     func start(blueprint: WorkoutBlueprint, zones: PaceZones?, treadmillSpeedMetersPerSecond: Double? = nil) async throws {
         guard !isRunning, sessionState != .finishing else { return }
+        #if DEBUG && os(iOS)
+        if UITestingSupport.shouldSimulateLiveRecording {
+            try await beginSimulatedLiveRecording(
+                blueprint: blueprint,
+                zones: zones,
+                treadmillSpeedMetersPerSecond: treadmillSpeedMetersPerSecond
+            )
+            return
+        }
+        #endif
         activeStartupID = nextStartupID()
         let startupID = activeStartupID
         defer {
@@ -144,6 +154,57 @@ final class WorkoutSessionController: NSObject {
 
         try await beginCountdownThenStart(configuration: configuration, startupID: startupID)
     }
+
+    #if DEBUG && os(iOS)
+    private func beginSimulatedLiveRecording(
+        blueprint: WorkoutBlueprint,
+        zones: PaceZones?,
+        treadmillSpeedMetersPerSecond: Double? = nil
+    ) async throws {
+        self.blueprint = blueprint
+        self.zones = zones
+        stepper = WorkoutStepper(blueprint: blueprint, manualTreadmill: blueprint.location == .treadmill)
+        configureTreadmillIfNeeded(for: blueprint, treadmillSpeed: treadmillSpeedMetersPerSecond)
+        cuePolicy = CuePolicy()
+        speech.isEnabled = false
+        pausedDuration = 0
+        pauseStartedAt = nil
+        recordedSplits = []
+        splitMarkedDistance = 0
+        splitMarkedElapsed = 0
+        startedAt = Date()
+        isRunning = true
+        launchState = .recording
+        sessionState = .recording
+        isPaused = false
+        publishSnapshot()
+    }
+
+    private func finishSimulatedLiveRecording(blueprint: WorkoutBlueprint) {
+        let end = Date()
+        let duration = activeElapsed(at: end)
+        let distance = resolvedDistanceMeters()
+        let pace = distance > 0 ? (duration / distance) * 1_000 : nil
+        let result = WorkoutResult(
+            workoutID: blueprint.id,
+            startedAt: startedAt ?? end,
+            duration: duration,
+            distanceMeters: distance,
+            averagePaceSecPerKm: pace,
+            location: blueprint.location,
+            source: resultSource,
+            healthSync: HealthSyncMetadata(state: .notRequired)
+        )
+        isRunning = false
+        sessionState = .saved
+        launchState = .idle
+        onFinished?(result)
+        publishSnapshot(clear: true)
+        self.blueprint = nil
+        self.stepper = nil
+        startedAt = nil
+    }
+    #endif
 
     func startOnPhoneOnly(
         blueprint: WorkoutBlueprint,
@@ -431,6 +492,12 @@ final class WorkoutSessionController: NSObject {
     }
 
     func end() async {
+        #if DEBUG && os(iOS)
+        if UITestingSupport.shouldSimulateLiveRecording, session == nil, let finishingBlueprint = blueprint {
+            finishSimulatedLiveRecording(blueprint: finishingBlueprint)
+            return
+        }
+        #endif
         let sessionToEnd = session
         if !applyingRemote {
             await sendEndToRemote(through: sessionToEnd)

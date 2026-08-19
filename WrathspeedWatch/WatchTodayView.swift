@@ -191,9 +191,11 @@ struct WatchLiveView: View {
                 .padding(.top, 4)
                 .accessibilityLabel("Pace status")
                 .accessibilityValue(paceStatus.watchLabel)
-            zoneBand
-                .padding(.top, 12)
-                .accessibilityHidden(true)
+            if targetPace != nil {
+                zoneBand
+                    .padding(.top, 12)
+                    .accessibilityHidden(true)
+            }
             Spacer()
             HStack {
                 Text(Units.formatDuration(session.metrics.elapsed))
@@ -286,7 +288,7 @@ struct WatchLiveView: View {
     }
 
     private var zoneBand: some View {
-        let target = targetPace ?? 360
+        let target = targetPace ?? 0
         let current = store.session.metrics.currentPaceSecPerKm ?? target
         let low = target * 0.85
         let high = target * 1.20

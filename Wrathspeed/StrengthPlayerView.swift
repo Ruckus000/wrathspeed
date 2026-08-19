@@ -5,6 +5,7 @@ import WrathspeedCore
 struct StrengthPlayerView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     let session: StrengthSession
     @State private var resultID = UUID()
     @State private var index = 0
@@ -45,7 +46,16 @@ struct StrengthPlayerView: View {
             if remaining == 0 {
                 running = false
             }
-            persistProgressIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                persistProgressIfNeeded(force: true)
+            }
+        }
+        .overlay {
+            if let message = store.errorMessage {
+                WSAlert(message: message) { store.errorMessage = nil }
+            }
         }
         .sheet(isPresented: $showAbout) {
             if let current {
@@ -71,12 +81,15 @@ struct StrengthPlayerView: View {
                 .frame(minHeight: 44)
                 .accessibilityLabel("Finish strength session")
             Button("✕") {
-                persistProgressIfNeeded(force: true)
-                dismiss()
+                do {
+                    try persistProgress(force: true)
+                    dismiss()
+                } catch {}
             }
             .font(WSFont.ui(12, weight: .heavy))
             .foregroundStyle(WSColor.text40)
             .frame(minWidth: 44, minHeight: 44)
+            .accessibilityLabel("Close")
         }
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 8)
@@ -90,12 +103,16 @@ struct StrengthPlayerView: View {
                     .foregroundStyle(canGoPrevious ? WSColor.text50 : WSColor.text35)
                     .disabled(!canGoPrevious)
                     .frame(minHeight: 44)
+                    .accessibilityLabel(canGoPrevious ? "Previous" : "Previous, unavailable")
+                    .accessibilityHint(canGoPrevious ? "" : "At the first exercise")
                 Spacer()
                 Button("NEXT →") { goNext() }
                     .font(WSFont.ui(11, weight: .heavy))
                     .foregroundStyle(canGoNext ? WSColor.text50 : WSColor.text35)
                     .disabled(!canGoNext)
                     .frame(minHeight: 44)
+                    .accessibilityLabel(canGoNext ? "Next" : "Next, unavailable")
+                    .accessibilityHint(canGoNext ? "" : "At the last exercise")
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
@@ -148,8 +165,21 @@ struct StrengthPlayerView: View {
                 Text("LOAD")
                     .font(WSFont.ui(12, weight: .heavy))
                 Spacer()
+                HStack(spacing: 8) {
+                    WSChip(title: "KG", selected: loadUnit == "kg") {
+                        applyLoadUnit("kg")
+                    }
+                    WSChip(title: "LB", selected: loadUnit == "lb") {
+                        applyLoadUnit("lb")
+                    }
+                }
+            }
+            .padding(.horizontal, WSSpace.gutter)
+            .padding(.top, 8)
+            HStack {
+                Spacer()
                 WSStepperControl(
-                    valueText: String(format: "%.0f %@", loadValue, loadUnit),
+                    valueText: String(format: "%.0f %@", loadValue, loadUnit.uppercased()),
                     decrement: { loadValue = max(0, loadValue - 2.5); persistProgressIfNeeded(force: true) },
                     increment: { loadValue += 2.5; persistProgressIfNeeded(force: true) }
                 )
@@ -245,7 +275,9 @@ struct StrengthPlayerView: View {
             }
             .disabled(healthSync.state == .synced)
             .padding(.horizontal, WSSpace.gutter)
-            WSOutlineButton(title: "DONE") { dismiss() }
+            WSOutlineButton(title: "DONE") {
+                dismiss()
+            }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
                 .padding(.bottom, 56)
@@ -279,7 +311,7 @@ struct StrengthPlayerView: View {
     }
 
     private func restoreOrStart() {
-        if let existing = GuidedSessionPolicy.inProgressStrength(sessionID: session.id, in: store.strengthResults) {
+        if let existing = GuidedSessionPolicy.inProgressStrength(sessionID: session.id, in: store.guidedStrengthResults) {
             resultID = existing.id
             startedAt = existing.startedAt
             logs = existing.setLogs
@@ -316,13 +348,13 @@ struct StrengthPlayerView: View {
         if logs.indices.contains(logIndex), logs[logIndex].completed || logs[logIndex].skipped {
             reps = logs[logIndex].reps ?? current.reps
             loadValue = logs[logIndex].loadValue ?? 0
-            loadUnit = logs[logIndex].loadUnit ?? "kg"
+            loadUnit = logs[logIndex].loadUnit ?? defaultLoadUnit
             note = logs[logIndex].note ?? ""
             substitutionExerciseID = logs[logIndex].substitutionExerciseID
         } else {
             reps = current.reps
             loadValue = 0
-            loadUnit = "kg"
+            loadUnit = defaultLoadUnit
             note = ""
             substitutionExerciseID = nil
             remaining = current.restSeconds
@@ -385,7 +417,7 @@ struct StrengthPlayerView: View {
         logs[logIndex].skipped = skipped
         logs[logIndex].reps = reps
         logs[logIndex].loadValue = loadValue > 0 ? loadValue : nil
-        logs[logIndex].loadUnit = loadValue > 0 ? loadUnit : nil
+        logs[logIndex].loadUnit = loadUnit
         logs[logIndex].note = note.isEmpty ? nil : note
         logs[logIndex].substitutionExerciseID = substitutionExerciseID
         persistProgressIfNeeded(force: true)
@@ -424,12 +456,35 @@ struct StrengthPlayerView: View {
         }
     }
 
+    private var defaultLoadUnit: String {
+        store.unit == .miles ? "lb" : "kg"
+    }
+
+    private func applyLoadUnit(_ newUnit: String) {
+        guard newUnit != loadUnit else { return }
+        if loadValue > 0 {
+            loadValue = Self.convertLoad(loadValue, from: loadUnit, to: newUnit)
+        }
+        loadUnit = newUnit
+        persistProgressIfNeeded(force: true)
+    }
+
+    private static func convertLoad(_ value: Double, from: String, to: String) -> Double {
+        let kilograms: Double = from == "lb" ? value * 0.45359237 : value
+        let converted = to == "lb" ? kilograms / 0.45359237 : kilograms
+        return (converted * 2).rounded() / 2
+    }
+
     private func persistProgressIfNeeded(force: Bool = false) {
         guard !finished else { return }
-        _ = force
         do {
-            try persistLocalResult(completed: false)
+            try persistProgress(force: force)
         } catch {}
+    }
+
+    private func persistProgress(force: Bool) throws {
+        guard force else { return }
+        try persistLocalResult(completed: false)
     }
 
     private func persistCompleted(force: Bool = false) throws {

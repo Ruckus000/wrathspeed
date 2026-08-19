@@ -195,10 +195,12 @@ enum AppPersistenceError: LocalizedError, Equatable {
 final class AppStateRepository {
     private let context: ModelContext
     private(set) var migrationError: String?
+#if DEBUG
     var forceSaveFailure = false
     var forceSaveFailureAfterMutation = false
     var forceGuidedResultSaveFailure = false
     var forcePlanChangeFailure = false
+#endif
 
     init(context: ModelContext) {
         self.context = context
@@ -220,12 +222,15 @@ final class AppStateRepository {
     }
 
     func save(_ state: PersistedState) throws {
+#if DEBUG
         if forceSaveFailure {
             throw NSError(domain: "WrathspeedTests", code: 1, userInfo: [NSLocalizedDescriptionKey: "Simulated save failure"])
         }
+#endif
         do {
             if try PersistenceMigration.hasMigrated(in: context) {
                 try VersionedPersistence.save(state, to: context, beforeCommit: {
+#if DEBUG
                     if forceSaveFailureAfterMutation {
                         throw NSError(
                             domain: "WrathspeedTests",
@@ -240,6 +245,7 @@ final class AppStateRepository {
                             userInfo: [NSLocalizedDescriptionKey: "Simulated plan change failure"]
                         )
                     }
+#endif
                 })
             } else {
                 try Persistence.save(state, to: context)
