@@ -119,6 +119,12 @@ public struct StrengthSession: Codable, Equatable, Sendable, Identifiable {
 
 public struct StrengthCatalog: Codable, Equatable, Sendable {
     public var exercises: [StrengthExercise]
+
+    /// Explicit because the synthesised memberwise init of a public struct is internal,
+    /// and the app module builds an empty catalog as its load-failure fallback.
+    public init(exercises: [StrengthExercise]) {
+        self.exercises = exercises
+    }
 }
 
 public enum StrengthPlanner {
