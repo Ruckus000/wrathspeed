@@ -14,7 +14,6 @@ let package = Package(
     targets: [
         .target(
             name: "WrathspeedCore",
-            exclude: ["InstantWorkoutFactory.swift"],
             resources: [
                 .process("Resources"),
                 // Copied, not processed: these are already-encoded H.264 clips and the

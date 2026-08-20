@@ -127,13 +127,10 @@ struct PlanView: View {
             .sheet(item: $selectedWorkout) { workout in
                 WorkoutDetailSheet(workout: workout)
             }
-        }
-        // Attached to the NavigationStack rather than to WSScreen: two .sheet modifiers
-        // on the same view leave only one of them live, which silently swallowed the
-        // workout detail sheet.
-        .sheet(isPresented: $showMissedWork) {
-            if let situation = store.missedWorkSituation {
-                MissedWorkSheet(situation: situation)
+            .sheet(isPresented: $showMissedWork) {
+                if let situation = store.missedWorkSituation {
+                    MissedWorkSheet(situation: situation)
+                }
             }
         }
     }
@@ -388,99 +385,99 @@ struct WorkoutDetailSheet: View {
         // and everything below the fold would otherwise be unreachable.
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(workout.blueprint.title.uppercased())
-                    .font(WSFont.display(32))
-                    .foregroundStyle(WSColor.text)
-                Spacer()
-                Button("✕") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .foregroundStyle(WSColor.text40)
-            }
-            Text(meta)
-                .font(WSFont.mono(12))
-                .foregroundStyle(WSColor.text50)
-                .padding(.top, 6)
-            VStack(spacing: 0) {
-                ForEach(workout.blueprint.steps) { step in
-                    HStack {
-                        Text(step.name)
-                            .font(WSFont.ui(14, weight: .bold))
-                        Spacer()
-                        Text(stepLabel(step))
-                            .font(WSFont.mono(11))
-                            .foregroundStyle(WSColor.text50)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(workout.blueprint.title.uppercased())
+                        .font(WSFont.display(32))
+                        .foregroundStyle(WSColor.text)
+                    Spacer()
+                    Button("✕") { dismiss() }
+                        .font(WSFont.ui(13, weight: .heavy))
+                        .foregroundStyle(WSColor.text40)
+                }
+                Text(meta)
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text50)
+                    .padding(.top, 6)
+                VStack(spacing: 0) {
+                    ForEach(workout.blueprint.steps) { step in
+                        HStack {
+                            Text(step.name)
+                                .font(WSFont.ui(14, weight: .bold))
+                            Spacer()
+                            Text(stepLabel(step))
+                                .font(WSFont.mono(11))
+                                .foregroundStyle(WSColor.text50)
+                        }
+                        .padding(.vertical, 11)
+                        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
                     }
-                    .padding(.vertical, 11)
-                    .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
                 }
-            }
-            .padding(.top, 16)
-            if workout.status == .scheduled || workout.status == .convertedToEasy {
-                WSPrimaryButton(title: "START", height: 56, fontSize: 20) {
-                    store.presentPreflight(blueprint: workout.blueprint)
+                .padding(.top, 16)
+                if workout.status == .scheduled || workout.status == .convertedToEasy {
+                    WSPrimaryButton(title: "START", height: 56, fontSize: 20) {
+                        store.presentPreflight(blueprint: workout.blueprint)
+                    }
+                    .padding(.top, 18)
+                    .accessibilityLabel("Start workout")
                 }
-                .padding(.top, 18)
-                .accessibilityLabel("Start workout")
-            }
-            HStack(spacing: 10) {
-                outline("MOVE DATE") { showMoveSheet = true }
-                    .accessibilityIdentifier("workout_move_date")
-                Button("SKIP") {
-                    store.skip(workout)
-                    dismiss()
-                }
-                .font(WSFont.ui(12, weight: .heavy))
-                .tracking(1)
-                .foregroundStyle(WSColor.destructive)
-                .frame(maxWidth: .infinity)
-                .frame(height: 46)
-                .overlay(
-                    RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
-                        .stroke(WSColor.destructive.opacity(0.6), lineWidth: 1.5)
-                )
-                if workout.blueprint.kind.isQuality {
-                    outline("CONVERT TO EASY") {
-                        store.skip(workout, convertQuality: true)
+                HStack(spacing: 10) {
+                    outline("MOVE DATE") { showMoveSheet = true }
+                        .accessibilityIdentifier("workout_move_date")
+                    Button("SKIP") {
+                        store.skip(workout)
                         dismiss()
                     }
-                }
-            }
-            .padding(.top, 10)
-            if !routines.isEmpty {
-                Text("PREP AND RECOVERY")
                     .font(WSFont.ui(12, weight: .heavy))
                     .tracking(1)
-                    .foregroundStyle(WSColor.text50)
-                    .padding(.top, 22)
-                    .accessibilityIdentifier("workout_prep_and_recovery")
-                VStack(spacing: 0) {
-                    ForEach(routines) { routine in
-                        Button { selectedRoutine = routine } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(routine.title.uppercased())
-                                        .font(WSFont.ui(14, weight: .bold))
-                                        .foregroundStyle(WSColor.text)
-                                    Text("\(routine.items.count) MOVEMENTS · \(routine.totalSeconds / 60) MIN")
-                                        .font(WSFont.mono(11))
-                                        .foregroundStyle(WSColor.text50)
-                                }
-                                Spacer()
-                                Text("›")
-                                    .font(WSFont.ui(14, weight: .heavy))
-                                    .foregroundStyle(WSColor.text40)
-                            }
-                            .padding(.vertical, 11)
-                            .overlay(alignment: .bottom) {
-                                Rectangle().fill(WSColor.hairline).frame(height: 1)
-                            }
+                    .foregroundStyle(WSColor.destructive)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 46)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
+                            .stroke(WSColor.destructive.opacity(0.6), lineWidth: 1.5)
+                    )
+                    if workout.blueprint.kind.isQuality {
+                        outline("CONVERT TO EASY") {
+                            store.skip(workout, convertQuality: true)
+                            dismiss()
                         }
-                        .accessibilityIdentifier("workout_routine_\(routine.phase.rawValue)")
                     }
                 }
-                .padding(.top, 6)
-            }
+                .padding(.top, 10)
+                if !routines.isEmpty {
+                    Text("PREP AND RECOVERY")
+                        .font(WSFont.ui(12, weight: .heavy))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.text50)
+                        .padding(.top, 22)
+                        .accessibilityIdentifier("workout_prep_and_recovery")
+                    VStack(spacing: 0) {
+                        ForEach(routines) { routine in
+                            Button { selectedRoutine = routine } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(routine.title.uppercased())
+                                            .font(WSFont.ui(14, weight: .bold))
+                                            .foregroundStyle(WSColor.text)
+                                        Text("\(routine.items.count) MOVEMENTS · \(routine.totalSeconds / 60) MIN")
+                                            .font(WSFont.mono(11))
+                                            .foregroundStyle(WSColor.text50)
+                                    }
+                                    Spacer()
+                                    Text("›")
+                                        .font(WSFont.ui(14, weight: .heavy))
+                                        .foregroundStyle(WSColor.text40)
+                                }
+                                .padding(.vertical, 11)
+                                .overlay(alignment: .bottom) {
+                                    Rectangle().fill(WSColor.hairline).frame(height: 1)
+                                }
+                            }
+                            .accessibilityIdentifier("workout_routine_\(routine.phase.rawValue)")
+                        }
+                    }
+                    .padding(.top, 6)
+                }
             }
             .padding(.horizontal, 24)
             .padding(.top, 22)

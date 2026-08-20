@@ -27,14 +27,19 @@ struct StrengthPlayerView: View {
     private let speech = SpeechCuePlayer()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-            if finished {
-                finishView
-            } else if let current {
-                activeView(current)
+        // Scrollable: this screen already overflowed a small phone before the demo loop
+        // was added, which pushed COMPLETE SET off the bottom entirely.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                if finished {
+                    finishView
+                } else if let current {
+                    activeView(current)
+                }
             }
         }
+        .scrollBounceBehavior(.basedOnSize)
         .background(WSColor.bg.ignoresSafeArea())
         .onAppear {
             catalog = try? StrengthCatalogLoader.load()

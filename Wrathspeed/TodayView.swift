@@ -218,8 +218,12 @@ struct TodayView: View {
                 RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                     .stroke(WSColor.border, lineWidth: 1)
             )
+            // A stroke overlay draws no fill, so the row's interior is not hit-testable
+            // without this.
+            .contentShape(RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("strength-row-\(session.id)")
         .accessibilityLabel(isResume ? "Resume \(session.title)" : "Start \(session.title)")
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 12)

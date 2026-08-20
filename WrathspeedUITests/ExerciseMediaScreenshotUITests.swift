@@ -147,9 +147,67 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         XCTAssertTrue(foundDrills, "No quality day exposed a Form drills routine")
     }
 
+    /// The move-date sheet and the routine sheet both hang off the workout detail sheet.
+    /// Routine presentation is covered by testWorkoutDetailShowsPrepAndRecovery; this
+    /// pins the move-date sheet, which nothing else exercises.
+    func testWorkoutDetailPresentsMoveDateSheet() throws {
+        let app = XCUIApplication()
+        UITestOnboardingHelper.configureFreshLaunch(app)
+        app.launch()
+        UITestOnboardingHelper.completeOnboarding(app)
+
+        app.buttons["PLAN"].tap()
+        let easy = app.buttons["plan_workout_easy"].firstMatch
+        XCTAssertTrue(easy.waitForExistence(timeout: 5), "No easy run in the current week")
+        easy.tap()
+        XCTAssertTrue(
+            app.staticTexts["workout_prep_and_recovery"].waitForExistence(timeout: 6),
+            "Workout detail sheet did not present"
+        )
+
+        let moveDate = app.buttons["workout_move_date"]
+        XCTAssertTrue(moveDate.waitForExistence(timeout: 4), "Move date control missing")
+        moveDate.tap()
+        XCTAssertTrue(
+            app.datePickers["move_workout_date_picker"].waitForExistence(timeout: 6),
+            "Move date sheet did not present"
+        )
+    }
+
+    /// The strength player also shows a demo loop. Reached from Today, and only when the
+    /// generated plan actually put a strength session on today, so this skips rather than
+    /// fails when there is none to open.
+    func testStrengthPlayerShowsClip() throws {
+        let app = XCUIApplication()
+        UITestOnboardingHelper.configureFreshLaunch(app)
+        app.launch()
+        UITestOnboardingHelper.completeOnboarding(app)
+
+        app.buttons["TODAY"].tap()
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
+
+        let start = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'strength-row-'")
+        ).firstMatch
+        try XCTSkipUnless(
+            start.waitForExistence(timeout: 6),
+            "No strength session scheduled for today in this generated plan"
+        )
+        start.tap()
+
+        XCTAssertTrue(
+            app.buttons["ABOUT THIS EXERCISE"].waitForExistence(timeout: 8),
+            "Strength player did not open"
+        )
+        RunLoop.current.run(until: Date().addingTimeInterval(2.5))
+        attach(app, named: "08-strength-player-clip")
+    }
+
     private func closeSheet(_ app: XCUIApplication) {
+        // The ✕ is a 9x13pt glyph, so it is not reliably hittable once a nested sheet
+        // has been over it; fall back to the dismiss gesture.
         let close = app.buttons["\u{2715}"].firstMatch
-        if close.exists {
+        if close.exists, close.isHittable {
             close.tap()
         } else {
             app.swipeDown()
