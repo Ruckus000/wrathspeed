@@ -9,6 +9,7 @@ struct WorkoutActivityAttributes: ActivityAttributes {
         var distanceMeters: Double
         var paceSecPerKm: Double?
         var isPaused: Bool
+        var distanceUnitRaw: String
     }
 
     var workoutName: String

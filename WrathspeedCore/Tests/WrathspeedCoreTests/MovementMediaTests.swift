@@ -44,17 +44,16 @@ struct MediaLibraryTests {
         }
     }
 
+    /// The strength half of this coverage rule lives in
+    /// `WrathspeedTests/StrengthMediaCoverageTests` because the strength catalog is
+    /// owned by the app bundle, not by this package.
     @Test("Every catalog movement either has a clip or a symbol to fall back to")
     func coverageIsTotal() throws {
         let library = try MediaLibrary()
         let movements = try MovementCatalog.load().movements
-        let exercises = try StrengthPlanner.loadCatalog().exercises
 
         for movement in movements where !library.hasClip(for: movement.id) {
             #expect(!movement.symbolName.isEmpty, "\(movement.id) has neither clip nor symbol")
-        }
-        for exercise in exercises where !library.hasClip(for: exercise.id) {
-            #expect(!exercise.symbolName.isEmpty, "\(exercise.id) has neither clip nor symbol")
         }
     }
 

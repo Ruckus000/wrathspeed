@@ -6,10 +6,7 @@ enum BeginnerPlanGenerator {
         calendar.firstWeekday = 1
         let start = calendar.startOfDay(for: request.startDate)
         let weeks = PlanGenerator.weekCount(for: request.goal, startDate: start, calendar: calendar)
-        let weekdays = PlanGenerator.runWeekdays(
-            daysPerWeek: request.profile.daysPerWeek,
-            longRun: request.profile.longRunWeekday
-        )
+        let weekdays = request.profile.resolvedRunWeekdays()
         let faster = request.goal.kind == .returnToRunning
         var workouts: [ScheduledWorkout] = []
 

@@ -40,6 +40,9 @@ import imageio_ffmpeg
 REPO = Path(__file__).resolve().parents[2]
 CORE = REPO / "WrathspeedCore" / "Sources" / "WrathspeedCore"
 RESOURCES = CORE / "Resources"
+# The strength catalog is owned by the app bundle; only the movement catalog and the
+# generated media live in the WrathspeedCore resources.
+STRENGTH_CATALOG = REPO / "Wrathspeed" / "strength_catalog.json"
 MEDIA_OUT = CORE / "Media"
 SOURCES_FILE = Path(__file__).resolve().parent / "media_sources.json"
 CACHE = REPO / ".media-cache"
@@ -140,7 +143,7 @@ def encode(frames: list[Image.Image], dest: Path) -> None:
 def load_catalog_ids() -> dict[str, str]:
     """Every movement id the app can show, mapped to which catalog it came from."""
     ids: dict[str, str] = {}
-    strength = json.loads((RESOURCES / "strength_catalog.json").read_text())
+    strength = json.loads(STRENGTH_CATALOG.read_text())
     for e in strength["exercises"]:
         ids[e["id"]] = "strength"
     movements = json.loads((RESOURCES / "movement_catalog.json").read_text())

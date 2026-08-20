@@ -25,6 +25,7 @@ targets:
       - Wrathspeed
       - Session
       - Shared
+      - Design
     dependencies:
       - package: WrathspeedCore
       - target: WrathspeedWatch
@@ -35,6 +36,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app
         PRODUCT_NAME: Wrathspeed
+        DEVELOPMENT_TEAM: XJ3KNK4F29
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_ENTITLEMENTS: Wrathspeed/Wrathspeed.entitlements
         INFOPLIST_KEY_CFBundleDisplayName: Wrathspeed
@@ -44,16 +46,20 @@ targets:
         INFOPLIST_KEY_NSHealthShareUsageDescription: Wrathspeed reads heart rate and workout data to coach your runs.
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: Wrathspeed saves completed runs and strength sessions to Apple Health.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs.
-        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: Wrathspeed uses your location to track outdoor runs while the phone is locked or in your pocket.
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: Wrathspeed records your outdoor route while a workout is active, including when the screen is locked.
+        INFOPLIST_KEY_NSUserNotificationsUsageDescription: Wrathspeed can remind you before a scheduled run when you enable a workout reminder.
         INFOPLIST_FILE: Wrathspeed/Info.plist
     entitlements:
       path: Wrathspeed/Wrathspeed.entitlements
+      properties:
+        com.apple.developer.healthkit: true
   WrathspeedWatch:
     type: application
     platform: watchOS
     sources:
       - WrathspeedWatch
       - Session
+      - Design
     dependencies:
       - package: WrathspeedCore
     settings:
@@ -70,12 +76,15 @@ targets:
         INFOPLIST_FILE: WrathspeedWatch/Info.plist
     entitlements:
       path: WrathspeedWatch/WrathspeedWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
   WrathspeedWidgets:
     type: app-extension
     platform: iOS
     sources:
       - WrathspeedWidgets
       - Shared
+      - Design
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.widgets
@@ -85,6 +94,26 @@ targets:
         SKIP_INSTALL: YES
     entitlements:
       path: WrathspeedWidgets/WrathspeedWidgets.entitlements
+  WrathspeedTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - WrathspeedTests
+    dependencies:
+      - target: Wrathspeed
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.tests
+  WrathspeedUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WrathspeedUITests
+    dependencies:
+      - target: Wrathspeed
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.uitests
 schemes:
   Wrathspeed:
     build:
@@ -92,6 +121,12 @@ schemes:
         Wrathspeed: all
         WrathspeedWatch: all
         WrathspeedWidgets: all
+        WrathspeedTests: [test]
+        WrathspeedUITests: [test]
+    test:
+      targets:
+        - WrathspeedTests
+        - WrathspeedUITests
     run:
       config: Debug
       executable: Wrathspeed

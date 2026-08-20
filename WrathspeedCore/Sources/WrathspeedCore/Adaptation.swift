@@ -76,13 +76,23 @@ public enum AdaptationRules {
         abs(to.timeIntervalSince(from)) <= 48 * 3600
     }
 
-    public static func wouldStackQuality(existing: [ScheduledWorkout], moving: ScheduledWorkout, to date: Date, calendar: Calendar) -> Bool {
+    public static func wouldCreateAdjacentQuality(
+        existing: [ScheduledWorkout],
+        moving: ScheduledWorkout,
+        to date: Date,
+        calendar: Calendar
+    ) -> Bool {
         guard moving.blueprint.kind.isQuality else { return false }
+        let target = calendar.startOfDay(for: date)
+        let adjacent = [
+            calendar.date(byAdding: .day, value: -1, to: target),
+            calendar.date(byAdding: .day, value: 1, to: target),
+        ].compactMap { $0 }
         return existing.contains { other in
             other.id != moving.id
                 && other.blueprint.kind.isQuality
-                && other.status == .scheduled
-                && calendar.isDate(other.date, inSameDayAs: date)
+                && (other.status == .scheduled || other.status == .convertedToEasy)
+                && adjacent.contains { calendar.isDate(other.date, inSameDayAs: $0) }
         }
     }
 }
@@ -130,12 +140,29 @@ public struct N100Adjustment: Codable, Equatable, Sendable {
     public var dayCount: Int
     public var mode: N100Mode
     public var returnPace: N100Return
+    public var createdAt: Date?
 
-    public init(start: Date, dayCount: Int, mode: N100Mode, returnPace: N100Return) {
+    public init(
+        start: Date,
+        dayCount: Int,
+        mode: N100Mode,
+        returnPace: N100Return,
+        createdAt: Date? = nil
+    ) {
         self.start = start
         self.dayCount = min(14, max(3, dayCount))
         self.mode = mode
         self.returnPace = returnPace
+        self.createdAt = createdAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        start = try container.decode(Date.self, forKey: .start)
+        dayCount = try container.decode(Int.self, forKey: .dayCount)
+        mode = try container.decode(N100Mode.self, forKey: .mode)
+        returnPace = try container.decode(N100Return.self, forKey: .returnPace)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
     }
 
     public func windowEnd(calendar: Calendar) -> Date {
@@ -150,6 +177,39 @@ public struct N100Adjustment: Codable, Equatable, Sendable {
 public enum NotFeeling100Rules {
     public static func isValidDayCount(_ count: Int) -> Bool {
         (3...14).contains(count)
+    }
+
+    public static func isValidStart(
+        start: Date,
+        dayCount: Int,
+        calendar: Calendar = .current,
+        asOf: Date = Date()
+    ) -> Bool {
+        guard isValidDayCount(dayCount) else { return false }
+        let startDay = calendar.startOfDay(for: start)
+        let today = calendar.startOfDay(for: asOf)
+        if startDay >= today { return true }
+        let windowEnd = adjustmentWindowEnd(start: startDay, dayCount: dayCount, calendar: calendar)
+        guard today >= startDay && today < windowEnd else { return false }
+        let earliest = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+        return startDay >= earliest
+    }
+
+    public static func adjustmentWindowEnd(
+        start: Date,
+        dayCount: Int,
+        calendar: Calendar
+    ) -> Date {
+        calendar.date(byAdding: .day, value: dayCount, to: calendar.startOfDay(for: start)) ?? start
+    }
+
+    public static func canDiscardOnCreationDay(
+        adjustment: N100Adjustment,
+        createdOn: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard let createdAt = adjustment.createdAt else { return false }
+        return calendar.isDate(createdAt, inSameDayAs: createdOn)
     }
 
     public static func apply(

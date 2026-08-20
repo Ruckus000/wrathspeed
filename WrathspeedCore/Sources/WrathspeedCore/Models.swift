@@ -19,6 +19,20 @@ public enum Weekday: Int, Codable, CaseIterable, Sendable, Comparable {
     public static func < (lhs: Weekday, rhs: Weekday) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
+
+    public var calendarWeekday: Int { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .sunday: "Sunday"
+        case .monday: "Monday"
+        case .tuesday: "Tuesday"
+        case .wednesday: "Wednesday"
+        case .thursday: "Thursday"
+        case .friday: "Friday"
+        case .saturday: "Saturday"
+        }
+    }
 }
 
 public enum DistanceUnit: String, Codable, CaseIterable, Sendable {
@@ -62,6 +76,13 @@ public enum WorkoutKind: String, Codable, CaseIterable, Sendable {
     public var isQuality: Bool {
         switch self {
         case .intervals, .tempo, .race: true
+        default: false
+        }
+    }
+
+    public var usesPaceTargetsByDefault: Bool {
+        switch self {
+        case .easy, .intervals, .tempo, .longRun, .race: true
         default: false
         }
     }
@@ -149,6 +170,7 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
     public var unit: DistanceUnit
     public var recentRace: RaceResult?
     public var vdot: Double
+    public var availableWeekdays: [Weekday]?
 
     public init(
         ability: Ability,
@@ -158,7 +180,8 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
         longRunWeekday: Weekday,
         unit: DistanceUnit,
         recentRace: RaceResult? = nil,
-        vdot: Double? = nil
+        vdot: Double? = nil,
+        availableWeekdays: [Weekday]? = nil
     ) {
         self.ability = ability
         self.weeklyMileageMeters = weeklyMileageMeters ?? ability.defaultWeeklyMileageMeters
@@ -167,6 +190,7 @@ public struct RunnerProfile: Codable, Equatable, Sendable {
         self.longRunWeekday = longRunWeekday
         self.unit = unit
         self.recentRace = recentRace
+        self.availableWeekdays = availableWeekdays
         if let vdot {
             self.vdot = vdot
         } else if let recentRace {
@@ -203,6 +227,25 @@ public extension Ability {
         case .advanced: 16_000
         case .elite: 24_000
         }
+    }
+}
+
+public extension RunnerProfile {
+    func resolvedRunWeekdays() -> [Weekday] {
+        if let availableWeekdays, !availableWeekdays.isEmpty {
+            return availableWeekdays.sorted()
+        }
+        return PlanGenerator.runWeekdays(daysPerWeek: daysPerWeek, longRun: longRunWeekday)
+    }
+}
+
+public struct MobilityPreferences: Codable, Equatable, Sendable {
+    public var enabled: Bool
+    public var sessionsPerWeek: Int
+
+    public init(enabled: Bool = false, sessionsPerWeek: Int = 2) {
+        self.enabled = enabled
+        self.sessionsPerWeek = min(3, max(1, sessionsPerWeek))
     }
 }
 
@@ -296,23 +339,58 @@ public struct ScheduledWorkout: Codable, Equatable, Sendable, Identifiable {
     public var blueprint: WorkoutBlueprint
     public var status: WorkoutStatus
     public var result: WorkoutResult?
+    public var scheduledTimeMinutes: Int?
+    public var reminderEnabled: Bool
 
     public init(
         id: UUID = UUID(),
         blueprint: WorkoutBlueprint,
         status: WorkoutStatus = .scheduled,
-        result: WorkoutResult? = nil
+        result: WorkoutResult? = nil,
+        scheduledTimeMinutes: Int? = nil,
+        reminderEnabled: Bool = false
     ) {
         self.id = id
         self.blueprint = blueprint
         self.status = status
         self.result = result
+        self.scheduledTimeMinutes = scheduledTimeMinutes
+        self.reminderEnabled = reminderEnabled
     }
 
     public var date: Date { blueprint.date }
+
+    enum CodingKeys: String, CodingKey {
+        case id, blueprint, status, result, scheduledTimeMinutes, reminderEnabled
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        blueprint = try values.decode(WorkoutBlueprint.self, forKey: .blueprint)
+        status = try values.decode(WorkoutStatus.self, forKey: .status)
+        result = try values.decodeIfPresent(WorkoutResult.self, forKey: .result)
+        scheduledTimeMinutes = try values.decodeIfPresent(Int.self, forKey: .scheduledTimeMinutes)
+        reminderEnabled = try values.decodeIfPresent(Bool.self, forKey: .reminderEnabled) ?? false
+    }
 }
 
-public struct WorkoutResult: Codable, Equatable, Sendable {
+public struct WorkoutSplit: Codable, Equatable, Sendable {
+    public var index: Int
+    public var distanceMeters: Double
+    public var duration: TimeInterval
+    public var paceSecPerKm: Double
+
+    public init(index: Int, distanceMeters: Double, duration: TimeInterval, paceSecPerKm: Double) {
+        self.index = index
+        self.distanceMeters = distanceMeters
+        self.duration = duration
+        self.paceSecPerKm = paceSecPerKm
+    }
+}
+
+public struct WorkoutResult: Codable, Equatable, Sendable, Identifiable {
+    public var id: String { WorkoutResultMerge.identityKey(for: self) }
     public var workoutID: UUID
     public var startedAt: Date
     public var duration: TimeInterval
@@ -321,6 +399,14 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
     public var heartRateAverage: Double?
     public var location: RunLocation
     public var healthKitUUID: UUID?
+    public var route: [RoutePoint]?
+    public var splits: [WorkoutSplit]?
+    public var source: WorkoutSource
+    public var matchInfo: WorkoutMatchInfo
+    public var energyKilocalories: Double?
+    public var cadenceAverage: Double?
+    public var isUnavailableInHealth: Bool
+    public var healthSync: HealthSyncMetadata
 
     public init(
         workoutID: UUID,
@@ -330,7 +416,15 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         averagePaceSecPerKm: Double?,
         heartRateAverage: Double? = nil,
         location: RunLocation,
-        healthKitUUID: UUID? = nil
+        healthKitUUID: UUID? = nil,
+        route: [RoutePoint]? = nil,
+        splits: [WorkoutSplit]? = nil,
+        source: WorkoutSource = .wrathspeedPhone,
+        matchInfo: WorkoutMatchInfo = WorkoutMatchInfo(),
+        energyKilocalories: Double? = nil,
+        cadenceAverage: Double? = nil,
+        isUnavailableInHealth: Bool = false,
+        healthSync: HealthSyncMetadata = HealthSyncMetadata()
     ) {
         self.workoutID = workoutID
         self.startedAt = startedAt
@@ -340,6 +434,55 @@ public struct WorkoutResult: Codable, Equatable, Sendable {
         self.heartRateAverage = heartRateAverage
         self.location = location
         self.healthKitUUID = healthKitUUID
+        self.route = route
+        self.splits = splits
+        self.source = source
+        self.matchInfo = matchInfo
+        self.energyKilocalories = energyKilocalories
+        self.cadenceAverage = cadenceAverage
+        self.isUnavailableInHealth = isUnavailableInHealth
+        self.healthSync = healthSync
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case workoutID, startedAt, duration, distanceMeters, averagePaceSecPerKm, heartRateAverage
+        case location, healthKitUUID, route, splits, source, matchInfo, energyKilocalories
+        case cadenceAverage, isUnavailableInHealth, healthSync
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        workoutID = try values.decode(UUID.self, forKey: .workoutID)
+        startedAt = try values.decode(Date.self, forKey: .startedAt)
+        duration = try values.decode(TimeInterval.self, forKey: .duration)
+        distanceMeters = try values.decode(Double.self, forKey: .distanceMeters)
+        averagePaceSecPerKm = try values.decodeIfPresent(Double.self, forKey: .averagePaceSecPerKm)
+        heartRateAverage = try values.decodeIfPresent(Double.self, forKey: .heartRateAverage)
+        location = try values.decode(RunLocation.self, forKey: .location)
+        healthKitUUID = try values.decodeIfPresent(UUID.self, forKey: .healthKitUUID)
+        route = try values.decodeIfPresent([RoutePoint].self, forKey: .route)
+        splits = try values.decodeIfPresent([WorkoutSplit].self, forKey: .splits)
+        source = try values.decodeIfPresent(WorkoutSource.self, forKey: .source) ?? .wrathspeedPhone
+        matchInfo = try values.decodeIfPresent(WorkoutMatchInfo.self, forKey: .matchInfo) ?? WorkoutMatchInfo()
+        energyKilocalories = try values.decodeIfPresent(Double.self, forKey: .energyKilocalories)
+        cadenceAverage = try values.decodeIfPresent(Double.self, forKey: .cadenceAverage)
+        isUnavailableInHealth = try values.decodeIfPresent(Bool.self, forKey: .isUnavailableInHealth) ?? false
+        healthSync = try values.decodeIfPresent(HealthSyncMetadata.self, forKey: .healthSync) ?? HealthSyncMetadata(
+            state: healthKitUUID == nil ? .notRequired : .synced,
+            healthKitUUID: healthKitUUID
+        )
+    }
+}
+
+public struct RoutePoint: Codable, Equatable, Sendable, Hashable {
+    public var latitude: Double
+    public var longitude: Double
+    public var timestamp: Date
+
+    public init(latitude: Double, longitude: Double, timestamp: Date) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.timestamp = timestamp
     }
 }
 
@@ -349,22 +492,19 @@ public struct TrainingPlan: Codable, Equatable, Sendable, Identifiable {
     public var profile: RunnerProfile
     public var workouts: [ScheduledWorkout]
     public var generatedAt: Date
-    public var strengthWorkouts: [ScheduledWorkout]
 
     public init(
         id: UUID = UUID(),
         goal: TrainingGoal,
         profile: RunnerProfile,
         workouts: [ScheduledWorkout],
-        generatedAt: Date = Date(),
-        strengthWorkouts: [ScheduledWorkout] = []
+        generatedAt: Date = Date()
     ) {
         self.id = id
         self.goal = goal
         self.profile = profile
         self.workouts = workouts
         self.generatedAt = generatedAt
-        self.strengthWorkouts = strengthWorkouts
     }
 }
 
@@ -372,11 +512,18 @@ public struct UpcomingWorkoutsPayload: Codable, Equatable, Sendable {
     public var generatedAt: Date
     public var blueprints: [WorkoutBlueprint]
     public var vdot: Double?
+    public var unit: DistanceUnit?
 
-    public init(generatedAt: Date = Date(), blueprints: [WorkoutBlueprint], vdot: Double? = nil) {
+    public init(
+        generatedAt: Date = Date(),
+        blueprints: [WorkoutBlueprint],
+        vdot: Double? = nil,
+        unit: DistanceUnit? = nil
+    ) {
         self.generatedAt = generatedAt
         self.blueprints = blueprints
         self.vdot = vdot
+        self.unit = unit
     }
 }
 

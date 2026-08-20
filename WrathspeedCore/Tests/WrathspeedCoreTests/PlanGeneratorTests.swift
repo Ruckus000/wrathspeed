@@ -113,4 +113,74 @@ struct PlanGeneratorTests {
         #expect(days.last == .saturday)
         #expect(days.count == 4)
     }
+
+    @Test func rejectsRaceDateShorterThanMinimumPlan() {
+        var invalid = request(kind: .halfMarathon, weeks: 12)
+        invalid.goal.raceDate = calendar.date(byAdding: .day, value: 7, to: invalid.startDate)
+        #expect(throws: PlanInputError.raceDateTooSoon(minimumWeeks: GoalKind.halfMarathon.minimumWeeks)) {
+            try PlanGenerator.generateValidated(invalid)
+        }
+    }
+
+    @Test func rejectsInvalidMileage() {
+        var invalid = request(kind: .tenK, weeks: 10)
+        invalid.profile.weeklyMileageMeters = 0
+        #expect(throws: PlanInputError.invalidWeeklyMileage) {
+            try PlanGenerator.generateValidated(invalid)
+        }
+    }
+
+    @Test func rejectsRaceDateBeyondMaximumPlan() {
+        var invalid = request(kind: .fiveK, weeks: 8)
+        invalid.goal.raceDate = calendar.date(byAdding: .day, value: (PlanGenerator.maxWeeks + 1) * 7, to: invalid.startDate)
+        #expect(throws: PlanInputError.raceDateTooFar(maximumWeeks: PlanGenerator.maxWeeks)) {
+            try PlanGenerator.generateValidated(invalid)
+        }
+    }
+
+    @Test func reconcilerRetainsCompletedWorkoutAndCapsFutureMileage() {
+        let original = PlanGenerator.generate(request(kind: .tenK, weeks: 10))
+        var completed = original
+        completed.workouts[0].status = .completed
+        let result = WorkoutResult(workoutID: completed.workouts[0].blueprint.id, startedAt: completed.workouts[0].date, duration: 300, distanceMeters: 1_000, averagePaceSecPerKm: 300, location: .outdoor)
+        completed.workouts[0].result = result
+        let regenerated = PlanGenerator.generate(request(kind: .tenK, weeks: 10))
+        let reconciled = PlanReconciler.reconcile(existing: completed, generated: regenerated, asOf: completed.workouts[0].date, calendar: calendar, freezeMileageBaselineMeters: 5_000)
+        #expect(reconciled.workouts.contains { $0.id == completed.workouts[0].id && $0.result == result })
+        let weekly = Dictionary(grouping: reconciled.workouts.filter { $0.status == .scheduled && $0.blueprint.kind.isRunning && $0.blueprint.kind != .race }) {
+            calendar.dateInterval(of: .weekOfYear, for: $0.date)?.start ?? $0.date
+        }
+        #expect(weekly.values.allSatisfy { $0.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters } <= 5_000.01 })
+    }
+
+    @Test func planServiceAppliesReconciliationAdjustmentAndStrengthScheduling() throws {
+        var request = request(kind: .tenK, weeks: 10)
+        request.goal.raceDate = calendar.date(byAdding: .day, value: 10 * 7, to: request.startDate)
+        var existing = PlanGenerator.generate(request)
+        existing.workouts[0].status = .completed
+        let completedID = existing.workouts[0].id
+        let catalog = StrengthCatalog(exercises: [
+            StrengthExercise(
+                id: "squat",
+                name: "Squat",
+                focus: [.legsCore, .fullBody],
+                equipment: [.bodyweight],
+                symbolName: "figure.strengthtraining.traditional",
+                defaultReps: 10,
+                cue: "Stand tall."
+            ),
+        ])
+
+        let output = try TrainingPlanService.regenerate(
+            request: request,
+            existingPlan: existing,
+            adjustment: N100Adjustment(start: request.startDate, dayCount: 3, mode: .reducedDifficulty, returnPace: .balanced),
+            freezeMileageBaselineMeters: 5_000,
+            strengthPreferences: StrengthPreferences(sessionsPerWeek: 1),
+            strengthCatalog: catalog
+        )
+
+        #expect(output.plan.workouts.contains { $0.id == completedID && $0.status == .completed })
+        #expect(output.strengthSessions.count == request.goal.weekCount)
+    }
 }

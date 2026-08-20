@@ -17,5 +17,10 @@
 		<string>workout-processing</string>
 		<string>audio</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Anton-Regular.ttf</string>
+		<string>Archivo-Variable.ttf</string>
+	</array>
 </dict>
 </plist>

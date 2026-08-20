@@ -4,143 +4,487 @@ import WrathspeedCore
 struct OnboardingView: View {
     @Environment(AppStore.self) private var store
 
-    @State private var kind: GoalKind = .halfMarathon
-    @State private var weeks: Double = 12
-    @State private var hasRaceDate = false
-    @State private var raceDate = Date().addingTimeInterval(12 * 7 * 24 * 3600)
-    @State private var ability: Ability = .intermediate
-    @State private var days = 4
-    @State private var longRun: Weekday = .saturday
-    @State private var mileageDisplay = 30.0
-    @State private var longestDisplay = 10.0
-    @State private var hasRaceTime = false
-    @State private var raceDistanceKind: GoalKind = .fiveK
-    @State private var raceHours = 0
-    @State private var raceMinutes = 25
-    @State private var raceSeconds = 0
-    @State private var strength = StrengthPreferences()
+    @State private var step = 0
+    @State private var inputs = OnboardingInputs()
+    @State private var draft: OnboardingDraft?
+    @State private var building = false
+    @State private var buildProgress = 0.12
+    @State private var validationMessage: String?
+
+    private let totalSteps = 7
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Goal") {
-                    Picker("Plan type", selection: $kind) {
-                        ForEach(GoalKind.allCases, id: \.self) { item in
-                            Text(item.displayName).tag(item)
-                        }
-                    }
-                    if !kind.isBeginner {
-                        Toggle("I have a race date", isOn: $hasRaceDate)
-                        if hasRaceDate {
-                            DatePicker("Race date", selection: $raceDate, displayedComponents: .date)
-                        }
-                        Stepper("Length: \(Int(weeks)) weeks", value: $weeks, in: Double(kind.minimumWeeks)...26)
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            if building {
+                buildScreen
+            } else {
+                formScreen
+            }
+        }
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.top, 20)
+        .padding(.bottom, 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(WSColor.bg.ignoresSafeArea())
+    }
+
+    private var formScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                if step > 0 {
+                    Button("← BACK") { step -= 1 }
+                        .font(WSFont.ui(13, weight: .heavy))
+                        .tracking(1)
+                        .foregroundStyle(WSColor.text50)
+                        .accessibilityLabel("Back")
                 }
-                Section("Running") {
-                    Picker("Ability", selection: $ability) {
-                        ForEach(Ability.allCases, id: \.self) { item in
-                            Text(item.rawValue.capitalized).tag(item)
-                        }
-                    }
-                    Stepper("Days per week: \(days)", value: $days, in: 3...6)
-                    Picker("Long run day", selection: $longRun) {
-                        ForEach(Weekday.allCases, id: \.self) { day in
-                            Text(day.label).tag(day)
-                        }
-                    }
-                    HStack {
-                        Text("Weekly mileage")
-                        Spacer()
-                        TextField("Mileage", value: $mileageDisplay, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    HStack {
-                        Text("Longest recent run")
-                        Spacer()
-                        TextField("Longest", value: $longestDisplay, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    Toggle("Recent race time", isOn: $hasRaceTime)
-                    if hasRaceTime {
-                        Picker("Distance", selection: $raceDistanceKind) {
-                            Text("5K").tag(GoalKind.fiveK)
-                            Text("10K").tag(GoalKind.tenK)
-                            Text("Half").tag(GoalKind.halfMarathon)
-                            Text("Marathon").tag(GoalKind.marathon)
-                        }
-                        HStack {
-                            TextField("H", value: $raceHours, format: .number)
-                            TextField("M", value: $raceMinutes, format: .number)
-                            TextField("S", value: $raceSeconds, format: .number)
-                        }
-                    }
-                }
-                Section("Strength") {
-                    Picker("Experience", selection: $strength.ability) {
-                        ForEach(StrengthAbility.allCases, id: \.self) { item in
-                            Text(item.rawValue.capitalized).tag(item)
-                        }
-                    }
-                    Picker("Goal", selection: $strength.goal) {
-                        ForEach(StrengthGoal.allCases, id: \.self) { item in
-                            Text(item.title).tag(item)
-                        }
-                    }
-                    Picker("Session length", selection: $strength.durationMinutes) {
-                        Text("30 min").tag(30)
-                        Text("45 min").tag(45)
-                        Text("60 min").tag(60)
-                    }
-                    Stepper("Sessions per week: \(strength.sessionsPerWeek)", value: $strength.sessionsPerWeek, in: 1...4)
+                Spacer()
+            }
+            WSEyebrow(text: eyebrow)
+                .padding(.top, 26)
+            Text(headline)
+                .font(WSFont.display(42))
+                .foregroundStyle(WSColor.text)
+                .lineSpacing(-4)
+                .padding(.top, 8)
+                .minimumScaleFactor(0.7)
+                .accessibilityAddTraits(.isHeader)
+
+            Group {
+                switch step {
+                case 0: goalModeStep
+                case 1: goalDetailsStep
+                case 2: unitStep
+                case 3: numbersStep
+                case 4: scheduleStep
+                case 5: supplementalStep
+                default: previewStep
                 }
             }
-            .navigationTitle("Wrathspeed")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create plan") { submit() }
+            .padding(.top, 26)
+
+            if let validationMessage {
+                Text(validationMessage)
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.accent)
+                    .padding(.top, 12)
+                    .accessibilityLabel(validationMessage)
+            }
+
+            Spacer()
+            WSPrimaryButton(title: primaryButtonTitle) {
+                advance()
+            }
+            .accessibilityIdentifier(primaryButtonTitle)
+        }
+    }
+
+    private var buildScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer()
+            WSEyebrow(text: "STAND BY")
+            Text("BUILDING\nYOUR PLAN")
+                .font(WSFont.display(56))
+                .foregroundStyle(WSColor.text)
+                .padding(.top, 10)
+            Text(buildSummary)
+                .font(WSFont.mono(12))
+                .foregroundStyle(WSColor.text45)
+                .padding(.top, 16)
+            WSProgressBar(progress: buildProgress)
+                .padding(.top, 26)
+            Spacer()
+        }
+    }
+
+    private var goalModeStep: some View {
+        VStack(spacing: 10) {
+            ForEach(GoalMode.allCases, id: \.self) { mode in
+                WSSelectRow(title: mode.displayName, selected: inputs.goalMode == mode) {
+                    inputs.goalMode = mode
+                    switch mode {
+                    case .race: inputs.goalKind = .halfMarathon
+                    case .distance: inputs.goalKind = .tenK
+                    case .newToRunning: inputs.goalKind = .newToRunning
+                    case .returnToRunning: inputs.goalKind = .returnToRunning
+                    }
+                    inputs.weekCount = max(inputs.weekCount, inputs.goalKind.minimumWeeks)
+                } accessory: { EmptyView() }
+            }
+        }
+    }
+
+    private var goalDetailsStep: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if inputs.goalMode == .race {
+                Text("RACE DISTANCE")
+                    .font(WSFont.ui(14, weight: .heavy))
+                VStack(spacing: 8) {
+                    ForEach([GoalKind.fiveK, .tenK, .halfMarathon, .marathon], id: \.self) { kind in
+                        WSSelectRow(title: kind.displayName, selected: inputs.goalKind == kind) {
+                            inputs.goalKind = kind
+                            inputs.weekCount = max(inputs.weekCount, kind.minimumWeeks)
+                        } accessory: { EmptyView() }
+                    }
+                }
+                DatePicker(
+                    "Race date",
+                    selection: Binding(
+                        get: { inputs.raceDate ?? defaultRaceDate },
+                        set: { inputs.raceDate = $0 }
+                    ),
+                    in: Date()...,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .tint(WSColor.accent)
+                .accessibilityLabel("Race date")
+            } else if inputs.goalMode == .distance {
+                Text("DISTANCE GOAL")
+                    .font(WSFont.ui(14, weight: .heavy))
+                VStack(spacing: 8) {
+                    ForEach([GoalKind.fiveK, .tenK, .halfMarathon, .marathon], id: \.self) { kind in
+                        WSSelectRow(title: kind.displayName, selected: inputs.goalKind == kind) {
+                            inputs.goalKind = kind
+                            inputs.weekCount = max(inputs.weekCount, kind.minimumWeeks)
+                        } accessory: { EmptyView() }
+                    }
+                }
+                stepperRow(
+                    "PLAN LENGTH · WKS",
+                    text: "\(inputs.weekCount)",
+                    down: { inputs.weekCount = max(inputs.goalKind.minimumWeeks, inputs.weekCount - 1) },
+                    up: { inputs.weekCount = min(26, inputs.weekCount + 1) }
+                )
+            } else {
+                stepperRow(
+                    "PLAN LENGTH · WKS",
+                    text: "\(inputs.weekCount)",
+                    down: { inputs.weekCount = max(inputs.goalKind.minimumWeeks, inputs.weekCount - 1) },
+                    up: { inputs.weekCount = min(26, inputs.weekCount + 1) }
+                )
+            }
+        }
+    }
+
+    private var unitStep: some View {
+        VStack(spacing: 10) {
+            WSSelectRow(title: "Kilometers", selected: inputs.unit == .kilometers) {
+                inputs.unit = .kilometers
+            } accessory: { EmptyView() }
+            WSSelectRow(title: "Miles", selected: inputs.unit == .miles) {
+                inputs.unit = .miles
+            } accessory: { EmptyView() }
+            Text("DISTANCE LABELS AND INPUTS FOLLOW THIS UNIT. WE STORE METERS INTERNALLY.")
+                .font(WSFont.mono(11))
+                .foregroundStyle(WSColor.text40)
+                .padding(.top, 8)
+        }
+    }
+
+    private var numbersStep: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(spacing: 8) {
+                ForEach(Ability.allCases, id: \.self) { item in
+                    WSChip(title: item.title, selected: inputs.ability == item) { inputs.ability = item }
+                }
+            }
+            stepperRow(
+                "WEEKLY \(WSFormat.unitLabel(inputs.unit).uppercased())",
+                text: WSFormat.distanceValue(Units.meters(fromDisplay: inputs.weeklyDisplayDistance, unit: inputs.unit), unit: inputs.unit, fraction: 0),
+                down: { inputs.weeklyDisplayDistance = max(5, inputs.weeklyDisplayDistance - 1) },
+                up: { inputs.weeklyDisplayDistance = min(90, inputs.weeklyDisplayDistance + 1) }
+            )
+            stepperRow(
+                "LONGEST RECENT \(WSFormat.unitLabel(inputs.unit).uppercased())",
+                text: WSFormat.distanceValue(Units.meters(fromDisplay: inputs.longestDisplayDistance, unit: inputs.unit), unit: inputs.unit, fraction: 0),
+                down: { inputs.longestDisplayDistance = max(2, inputs.longestDisplayDistance - 1) },
+                up: { inputs.longestDisplayDistance = min(26, inputs.longestDisplayDistance + 1) }
+            )
+            Toggle(isOn: $inputs.includesRecentPerformance) {
+                Text("ADD RECENT RACE OR PB")
+                    .font(WSFont.ui(14, weight: .heavy))
+            }
+            .tint(WSColor.accent)
+            if inputs.includesRecentPerformance {
+                stepperRow(
+                    "RACE \(WSFormat.unitLabel(inputs.unit).uppercased())",
+                    text: WSFormat.distanceValue(Units.meters(fromDisplay: inputs.recentDistanceDisplay ?? 10, unit: inputs.unit), unit: inputs.unit, fraction: 1),
+                    down: {
+                        let current = inputs.recentDistanceDisplay ?? 10
+                        inputs.recentDistanceDisplay = max(1, current - 0.5)
+                    },
+                    up: {
+                        let current = inputs.recentDistanceDisplay ?? 10
+                        inputs.recentDistanceDisplay = min(42, current + 0.5)
+                    }
+                )
+                HStack {
+                    Text("TIME")
+                        .font(WSFont.ui(14, weight: .heavy))
+                    Spacer()
+                    WSStepperControl(
+                        valueText: timeLabel,
+                        decrement: { adjustRecentTime(by: -5) },
+                        increment: { adjustRecentTime(by: 5) }
+                    )
+                }
+            } else {
+                Text("WITHOUT A RECENT RESULT, VDOT COMES FROM ABILITY — LABELED AS AN ESTIMATE IN PREVIEW.")
+                    .font(WSFont.mono(11))
+                    .foregroundStyle(WSColor.text40)
+            }
+        }
+    }
+
+    private var scheduleStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("AVAILABLE RUN DAYS")
+                .font(WSFont.ui(14, weight: .heavy))
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
+                ForEach(Weekday.allCases, id: \.self) { day in
+                    WSChip(title: day.chipLabel, selected: inputs.availableDays.contains(day)) {
+                        toggleDay(day)
+                    }
+                }
+            }
+            Text("LONG RUN DAY")
+                .font(WSFont.ui(14, weight: .heavy))
+                .padding(.top, 8)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
+                ForEach(inputs.availableDays.sorted(), id: \.self) { day in
+                    WSChip(title: day.chipLabel, selected: inputs.longRunDay == day) {
+                        inputs.longRunDay = day
+                    }
                 }
             }
         }
     }
 
-    private func submit() {
-        let unit = DistanceUnit.default()
-        let recent: RaceResult? = {
-            guard hasRaceTime, let meters = raceDistanceKind.distanceMeters else { return nil }
-            let duration = TimeInterval(raceHours * 3600 + raceMinutes * 60 + raceSeconds)
-            return RaceResult(distanceMeters: meters, duration: duration)
-        }()
-        let profile = RunnerProfile(
-            ability: ability,
-            weeklyMileageMeters: Units.meters(fromDisplay: mileageDisplay, unit: unit),
-            longestRunMeters: Units.meters(fromDisplay: longestDisplay, unit: unit),
-            daysPerWeek: days,
-            longRunWeekday: longRun,
-            unit: unit,
-            recentRace: recent
-        )
-        let goal = TrainingGoal(
-            kind: kind,
-            raceDate: hasRaceDate && !kind.isBeginner ? raceDate : nil,
-            weekCount: Int(weeks)
-        )
-        store.completeOnboarding(goal: goal, profile: profile, strength: strength)
-    }
-}
-
-extension Weekday {
-    var label: String {
-        switch self {
-        case .sunday: "Sunday"
-        case .monday: "Monday"
-        case .tuesday: "Tuesday"
-        case .wednesday: "Wednesday"
-        case .thursday: "Thursday"
-        case .friday: "Friday"
-        case .saturday: "Saturday"
+    private var supplementalStep: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Toggle(isOn: $inputs.strengthEnabled) {
+                Text("INCLUDE STRENGTH")
+                    .font(WSFont.ui(14, weight: .heavy))
+            }
+            .tint(WSColor.accent)
+            if inputs.strengthEnabled {
+                VStack(spacing: 8) {
+                    ForEach(StrengthGoal.allCases, id: \.self) { item in
+                        WSSelectRow(title: item.title, selected: inputs.strength.goal == item) {
+                            inputs.strength.goal = item
+                        } accessory: { EmptyView() }
+                    }
+                }
+                stepperRow(
+                    "STRENGTH / WEEK",
+                    text: "\(inputs.strength.sessionsPerWeek)",
+                    down: { inputs.strength.sessionsPerWeek = max(1, inputs.strength.sessionsPerWeek - 1) },
+                    up: { inputs.strength.sessionsPerWeek = min(4, inputs.strength.sessionsPerWeek + 1) }
+                )
+            }
+            Toggle(isOn: $inputs.mobility.enabled) {
+                Text("INCLUDE MOBILITY")
+                    .font(WSFont.ui(14, weight: .heavy))
+            }
+            .tint(WSColor.accent)
+            if inputs.mobility.enabled {
+                stepperRow(
+                    "MOBILITY / WEEK",
+                    text: "\(inputs.mobility.sessionsPerWeek)",
+                    down: { inputs.mobility.sessionsPerWeek = max(1, inputs.mobility.sessionsPerWeek - 1) },
+                    up: { inputs.mobility.sessionsPerWeek = min(3, inputs.mobility.sessionsPerWeek + 1) }
+                )
+            }
         }
+    }
+
+    private var previewStep: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if let draft {
+                Text("FIRST WEEK")
+                    .font(WSFont.ui(14, weight: .heavy))
+                ForEach(firstWeekWorkouts(draft)) { workout in
+                    HStack {
+                        Text(WSFormat.weekdayDate(workout.date))
+                            .font(WSFont.mono(11))
+                            .foregroundStyle(WSColor.text45)
+                            .frame(width: 92, alignment: .leading)
+                        Text(workout.blueprint.title.uppercased())
+                            .font(WSFont.ui(13, weight: .heavy))
+                        Spacer()
+                        Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: inputs.unit, fraction: 0))
+                            .font(WSFont.mono(11))
+                            .foregroundStyle(WSColor.text45)
+                    }
+                }
+                Text("STARTING WEEKLY \(WSFormat.distance(weeklyMileage(draft), unit: inputs.unit)) · \(draft.plan.goal.weekCount) WEEKS")
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text45)
+                    .padding(.top, 6)
+                if let easy = draft.zones.secondsPerKilometer(for: .easy) {
+                    Text("EASY PACE \(WSFormat.pace(easy, unit: inputs.unit)) · VDOT \(WSFormat.vdot(draft.plan.profile.vdot)) (\(vdotLabel(draft)))")
+                        .font(WSFont.mono(12))
+                        .foregroundStyle(WSColor.text45)
+                }
+            } else {
+                Text("BUILD A DRAFT TO PREVIEW YOUR FIRST WEEK.")
+                    .font(WSFont.mono(12))
+                    .foregroundStyle(WSColor.text45)
+            }
+        }
+    }
+
+    private func stepperRow(_ title: String, text: String, down: @escaping () -> Void, up: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title)
+                .font(WSFont.ui(14, weight: .heavy))
+            Spacer()
+            WSStepperControl(valueText: text, decrement: down, increment: up)
+        }
+    }
+
+    private var eyebrow: String { "STEP \(step + 1)/\(totalSteps) — \(stepTitle.uppercased())" }
+    private var stepTitle: String {
+        switch step {
+        case 0: "Goal"
+        case 1: "Details"
+        case 2: "Units"
+        case 3: "Fitness"
+        case 4: "Schedule"
+        case 5: "Support"
+        default: "Preview"
+        }
+    }
+
+    private var headline: String {
+        switch step {
+        case 0: "WHAT ARE WE\nCHASING?"
+        case 1: "LOCK IN THE\nDETAILS."
+        case 2: "PICK YOUR\nDISTANCE UNIT."
+        case 3: "HOW FIT ARE\nYOU TODAY?"
+        case 4: "WHEN CAN YOU\nRUN?"
+        case 5: "STRENGTH +\nMOBILITY?"
+        default: "REVIEW YOUR\nDRAFT PLAN."
+        }
+    }
+
+    private var primaryButtonTitle: String {
+        switch step {
+        case totalSteps - 1: "CONFIRM PLAN →"
+        case 5: "BUILD DRAFT →"
+        default: "NEXT →"
+        }
+    }
+
+    private var buildSummary: String {
+        "\(inputs.weekCount) WEEKS · \(inputs.goalKind.displayName.uppercased()) · \(inputs.availableDays.count) RUNS / WK"
+    }
+
+    private var defaultRaceDate: Date {
+        Calendar.current.date(byAdding: .weekOfYear, value: inputs.goalKind.minimumWeeks, to: Date()) ?? Date()
+    }
+
+    private var timeLabel: String {
+        let minutes = inputs.recentDurationMinutes ?? 45
+        let seconds = inputs.recentDurationSeconds ?? 0
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private func adjustRecentTime(by seconds: Int) {
+        var total = (inputs.recentDurationMinutes ?? 45) * 60 + (inputs.recentDurationSeconds ?? 0)
+        total = max(60, total + seconds)
+        inputs.recentDurationMinutes = total / 60
+        inputs.recentDurationSeconds = total % 60
+        if inputs.recentDistanceDisplay == nil { inputs.recentDistanceDisplay = 10 }
+    }
+
+    private func toggleDay(_ day: Weekday) {
+        if inputs.availableDays.contains(day) {
+            guard inputs.availableDays.count > 3 else { return }
+            inputs.availableDays.remove(day)
+            if inputs.longRunDay == day {
+                inputs.longRunDay = inputs.availableDays.sorted().last ?? .saturday
+            }
+        } else {
+            inputs.availableDays.insert(day)
+        }
+    }
+
+    private func advance() {
+        validationMessage = nil
+        if step < 5 {
+            if let error = validateCurrentStep() {
+                validationMessage = error
+                return
+            }
+            normalizeDraftInputs()
+            step += 1
+            return
+        }
+        if step == 5 {
+            do {
+                normalizeDraftInputs()
+                try OnboardingValidator.validate(inputs)
+                building = true
+                withAnimation(.linear(duration: 1.2)) { buildProgress = 1 }
+                Task {
+                    try? await Task.sleep(for: .seconds(1.2))
+                    do {
+                        let built = try store.generateOnboardingDraft(from: inputs)
+                        draft = built
+                        building = false
+                        step += 1
+                    } catch {
+                        building = false
+                        validationMessage = error.localizedDescription
+                    }
+                }
+            } catch {
+                validationMessage = error.localizedDescription
+            }
+            return
+        }
+        guard let draft else {
+            validationMessage = "Build a draft plan first."
+            return
+        }
+        store.confirmOnboarding(draft: draft)
+    }
+
+    private func validateCurrentStep() -> String? {
+        switch step {
+        case 1:
+            normalizeDraftInputs()
+        case 4:
+            if inputs.availableDays.count < 3 { return OnboardingValidationError.tooFewAvailableDays.errorDescription }
+            if !inputs.availableDays.contains(inputs.longRunDay) { return OnboardingValidationError.longRunNotAvailable.errorDescription }
+        default: break
+        }
+        return nil
+    }
+
+    private func normalizeDraftInputs() {
+        if inputs.goalMode == .race && inputs.raceDate == nil {
+            inputs.raceDate = defaultRaceDate
+        }
+    }
+
+    private func firstWeekWorkouts(_ draft: OnboardingDraft) -> [ScheduledWorkout] {
+        let start = Calendar.current.startOfDay(for: Date())
+        let end = Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
+        return draft.plan.workouts.filter { $0.date >= start && $0.date < end }
+    }
+
+    private func weeklyMileage(_ draft: OnboardingDraft) -> Double {
+        let start = Calendar.current.startOfDay(for: Date())
+        let end = Calendar.current.date(byAdding: .day, value: 7, to: start) ?? start
+        return draft.plan.workouts
+            .filter { $0.date >= start && $0.date < end && $0.blueprint.kind.isRunning }
+            .reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }
+    }
+
+    private func vdotLabel(_ draft: OnboardingDraft) -> String {
+        draft.vdotSource == .recentPerformance ? "FROM RECENT RESULT" : "ABILITY ESTIMATE"
     }
 }
