@@ -66,6 +66,11 @@ struct WorkoutDetailView: View {
                     }
                 }
             }
+            if !routines.isEmpty {
+                Section("Prep and recovery") {
+                    MobilitySectionView(routines: routines)
+                }
+            }
             Section {
                 Button("Start") { showLive = true }
                 DatePicker("Move to", selection: $moveDate, displayedComponents: .date)
@@ -81,6 +86,10 @@ struct WorkoutDetailView: View {
             LiveRunView(blueprint: workout.blueprint)
         }
         .onAppear { moveDate = workout.date }
+    }
+
+    private var routines: [MobilityRoutine] {
+        MobilityPlanner.routines(for: workout.blueprint.kind, catalog: store.movementCatalog)
     }
 
     private func stepLabel(_ step: WorkoutStep) -> String {

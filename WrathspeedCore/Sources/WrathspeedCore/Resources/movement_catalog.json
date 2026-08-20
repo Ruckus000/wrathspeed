@@ -1,0 +1,384 @@
+{
+  "movements": [
+    {
+      "id": "arm-circles",
+      "name": "Arm circles",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "shoulders",
+      "durationSeconds": 30,
+      "symbolName": "figure.arms.open",
+      "cue": "Small circles first, then wider. Half forward, half back."
+    },
+    {
+      "id": "cat-cow",
+      "name": "Cat-cow",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "spine",
+      "durationSeconds": 40,
+      "symbolName": "figure.flexibility",
+      "cue": "On all fours. Round the spine, then arch. Move with your breath."
+    },
+    {
+      "id": "standing-pelvic-tilt",
+      "name": "Standing pelvic tilt",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "lowerBack",
+      "durationSeconds": 30,
+      "symbolName": "figure.stand",
+      "cue": "Tuck the tailbone under, then release. Small range, ribs quiet."
+    },
+    {
+      "id": "hip-circles",
+      "name": "Standing hip circles",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "hips",
+      "durationSeconds": 40,
+      "symbolName": "figure.socialdance",
+      "cue": "Hands on hips, draw big slow circles. Both directions."
+    },
+    {
+      "id": "ankle-circles",
+      "name": "Ankle circles",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "ankles",
+      "durationSeconds": 30,
+      "symbolName": "figure.stairs",
+      "cue": "Lift one foot, circle the ankle slowly. Both directions, both sides."
+    },
+    {
+      "id": "leg-swings-front",
+      "name": "Front leg swings",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 40,
+      "symbolName": "figure.walk",
+      "cue": "Hold a wall. Swing the leg front to back, relaxed, growing range."
+    },
+    {
+      "id": "leg-swings-side",
+      "name": "Lateral leg swings",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "adductors",
+      "durationSeconds": 40,
+      "symbolName": "figure.walk",
+      "cue": "Face the wall. Swing the leg across the body and out. Hips square."
+    },
+    {
+      "id": "groiners",
+      "name": "Groiners",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "hips",
+      "durationSeconds": 40,
+      "symbolName": "figure.flexibility",
+      "cue": "From a push-up position, step a foot outside the hand. Alternate."
+    },
+    {
+      "id": "worlds-greatest-stretch",
+      "name": "World's greatest stretch",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "hips",
+      "durationSeconds": 60,
+      "symbolName": "figure.flexibility",
+      "cue": "Lunge, forearm to the floor inside the foot, then rotate the top arm up."
+    },
+    {
+      "id": "inchworm",
+      "name": "Inchworm",
+      "kind": "mobility",
+      "phase": "warmup",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 40,
+      "symbolName": "figure.flexibility",
+      "cue": "Hinge, walk the hands out to a plank, walk the feet in. Keep legs long."
+    },
+    {
+      "id": "arm-drill",
+      "name": "Kneeling arm drill",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "shoulders",
+      "durationSeconds": 30,
+      "symbolName": "figure.run",
+      "cue": "Tall kneeling. Drive elbows back, hands cheek to pocket, relaxed hands."
+    },
+    {
+      "id": "wall-drill",
+      "name": "Acceleration wall drill",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "hips",
+      "durationSeconds": 40,
+      "symbolName": "figure.run",
+      "cue": "Lean into the wall from the ankles. Drive one knee up, punch the foot down."
+    },
+    {
+      "id": "claw-series",
+      "name": "Moving claw series",
+      "kind": "drill",
+      "phase": "drills",
+      "durationSeconds": 40,
+      "bodyArea": "hamstrings",
+      "symbolName": "figure.run",
+      "cue": "Reach the foot forward, then paw it back under the hip. Quick ground contact."
+    },
+    {
+      "id": "butt-kicks",
+      "name": "Butt kicks",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 30,
+      "symbolName": "figure.run",
+      "cue": "Heels to glutes, knees pointing down, quick light cadence."
+    },
+    {
+      "id": "single-leg-butt-kick",
+      "name": "Single-leg butt kick",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 30,
+      "symbolName": "figure.run",
+      "cue": "One leg cycles, the other stays quiet. Stay tall through the hips."
+    },
+    {
+      "id": "fast-skipping",
+      "name": "Fast skipping",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "calves",
+      "durationSeconds": 30,
+      "symbolName": "figure.run",
+      "cue": "Skip for height off a stiff ankle. Opposite arm drives with the knee."
+    },
+    {
+      "id": "carioca",
+      "name": "Carioca",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "hips",
+      "durationSeconds": 40,
+      "symbolName": "figure.socialdance",
+      "cue": "Travel sideways, trail leg crossing front then behind. Let the hips rotate."
+    },
+    {
+      "id": "lateral-bound",
+      "name": "Lateral bound",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "glutes",
+      "durationSeconds": 30,
+      "symbolName": "figure.jumprope",
+      "cue": "Push off one leg, land soft on the other, hold a beat before rebounding."
+    },
+    {
+      "id": "diagonal-bound",
+      "name": "Alternate leg diagonal bound",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "glutes",
+      "durationSeconds": 30,
+      "symbolName": "figure.jumprope",
+      "cue": "Long diagonal bounds, alternating legs. Cover ground, land quietly."
+    },
+    {
+      "id": "split-jump",
+      "name": "Split jump",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "quadriceps",
+      "durationSeconds": 30,
+      "symbolName": "figure.jumprope",
+      "cue": "Lunge, jump, switch legs in the air, absorb the landing."
+    },
+    {
+      "id": "knee-tuck-jump",
+      "name": "Knee tuck jump",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "quadriceps",
+      "durationSeconds": 30,
+      "symbolName": "figure.jumprope",
+      "cue": "Jump and pull both knees to the chest. Land soft, reset, repeat."
+    },
+    {
+      "id": "hurdle-hops",
+      "name": "Hurdle hops",
+      "kind": "drill",
+      "phase": "drills",
+      "bodyArea": "calves",
+      "durationSeconds": 30,
+      "symbolName": "figure.jumprope",
+      "cue": "Hop over low obstacles off both feet. Stiff ankles, minimal ground time."
+    },
+    {
+      "id": "calf-stretch-wall",
+      "name": "Wall calf stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "calves",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Back leg straight, heel down, hips forward. Hold and breathe."
+    },
+    {
+      "id": "soleus-achilles",
+      "name": "Soleus and achilles stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "calves",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Same as the calf stretch but bend the back knee. Lower and deeper."
+    },
+    {
+      "id": "runners-stretch",
+      "name": "Runner's stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Deep lunge, hands framing the front foot, sink the back hip down."
+    },
+    {
+      "id": "seated-hamstring",
+      "name": "Seated hamstring stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Hinge from the hips, not the spine. Chest toward the thigh."
+    },
+    {
+      "id": "kneeling-hip-flexor",
+      "name": "Kneeling hip flexor stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "hipFlexors",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Half kneeling, tuck the tailbone, then ease the hips forward."
+    },
+    {
+      "id": "quad-stretch",
+      "name": "Standing quad stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "quadriceps",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Heel to glute, knees together, stand tall. Don't arch the low back."
+    },
+    {
+      "id": "it-band-glute",
+      "name": "IT band and glute stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "itBand",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Cross the top leg over, hug the knee across the body."
+    },
+    {
+      "id": "lying-glute",
+      "name": "Lying glute stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "glutes",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Ankle over the opposite knee, pull the bottom thigh toward you."
+    },
+    {
+      "id": "lying-crossover",
+      "name": "Lying spinal crossover",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "lowerBack",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "On your back, drop one knee across the body. Shoulders stay down."
+    },
+    {
+      "id": "side-lying-groin",
+      "name": "Side-lying groin stretch",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "adductors",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Open the top leg and let it settle. Relax rather than force it."
+    },
+    {
+      "id": "hug-knees-to-chest",
+      "name": "Knees to chest",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "lowerBack",
+      "durationSeconds": 40,
+      "symbolName": "figure.flexibility",
+      "cue": "Hug both knees in, rock gently side to side."
+    },
+    {
+      "id": "childs-pose",
+      "name": "Child's pose",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "lowerBack",
+      "durationSeconds": 45,
+      "symbolName": "figure.flexibility",
+      "cue": "Hips to heels, arms long, let the ribs drop and breathe."
+    },
+    {
+      "id": "calves-smr",
+      "name": "Calf roll",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "calves",
+      "durationSeconds": 60,
+      "symbolName": "figure.rolling",
+      "cue": "Roll slowly, pause on tender spots for a few breaths."
+    },
+    {
+      "id": "hamstring-smr",
+      "name": "Hamstring roll",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "hamstrings",
+      "durationSeconds": 60,
+      "symbolName": "figure.rolling",
+      "cue": "Roll hip to knee. Slow. Stop where it bites and breathe."
+    },
+    {
+      "id": "it-band-smr",
+      "name": "IT band roll",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "itBand",
+      "durationSeconds": 60,
+      "symbolName": "figure.rolling",
+      "cue": "Side-lying on the roller, hip to just above the knee. Never on the knee."
+    },
+    {
+      "id": "piriformis-smr",
+      "name": "Glute roll",
+      "kind": "stretch",
+      "phase": "cooldown",
+      "bodyArea": "glutes",
+      "durationSeconds": 60,
+      "symbolName": "figure.rolling",
+      "cue": "Sit on the roller, ankle over the opposite knee, hunt for the sore spot."
+    }
+  ]
+}

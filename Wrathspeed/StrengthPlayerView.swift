@@ -14,9 +14,10 @@ struct StrengthPlayerView: View {
         let current = session.sets.indices.contains(index) ? session.sets[index] : nil
         VStack(spacing: 20) {
             if let current {
-                Image(systemName: current.exercise.symbolName)
-                    .font(.system(size: 64))
-                    .symbolRenderingMode(.hierarchical)
+                MovementMediaView(
+                    movementID: current.exercise.id,
+                    symbolName: current.exercise.symbolName
+                )
                 Text(current.exercise.name)
                     .font(.title2)
                 Text("\(current.sets) × \(current.reps)")

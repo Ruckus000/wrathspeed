@@ -18,6 +18,12 @@ final class AppStore {
     var results: [WorkoutResult] = []
     var errorMessage: String?
 
+    /// Static content, parsed once at launch rather than per render. An unreadable catalog
+    /// degrades to empty rather than failing launch, the same way missing media degrades
+    /// to SF Symbols.
+    let movementCatalog = (try? MovementCatalog.load()) ?? MovementCatalog(movements: [])
+    let strengthCatalog = (try? StrengthPlanner.loadCatalog()) ?? StrengthCatalog(exercises: [])
+
     let session = WorkoutSessionController()
     let bridge = WCSessionBridge()
     private var context: ModelContext?
@@ -96,13 +102,13 @@ final class AppStore {
         if let n100 {
             generated.workouts = NotFeeling100Rules.apply(workouts: generated.workouts, adjustment: n100, calendar: calendar)
         }
-        if let catalog = try? StrengthPlanner.loadCatalog() {
+        if !strengthCatalog.exercises.isEmpty {
             strengthSessions = StrengthPlanner.schedule(
                 preferences: strengthPrefs,
                 startDate: Date(),
                 weekCount: generated.goal.weekCount,
                 calendar: calendar,
-                catalog: catalog
+                catalog: strengthCatalog
             )
             generated.strengthWorkouts = StrengthPlanner.asScheduledWorkouts(strengthSessions)
         }

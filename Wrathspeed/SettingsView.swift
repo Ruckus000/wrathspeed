@@ -14,6 +14,13 @@ struct SettingsView: View {
                             Text("Miles").tag(DistanceUnit.miles)
                         }
                     }
+                    Section("Reference") {
+                        NavigationLink {
+                            MovementLibraryView()
+                        } label: {
+                            Label("Movement library", systemImage: "figure.flexibility")
+                        }
+                    }
                     Section("Coaching") {
                         Toggle("Audio cues", isOn: Binding(
                             get: { store.cuesEnabled },
