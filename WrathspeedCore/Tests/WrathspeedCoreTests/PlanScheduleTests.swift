@@ -106,13 +106,27 @@ final class PlanScheduleTests: XCTestCase {
         XCTAssertFalse(validation.warnings.isEmpty)
     }
 
-    func testConcentratedLoadWarning() {
-        let today = calendar.startOfDay(for: Date())
-        let lightWeek = calendar.date(byAdding: .day, value: 14, to: today)!
-        let heavyWeek = calendar.date(byAdding: .day, value: 7, to: today)!
+    /// A week already carrying three 12 km runs, plus a 10 km run sitting in the
+    /// following, lighter week. Moving that run into the heavy week should warn.
+    ///
+    /// Dates are aligned to real week boundaries rather than offset by raw days from the
+    /// anchor. The warning only fires when the target lands in the same week as the heavy
+    /// block, and a plain day offset crossed that boundary or not depending on which
+    /// weekday the anchor happened to fall on.
+    private func concentratedLoadScenario(
+        anchor today: Date
+    ) throws -> (plan: TrainingPlan, moving: ScheduledWorkout, target: Date) {
+        let heavyWeekStart = try XCTUnwrap(
+            calendar.dateInterval(
+                of: .weekOfYear,
+                for: calendar.date(byAdding: .day, value: 7, to: today)!
+            )?.start
+        )
+        let lightWeekStart = calendar.date(byAdding: .day, value: 7, to: heavyWeekStart)!
+
         let heavyWorkouts = (0..<3).map { offset in
             ScheduledWorkout(blueprint: WorkoutBlueprint(
-                date: calendar.date(byAdding: .day, value: offset, to: heavyWeek)!,
+                date: calendar.date(byAdding: .day, value: offset, to: heavyWeekStart)!,
                 kind: .easy,
                 title: "Easy",
                 steps: [],
@@ -121,32 +135,64 @@ final class PlanScheduleTests: XCTestCase {
             ))
         }
         let light = ScheduledWorkout(blueprint: WorkoutBlueprint(
-            date: lightWeek,
+            date: lightWeekStart,
             kind: .easy,
             title: "Light",
             steps: [],
             plannedDistanceMeters: 5_000,
             usesPaceTargets: true
         ))
+        // Starts in the light week, so moving it into the heavy week is a real move.
         let moving = ScheduledWorkout(blueprint: WorkoutBlueprint(
-            date: calendar.date(byAdding: .day, value: 10, to: today)!,
+            date: calendar.date(byAdding: .day, value: 1, to: lightWeekStart)!,
             kind: .easy,
             title: "Easy",
             steps: [],
             plannedDistanceMeters: 10_000,
             usesPaceTargets: true
         ))
-        let plan = makePlan(workouts: heavyWorkouts + [light, moving])
-        let targetDay = calendar.date(byAdding: .day, value: 3, to: heavyWeek)!
+        // Fourth day of the heavy week: inside it whatever the calendar's first weekday
+        // is, and the only one of those four days the heavy block does not occupy.
+        let target = calendar.date(byAdding: .day, value: 3, to: heavyWeekStart)!
+        return (makePlan(workouts: heavyWorkouts + [light, moving]), moving, target)
+    }
+
+    func testConcentratedLoadWarning() throws {
+        let today = calendar.date(from: DateComponents(year: 2026, month: 3, day: 2))!
+        let scenario = try concentratedLoadScenario(anchor: today)
         let validation = PlanScheduleService.canMove(
-            workout: moving,
-            to: targetDay,
-            plan: plan,
+            workout: scenario.moving,
+            to: scenario.target,
+            plan: scenario.plan,
             asOf: today,
             calendar: calendar
         )
         XCTAssertTrue(validation.allowed)
         XCTAssertTrue(validation.warnings.contains(where: { $0.contains("concentrate") }))
+    }
+
+    /// Guards the fixture above against going back to raw day offsets. That version was
+    /// anchored to `Date()` and silently stopped warning on two weekdays out of seven,
+    /// so it failed only on the days nobody happened to run it.
+    func testConcentratedLoadWarningHoldsWhicheverWeekdayTheSuiteRunsOn() throws {
+        let base = calendar.date(from: DateComponents(year: 2026, month: 3, day: 2))!
+        for dayOffset in 0..<7 {
+            let today = calendar.date(byAdding: .day, value: dayOffset, to: base)!
+            let scenario = try concentratedLoadScenario(anchor: today)
+            let validation = PlanScheduleService.canMove(
+                workout: scenario.moving,
+                to: scenario.target,
+                plan: scenario.plan,
+                asOf: today,
+                calendar: calendar
+            )
+            let weekday = calendar.component(.weekday, from: today)
+            XCTAssertTrue(validation.allowed, "blocked when the anchor is weekday \(weekday)")
+            XCTAssertTrue(
+                validation.warnings.contains(where: { $0.contains("concentrate") }),
+                "no concentration warning when the anchor is weekday \(weekday)"
+            )
+        }
     }
 
     func testLongRunPlacementWarning() {
