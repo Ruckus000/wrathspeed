@@ -27,7 +27,8 @@ final class StrengthMediaCoverageTests: XCTestCase {
 
     /// Guards the id contract between the app's strength catalog and the bundled clips:
     /// renaming an exercise id silently drops its demo loop, which the UI would absorb
-    /// as a symbol fallback rather than surface as a failure.
+    /// as a symbol fallback rather than surface as a failure. Every strength exercise now
+    /// has one, so the expected set is empty.
     func testKnownExercisesWithoutAClipAreOnlyTheDocumentedOnes() throws {
         let library = try MediaLibrary()
         let missing = try strengthCatalog().exercises
@@ -36,7 +37,7 @@ final class StrengthMediaCoverageTests: XCTestCase {
             .sorted()
         XCTAssertEqual(
             missing,
-            ["bird-dog"],
+            [],
             "Strength clip coverage changed. See docs/exercise-media-plan.md."
         )
     }

@@ -5,16 +5,22 @@ they need to change.
 
 ## What shipped
 
-58 movements are addressable by the app. 57 have a bundled looping clip; 1 falls back to an
-SF Symbol. Total bundle cost is **2.3 MB**.
+58 movements are addressable by the app, and all 58 now have a bundled looping clip. Total
+bundle cost is **2.3 MB**.
 
 | | Count |
 | --- | --- |
 | Anatomical render (house style) | 30 |
 | Photographic | 27 |
-| SF Symbol fallback | 1 |
+| Flat illustration | 1 |
+| SF Symbol fallback | 0 |
 
-The one fallback is `bird-dog`, which has no honest match in either source set.
+The illustration is `bird-dog`. No free source carries it in the house style — the
+ExerciseDB render family was searched exhaustively (seven mirrors, ~25,000 files, plus the
+alternate names quadruped, contralateral, opposite-arm and all-fours) and it is absent from
+all of them. It comes instead from RepDB's free tier, whose licence permits in-app use with
+attribution. Its pale ground is recoloured to white by the build script so it sits with the
+rest; the source is an isometric hold, which is the position at the top of each rep.
 
 Content breaks down as 20 strength exercises (pre-existing), 10 warm-up mobility movements,
 12 running form drills, and 16 cool-down stretches — the last three groups are new.
@@ -69,11 +75,11 @@ Tools/exercise-media/media_sources.json     mapping: movement id -> source + ref
 Tools/exercise-media/build_media.py         fetch, render, encode, emit manifest
         |
         v
-WrathspeedCore/Sources/WrathspeedCore/Media/*.mp4                 57 clips
+WrathspeedCore/Sources/WrathspeedCore/Media/*.mp4                 58 clips
 WrathspeedCore/Sources/WrathspeedCore/Resources/media_manifest.json
 ```
 
-Two source kinds are handled:
+Three source kinds are handled:
 
 - **Animated GIF** — transcoded to H.264, resampled to a constant 24fps while preserving the
   source's real per-frame timing. This matters: these GIFs hold ~1s at the top and bottom of
@@ -81,8 +87,12 @@ Two source kinds are handled:
   would play an entire squat in half a second.
 - **Image pair** — a start and end photo, crossfaded into a ping-pong loop (hold, fade, hold,
   fade back) so it loops seamlessly.
+- **Single image** — a held still, for an isometric hold where there is no movement to
+  animate. Deliberately given no synthetic pan or zoom, which would imply motion the source
+  does not show. Its near-uniform coloured ground is repainted white first, sampling the
+  corner and replacing only pixels close to it so the figure is untouched.
 
-Both are letterboxed onto a 480px white square, encoded as silent H.264 yuv420p with
+All three are letterboxed onto a 480px white square, encoded as silent H.264 yuv420p with
 `+faststart`.
 
 ```bash
@@ -126,7 +136,8 @@ No Swift changes are needed for a re-source. That was the point of the manifest 
 
 ## Known gaps
 
-- `bird-dog` has no clip.
+- `bird-dog` is a flat illustration and a still, not an animated house-style render. It is
+  the only clip that does not move, because its source is an isometric hold.
 - `reverse-lunge` uses a walking lunge render; the pattern is right, the step direction isn't.
   Flagged as `approximate` in the manifest.
 - 27 clips are photographic rather than the house render style, concentrated in the drills and

@@ -1,294 +1,260 @@
 {
   "clips": {
     "ankle-circles": {
-      "bytes": 14796,
       "file": "ankle-circles.mp4",
       "sourceRef": "calves/ankle-circles.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "arm-circles": {
-      "bytes": 73502,
       "file": "arm-circles.mp4",
       "sourceRef": "Arm_Circles",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "arm-drill": {
-      "bytes": 81246,
       "file": "arm-drill.mp4",
       "sourceRef": "Kneeling_Arm_Drill",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "band-row": {
-      "bytes": 30762,
       "file": "band-row.mp4",
       "sourceRef": "upper-back/resistance-band-seated-straight-back-row.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
+    "bird-dog": {
+      "approximate": "the isometric hold, which is the top of each rep",
+      "bytes": 9441,
+      "file": "bird-dog.mp4",
+      "sourceRef": "bird-dog-hold-main.webp",
+      "sourceRepo": "https://github.com/RepDB/exercise-dataset",
+      "style": "illustration"
+    },
     "butt-kicks": {
-      "bytes": 33997,
       "file": "butt-kicks.mp4",
       "sourceRef": "Double_Leg_Butt_Kick",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "bw-squat": {
-      "bytes": 62554,
       "file": "bw-squat.mp4",
       "sourceRef": "Bodyweight_Squat",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "calf-raise": {
-      "bytes": 28565,
       "file": "calf-raise.mp4",
       "sourceRef": "calves/bodyweight-standing-calf-raise.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "calf-stretch-wall": {
-      "bytes": 26081,
       "file": "calf-stretch-wall.mp4",
       "sourceRef": "calves/calf-stretch-with-hands-against-wall.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "calves-smr": {
-      "bytes": 53735,
       "file": "calves-smr.mp4",
       "sourceRef": "Calves-SMR",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "carioca": {
-      "bytes": 65027,
       "file": "carioca.mp4",
       "sourceRef": "Carioca_Quick_Step",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "cat-cow": {
-      "bytes": 35694,
       "file": "cat-cow.mp4",
       "sourceRef": "Cat_Stretch",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "childs-pose": {
-      "bytes": 39776,
       "file": "childs-pose.mp4",
       "sourceRef": "Childs_Pose",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "claw-series": {
-      "bytes": 59240,
       "file": "claw-series.mp4",
       "sourceRef": "Moving_Claw_Series",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "db-row": {
-      "bytes": 34028,
       "file": "db-row.mp4",
       "sourceRef": "upper-back/dumbbell-bent-over-row.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "dead-bug": {
-      "bytes": 25942,
       "file": "dead-bug.mp4",
       "sourceRef": "abs/dead-bug.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "diagonal-bound": {
-      "bytes": 37524,
       "file": "diagonal-bound.mp4",
       "sourceRef": "Alternate_Leg_Diagonal_Bound",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "farmer-carry": {
-      "bytes": 58191,
       "file": "farmer-carry.mp4",
       "sourceRef": "quads/farmers-walk.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "fast-skipping": {
-      "bytes": 32462,
       "file": "fast-skipping.mp4",
       "sourceRef": "Fast_Skipping",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "glute-bridge": {
-      "bytes": 28889,
       "file": "glute-bridge.mp4",
       "sourceRef": "glutes/low-glute-bridge-on-floor.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "goblet-squat": {
-      "bytes": 31129,
       "file": "goblet-squat.mp4",
       "sourceRef": "quads/dumbbell-goblet-squat.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "groiners": {
-      "bytes": 54866,
       "file": "groiners.mp4",
       "sourceRef": "Groiners",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "hamstring-smr": {
-      "bytes": 58093,
       "file": "hamstring-smr.mp4",
       "sourceRef": "Hamstring-SMR",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "hip-circles": {
-      "bytes": 40758,
       "file": "hip-circles.mp4",
       "sourceRef": "Standing_Hip_Circles",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "hip-thrust": {
-      "bytes": 68111,
       "file": "hip-thrust.mp4",
       "sourceRef": "Barbell_Hip_Thrust",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "hug-knees-to-chest": {
-      "bytes": 53188,
       "file": "hug-knees-to-chest.mp4",
       "sourceRef": "Hug_Knees_To_Chest",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "hurdle-hops": {
-      "bytes": 49905,
       "file": "hurdle-hops.mp4",
       "sourceRef": "Front_Cone_Hops_or_hurdle_hops",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "inchworm": {
-      "bytes": 55327,
       "file": "inchworm.mp4",
       "sourceRef": "abs/inchworm.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "it-band-glute": {
-      "bytes": 56105,
       "file": "it-band-glute.mp4",
       "sourceRef": "IT_Band_and_Glute_Stretch",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "it-band-smr": {
-      "bytes": 55765,
       "file": "it-band-smr.mp4",
       "sourceRef": "Iliotibial_Tract-SMR",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "knee-tuck-jump": {
-      "bytes": 48069,
       "file": "knee-tuck-jump.mp4",
       "sourceRef": "Knee_Tuck_Jump",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "kneeling-hip-flexor": {
-      "bytes": 20039,
       "file": "kneeling-hip-flexor.mp4",
       "sourceRef": "quads/intermediate-hip-flexor-and-quad-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "lateral-bound": {
-      "bytes": 64954,
       "file": "lateral-bound.mp4",
       "sourceRef": "cardio/skater-hops.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "leg-swings-front": {
-      "bytes": 47661,
       "file": "leg-swings-front.mp4",
       "sourceRef": "Front_Leg_Raises",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "leg-swings-side": {
-      "bytes": 43934,
       "file": "leg-swings-side.mp4",
       "sourceRef": "Side_Leg_Raises",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "lying-crossover": {
-      "bytes": 62216,
       "file": "lying-crossover.mp4",
       "sourceRef": "Lying_Crossover",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "lying-glute": {
-      "bytes": 29898,
       "file": "lying-glute.mp4",
       "sourceRef": "glutes/assisted-lying-glutes-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "piriformis-smr": {
-      "bytes": 52673,
       "file": "piriformis-smr.mp4",
       "sourceRef": "Piriformis-SMR",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "plank": {
-      "bytes": 68010,
       "file": "plank.mp4",
       "sourceRef": "Plank",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "pull-up": {
-      "bytes": 26049,
       "file": "pull-up.mp4",
       "sourceRef": "lats/pull-up.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "push-up": {
-      "bytes": 36518,
       "file": "push-up.mp4",
       "sourceRef": "pectorals/push-up.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "quad-stretch": {
-      "bytes": 57127,
       "file": "quad-stretch.mp4",
       "sourceRef": "Quad_Stretch",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "rdl": {
-      "bytes": 29384,
       "file": "rdl.mp4",
       "sourceRef": "glutes/dumbbell-romanian-deadlift.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
@@ -296,105 +262,90 @@
     },
     "reverse-lunge": {
       "approximate": "walking lunge, not a reverse step",
-      "bytes": 49179,
       "file": "reverse-lunge.mp4",
       "sourceRef": "glutes/walking-lunge.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "runners-stretch": {
-      "bytes": 27999,
       "file": "runners-stretch.mp4",
       "sourceRef": "hamstrings/runners-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "seated-hamstring": {
-      "bytes": 25674,
       "file": "seated-hamstring.mp4",
       "sourceRef": "hamstrings/hamstring-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "side-lying-groin": {
-      "bytes": 34727,
       "file": "side-lying-groin.mp4",
       "sourceRef": "adductors/assisted-side-lying-adductor-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "side-plank": {
-      "bytes": 39391,
       "file": "side-plank.mp4",
       "sourceRef": "abs/side-bridge-v-2.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "single-leg-bridge": {
-      "bytes": 25242,
       "file": "single-leg-bridge.mp4",
       "sourceRef": "glutes/single-leg-bridge-with-outstretched-leg.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "single-leg-butt-kick": {
-      "bytes": 33938,
       "file": "single-leg-butt-kick.mp4",
       "sourceRef": "Single_Leg_Butt_Kick",
       "sourceRepo": "https://github.com/yuhonas/free-exercise-db",
       "style": "photo"
     },
     "soleus-achilles": {
-      "bytes": 24179,
       "file": "soleus-achilles.mp4",
       "sourceRef": "calves/calf-push-stretch-with-hands-against-wall.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "split-jump": {
-      "bytes": 65596,
       "file": "split-jump.mp4",
       "sourceRef": "cardio/scissor-jumps-male.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "split-squat": {
-      "bytes": 36216,
       "file": "split-squat.mp4",
       "sourceRef": "quads/split-squats.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "standing-pelvic-tilt": {
-      "bytes": 28323,
       "file": "standing-pelvic-tilt.mp4",
       "sourceRef": "spine/standing-pelvic-tilt.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "step-up": {
-      "bytes": 21730,
       "file": "step-up.mp4",
       "sourceRef": "glutes/dumbbell-step-up.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "swiss-crunch": {
-      "bytes": 25012,
       "file": "swiss-crunch.mp4",
       "sourceRef": "abs/crunch-on-stability-ball.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "wall-drill": {
-      "bytes": 23669,
       "file": "wall-drill.mp4",
       "sourceRef": "cardio/high-knee-against-wall.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",
       "style": "anatomical-render"
     },
     "worlds-greatest-stretch": {
-      "bytes": 57349,
       "file": "worlds-greatest-stretch.mp4",
       "sourceRef": "hamstrings/world-greatest-stretch.gif",
       "sourceRepo": "https://github.com/JahelCuadrado/ExerciseGymGifsDB",

@@ -7,6 +7,8 @@ public enum ClipStyle: String, Codable, Sendable {
     case anatomicalRender = "anatomical-render"
     /// Photographic demo of a real person, built into a loop from a start and end frame.
     case photo
+    /// Flat vector illustration, a single held frame. Only where the other two have nothing.
+    case illustration
 }
 
 public struct MovementClip: Codable, Equatable, Sendable {

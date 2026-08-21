@@ -62,6 +62,46 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         attach(app, named: "03-movement-detail-dead-bug-clip-later-frame")
     }
 
+    /// Bird dog is the one clip that is a flat illustration rather than a house-style
+    /// render, so it gets its own shot to check it does not look out of place.
+    func testBirdDogHasAClip() throws {
+        let app = XCUIApplication()
+        UITestOnboardingHelper.configureFreshLaunch(app)
+        app.launch()
+        UITestOnboardingHelper.completeOnboarding(app)
+
+        app.buttons["SETTINGS"].tap()
+        let library = app.buttons["settings.movementLibrary"]
+        var attempts = 0
+        while !library.exists && attempts < 8 {
+            app.swipeUp()
+            attempts += 1
+        }
+        XCTAssertTrue(library.waitForExistence(timeout: 5), "Movement library entry missing")
+        if !library.isHittable { app.swipeUp() }
+        library.tap()
+        XCTAssertTrue(app.navigationBars["Movements"].waitForExistence(timeout: 8))
+
+        let birdDog = app.buttons["Bird dog"].firstMatch
+        attempts = 0
+        while !birdDog.exists && attempts < 8 {
+            app.swipeUp()
+            attempts += 1
+        }
+        XCTAssertTrue(birdDog.waitForExistence(timeout: 5), "Bird dog row missing from library")
+        birdDog.tap()
+        XCTAssertTrue(app.navigationBars["Bird dog"].waitForExistence(timeout: 8))
+
+        // The clip, not the symbol fallback: the media view exposes this only when a file
+        // actually resolved.
+        XCTAssertTrue(
+            app.otherElements["Demonstration loop"].waitForExistence(timeout: 6),
+            "Bird dog fell back to its SF Symbol instead of playing a clip"
+        )
+        RunLoop.current.run(until: Date().addingTimeInterval(2.0))
+        attach(app, named: "09-movement-detail-bird-dog-clip")
+    }
+
     /// True when the open workout detail sheet is for a quality session. Read from the
     /// sheet's own meta line so the drills assertion is not circular.
     private func detailSheetIsQuality(_ app: XCUIApplication) -> Bool {

@@ -9,7 +9,10 @@
     "              static stretches; thin on running drills and foam rolling.",
     "  2. photo  - photographic demo of a real person, start + end frame. Used only where",
     "              tier 1 has no honest match. Built into a loop by crossfading the two frames.",
-    "  3. none   - no honest match in either set. The app falls back to the movement's",
+    "  3. repdb  - flat vector illustration, single frame. Used only where tiers 1 and 2 have",
+    "              nothing at all. Its pale ground is recoloured to white so it sits with the",
+    "              rest; RepDB's free tier permits resizing and recolouring for in-app use.",
+    "  4. none   - no honest match in any set. The app falls back to the movement's",
     "              SF Symbol. Never map a movement to artwork of a DIFFERENT movement just",
     "              to fill the slot.",
     "",
@@ -28,6 +31,12 @@
       "rawBase": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises",
       "style": "photo",
       "kind": "image-pair"
+    },
+    "repdb": {
+      "repo": "https://github.com/RepDB/exercise-dataset",
+      "rawBase": "https://raw.githubusercontent.com/RepDB/exercise-dataset/main/images/flat",
+      "style": "illustration",
+      "kind": "image-single"
     }
   },
   "mappings": {
@@ -39,7 +48,7 @@
     "calf-raise": { "source": "gifdb", "ref": "calves/bodyweight-standing-calf-raise.gif" },
     "side-plank": { "source": "gifdb", "ref": "abs/side-bridge-v-2.gif" },
     "dead-bug": { "source": "gifdb", "ref": "abs/dead-bug.gif" },
-    "bird-dog": { "source": "none", "reason": "no bird dog in either set; nearest candidates are a different movement" },
+    "bird-dog": { "source": "repdb", "ref": "bird-dog-hold-main.webp", "approximate": "the isometric hold, which is the top of each rep" },
     "push-up": { "source": "gifdb", "ref": "pectorals/push-up.gif" },
     "band-row": { "source": "gifdb", "ref": "upper-back/resistance-band-seated-straight-back-row.gif" },
     "db-row": { "source": "gifdb", "ref": "upper-back/dumbbell-bent-over-row.gif" },

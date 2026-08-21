@@ -120,6 +120,40 @@ def frames_from_pair(a: Path, b: Path) -> list[Image.Image]:
     return frames
 
 
+def flatten_ground_to_white(im: Image.Image, tolerance: int = 12) -> Image.Image:
+    """Repaint a near-uniform coloured ground white.
+
+    The illustration tier ships on a pale blue ground, which reads as a coloured box
+    beside the white-background renders. Sampling the corner and replacing only pixels
+    within `tolerance` of it leaves the figure alone -- its blues are far more saturated
+    than the ground. RepDB's free tier explicitly allows recolouring for in-app use.
+    """
+    im = im.convert("RGB")
+    ground = im.getpixel((0, 0))
+    if max(ground) - min(ground) > 60:
+        return im  # not a flat ground; leave it alone
+    px = im.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b = px[x, y]
+            if (abs(r - ground[0]) <= tolerance
+                    and abs(g - ground[1]) <= tolerance
+                    and abs(b - ground[2]) <= tolerance):
+                px[x, y] = (255, 255, 255)
+    return im
+
+
+def frames_from_single(path: Path) -> list[Image.Image]:
+    """A held still. Used for isometric holds, where there is no movement to animate.
+
+    Deliberately not given synthetic motion: inventing a pan or a zoom would imply a
+    movement the source does not show.
+    """
+    still = fit_to_canvas(flatten_ground_to_white(Image.open(path)))
+    return [still] * (HOLD_FRAMES * 2)
+
+
 def encode(frames: list[Image.Image], dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
@@ -180,7 +214,7 @@ def main() -> int:
 
     wanted = set(args.only) if args.only else set(catalog_ids)
     manifest: dict[str, dict] = {}
-    counts = {"gifdb": 0, "photo": 0, "none": 0}
+    counts = {"gifdb": 0, "photo": 0, "repdb": 0, "none": 0}
 
     with tempfile.TemporaryDirectory() as work:
         work = Path(work)
@@ -203,6 +237,9 @@ def main() -> int:
             if src == "gifdb":
                 gif = fetch(f"{cfg['rawBase']}/{m['ref']}", work / f"{mid}.gif")
                 frames = frames_from_gif(gif)
+            elif cfg["kind"] == "image-single":
+                still = fetch(f"{cfg['rawBase']}/{m['ref']}", work / f"{mid}{Path(m['ref']).suffix}")
+                frames = frames_from_single(still)
             else:
                 a = fetch(f"{cfg['rawBase']}/{m['ref']}/0.jpg", work / f"{mid}-0.jpg")
                 b = fetch(f"{cfg['rawBase']}/{m['ref']}/1.jpg", work / f"{mid}-1.jpg")
@@ -222,6 +259,7 @@ def main() -> int:
     log("")
     log(f"anatomical render : {counts['gifdb']}")
     log(f"photo             : {counts['photo']}")
+    log(f"illustration      : {counts['repdb']}")
     log(f"symbol fallback   : {counts['none']}")
     log(f"bundle size       : {total_mb:.1f} MB across {len(manifest)} clips")
     return 0

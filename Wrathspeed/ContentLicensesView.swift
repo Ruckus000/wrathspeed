@@ -20,7 +20,7 @@ struct ContentLicensesView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
                 .accessibilityAddTraits(.isHeader)
-            Text("Wrathspeed ships local exercise guidance and SF Symbol fallbacks. No third-party exercise media is bundled until license metadata is verified.")
+            Text("Wrathspeed bundles 58 third-party demonstration clips. They were sourced for a private build, not for public release: the anatomical renders below are not cleared for redistribution. See Content/LICENSE.md before shipping.")
                 .font(WSFont.ui(14, weight: .medium))
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
@@ -32,6 +32,14 @@ struct ContentLicensesView: View {
             licenseBlock(
                 title: "MOBILITY CATALOG",
                 body: "Pre-run, post-run, and recovery routines use local text cues and SF Symbol illustrations."
+            )
+            licenseBlock(
+                title: "DEMONSTRATION CLIPS",
+                body: "30 anatomical renders from ExerciseGymGifsDB, which republishes ExerciseDB-derived artwork whose terms restrict redistribution. 27 photographic demos from free-exercise-db, published under the Unlicense."
+            )
+            licenseBlock(
+                title: "EXERCISE DATA BY REPDB (REPDB.CO)",
+                body: "The bird dog illustration comes from RepDB's free tier, which permits use inside applications with attribution. Its background is recoloured to white, which that licence allows."
             )
             licenseBlock(
                 title: "WGER MEDIA",
