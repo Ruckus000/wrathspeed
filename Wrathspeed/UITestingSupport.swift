@@ -5,6 +5,8 @@ enum UITestingSupport {
     static let simulateLiveRecordingLaunchArgument = "-uiTestingSimulateLiveRecording"
     static let seedInProgressMobilityLaunchArgument = "-uiTestingSeedInProgressMobility"
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
+    static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
+    static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
 
     /// True when UI tests pass `-uiTestingResetStore` in Debug builds only.
     static var shouldResetStore: Bool {
@@ -37,6 +39,25 @@ enum UITestingSupport {
     static var shouldPresentMobilityPreRun: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains(presentMobilityPreRunLaunchArgument)
+        #else
+        false
+        #endif
+    }
+
+    /// Moves the next scheduled run onto today. A generated plan puts runs on particular
+    /// weekdays, so whether Today has one to start depends on the day the suite runs.
+    static var shouldSeedTodayRun: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(seedTodayRunLaunchArgument)
+        #else
+        false
+        #endif
+    }
+
+    /// Moves the next scheduled strength session onto today, for the same reason.
+    static var shouldSeedTodayStrength: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(seedTodayStrengthLaunchArgument)
         #else
         false
         #endif

@@ -8,7 +8,13 @@ final class PreflightLiveStartUITests: XCTestCase {
 
     func testPreflightOutdoorAndTreadmillReachLiveRun() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app, simulateLiveRecording: true)
+        // seedTodayRun: the plan schedules runs on particular weekdays, so on a rest day
+        // Today offers nothing to start and this test had no run to preflight.
+        UITestOnboardingHelper.configureFreshLaunch(
+            app,
+            simulateLiveRecording: true,
+            seedTodayRun: true
+        )
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

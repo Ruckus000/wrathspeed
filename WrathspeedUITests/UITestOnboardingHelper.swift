@@ -12,11 +12,15 @@ enum UITestOnboardingHelper {
     static let simulateLiveRecordingLaunchArgument = "-uiTestingSimulateLiveRecording"
     static let seedInProgressMobilityLaunchArgument = "-uiTestingSeedInProgressMobility"
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
+    static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
+    static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
 
     static func freshLaunchArguments(
         simulateLiveRecording: Bool = false,
         seedInProgressMobility: Bool = false,
-        presentMobilityPreRun: Bool = false
+        presentMobilityPreRun: Bool = false,
+        seedTodayRun: Bool = false,
+        seedTodayStrength: Bool = false
     ) -> [String] {
         var args = [resetStoreLaunchArgument] + englishLocaleArguments
         if simulateLiveRecording {
@@ -28,6 +32,12 @@ enum UITestOnboardingHelper {
         if presentMobilityPreRun {
             args.append(presentMobilityPreRunLaunchArgument)
         }
+        if seedTodayRun {
+            args.append(seedTodayRunLaunchArgument)
+        }
+        if seedTodayStrength {
+            args.append(seedTodayStrengthLaunchArgument)
+        }
         return args
     }
 
@@ -36,12 +46,16 @@ enum UITestOnboardingHelper {
         contentSizeCategory: String? = nil,
         simulateLiveRecording: Bool = false,
         seedInProgressMobility: Bool = false,
-        presentMobilityPreRun: Bool = false
+        presentMobilityPreRun: Bool = false,
+        seedTodayRun: Bool = false,
+        seedTodayStrength: Bool = false
     ) {
         app.launchArguments = freshLaunchArguments(
             simulateLiveRecording: simulateLiveRecording,
             seedInProgressMobility: seedInProgressMobility,
-            presentMobilityPreRun: presentMobilityPreRun
+            presentMobilityPreRun: presentMobilityPreRun,
+            seedTodayRun: seedTodayRun,
+            seedTodayStrength: seedTodayStrength
         )
         if let contentSizeCategory {
             app.launchEnvironment["UIPreferredContentSizeCategoryName"] = contentSizeCategory

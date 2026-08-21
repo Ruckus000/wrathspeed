@@ -185,12 +185,12 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         )
     }
 
-    /// The strength player also shows a demo loop. Reached from Today, and only when the
-    /// generated plan actually put a strength session on today, so this skips rather than
-    /// fails when there is none to open.
+    /// The strength player also shows a demo loop. Reached from Today, which only offers a
+    /// strength session on the days the plan scheduled one, so this seeds one rather than
+    /// skipping and quietly losing the coverage on most days.
     func testStrengthPlayerShowsClip() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedTodayStrength: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -200,9 +200,9 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         let start = app.buttons.matching(
             NSPredicate(format: "identifier BEGINSWITH 'strength-row-'")
         ).firstMatch
-        try XCTSkipUnless(
-            start.waitForExistence(timeout: 6),
-            "No strength session scheduled for today in this generated plan"
+        XCTAssertTrue(
+            start.waitForExistence(timeout: 8),
+            "Today offered no strength session even with one seeded"
         )
         start.tap()
 

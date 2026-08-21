@@ -247,6 +247,8 @@ final class AppStore {
             showToast("PLAN READY — \(draft.plan.goal.weekCount) WEEKS")
 #if DEBUG
             seedInProgressMobilityForUITestingIfNeeded()
+            seedTodayRunForUITestingIfNeeded()
+            seedTodayStrengthForUITestingIfNeeded()
 #endif
         } catch {
             hasOnboarded = false
@@ -1339,6 +1341,29 @@ final class AppStore {
             progress: MobilitySessionProgress(movementIndex: 1, remainingSeconds: 30)
         )
         try? recordMobilityResult(result)
+    }
+
+    /// Pulls the next scheduled run onto today so Today always has one to start. A
+    /// generated plan places runs on particular weekdays, so whether one falls on the day
+    /// the suite runs is otherwise down to the calendar.
+    func seedTodayRunForUITestingIfNeeded() {
+        guard UITestingSupport.shouldSeedTodayRun, todaysRuns.isEmpty, var plan else { return }
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let index = plan.workouts.firstIndex(where: {
+            $0.blueprint.kind.isRunning && $0.status == .scheduled && $0.date > today
+        }) else { return }
+        plan.workouts[index].blueprint.date = today
+        self.plan = plan
+        persist()
+    }
+
+    /// The same, for the strength session Today offers.
+    func seedTodayStrengthForUITestingIfNeeded() {
+        guard UITestingSupport.shouldSeedTodayStrength, todaysStrength.isEmpty else { return }
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let index = strengthSessions.firstIndex(where: { $0.date > today }) else { return }
+        strengthSessions[index].date = today
+        persist()
     }
 #endif
 
