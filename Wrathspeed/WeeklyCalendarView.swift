@@ -6,6 +6,7 @@ struct WeeklyCalendarView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var weekOffset = 0
     @State private var selectedWorkout: ScheduledWorkout?
+    @State private var pendingStart: WorkoutBlueprint?
 
     private var calendar: Calendar { Calendar.current }
 
@@ -61,9 +62,17 @@ struct WeeklyCalendarView: View {
         }
         .toolbar(.hidden, for: .navigationBar)
         .background(WSColor.bg.ignoresSafeArea())
-        .sheet(item: $selectedWorkout) { workout in
-            WorkoutDetailSheet(workout: workout)
+        .sheet(item: $selectedWorkout, onDismiss: startPendingWorkout) { workout in
+            WorkoutDetailSheet(workout: workout) { pendingStart = $0 }
         }
+    }
+
+    /// Runs once the detail sheet has actually gone, so RootView is free to present
+    /// preflight.
+    private func startPendingWorkout() {
+        guard let blueprint = pendingStart else { return }
+        pendingStart = nil
+        store.presentPreflight(blueprint: blueprint)
     }
 
     private var weekNavigation: some View {

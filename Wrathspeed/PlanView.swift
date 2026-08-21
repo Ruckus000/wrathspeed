@@ -4,6 +4,7 @@ import WrathspeedCore
 struct PlanView: View {
     @Environment(AppStore.self) private var store
     @State private var selectedWorkout: ScheduledWorkout?
+    @State private var pendingStart: WorkoutBlueprint?
     @State private var selectedWeek: Date?
     @State private var showMissedWork = false
 
@@ -124,8 +125,8 @@ struct PlanView: View {
             .navigationDestination(item: $selectedWeek) { start in
                 WeekDetailView(weekStart: start)
             }
-            .sheet(item: $selectedWorkout) { workout in
-                WorkoutDetailSheet(workout: workout)
+            .sheet(item: $selectedWorkout, onDismiss: startPendingWorkout) { workout in
+                WorkoutDetailSheet(workout: workout) { pendingStart = $0 }
             }
             .sheet(isPresented: $showMissedWork) {
                 if let situation = store.missedWorkSituation {
@@ -133,6 +134,14 @@ struct PlanView: View {
                 }
             }
         }
+    }
+
+    /// Runs once the detail sheet has actually gone, so RootView is free to present
+    /// preflight.
+    private func startPendingWorkout() {
+        guard let blueprint = pendingStart else { return }
+        pendingStart = nil
+        store.presentPreflight(blueprint: blueprint)
     }
 
     private var weekCalendar: some View {
@@ -377,6 +386,10 @@ struct WorkoutDetailSheet: View {
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let workout: ScheduledWorkout
+    /// Handed back to the presenter rather than started here. Preflight is owned by
+    /// RootView, and SwiftUI will not present it while this sheet is still up, so the
+    /// presenter starts it from its sheet's onDismiss.
+    var onStart: (WorkoutBlueprint) -> Void = { _ in }
     @State private var showMoveSheet = false
     @State private var selectedRoutine: MobilityRoutine?
 
@@ -415,7 +428,8 @@ struct WorkoutDetailSheet: View {
                 .padding(.top, 16)
                 if workout.status == .scheduled || workout.status == .convertedToEasy {
                     WSPrimaryButton(title: "START", height: 56, fontSize: 20) {
-                        store.presentPreflight(blueprint: workout.blueprint)
+                        onStart(workout.blueprint)
+                        dismiss()
                     }
                     .padding(.top, 18)
                     .accessibilityLabel("Start workout")

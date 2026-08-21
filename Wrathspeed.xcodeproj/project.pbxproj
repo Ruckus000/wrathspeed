@@ -26,6 +26,7 @@
 		24105199DEDA07152FA63896 /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C83236791022F5208F5DC89 /* WatchStore.swift */; };
 		26BBAA1750C8B78057950701 /* WrathspeedWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD67EF2B0C24BA3EAF5D4F /* WrathspeedWidgets.swift */; };
 		27FB4D2E4EE3ED64794B4F6B /* WorkoutSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8C119916F881776860D7C /* WorkoutSessionCoordinator.swift */; };
+		29A8948FA9694CB749505CF7 /* PlanStartPreflightUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */; };
 		2E5B3775E77AAEFC7216EF85 /* WorkoutRouteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */; };
 		2F1364AFE26CA9375735A694 /* SpeechCuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4235A006157B1E50F19552 /* SpeechCuePlayer.swift */; };
 		303E7770CCB71075E7BDB175 /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ACAF9D2CD26EBF982A6FF521 /* Anton-Regular.ttf */; };
@@ -256,6 +257,7 @@
 		CAD3990DA838FA141746FB9D /* InstantRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantRunView.swift; sourceTree = "<group>"; };
 		CCEEA40C553246BE6668AC20 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRouteRecorder.swift; sourceTree = "<group>"; };
+		CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanStartPreflightUITests.swift; sourceTree = "<group>"; };
 		D03AE48A3DEECC9F2161D4BF /* CoachingCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingCopy.swift; sourceTree = "<group>"; };
 		D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionController.swift; sourceTree = "<group>"; };
 		D4CFBF834821A2F1F2E98191 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -373,6 +375,7 @@
 				6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */,
 				2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */,
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
+				CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */,
 				16C406BC82830CFAEAF59093 /* PreflightLiveStartUITests.swift */,
 				0226C028B3AEA93CF981DCF2 /* UITestOnboardingHelper.swift */,
 			);
@@ -721,6 +724,7 @@
 				61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */,
 				75E07B2861F6C64B59F12907 /* Milestone4UITests.swift in Sources */,
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
+				29A8948FA9694CB749505CF7 /* PlanStartPreflightUITests.swift in Sources */,
 				7EC60BAAACE48C992A0F0857 /* PreflightLiveStartUITests.swift in Sources */,
 				D65FDBEDBA00C604B4BCE703 /* UITestOnboardingHelper.swift in Sources */,
 			);
