@@ -114,6 +114,13 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wrathspeed.app.uitests
+# The committed .xcscheme is Xcode's form, not xcodegen's, and that is deliberate.
+# Both tools write this file and neither yields: xcodegen emits a version 1.7 scheme, and
+# Xcode rewrites it to 1.3 about a second later whenever the project is open. Committing
+# xcodegen's output therefore leaves the working tree permanently dirty for anyone with
+# Xcode running. Removing this block is not an escape either -- xcodegen deletes the scheme
+# when it is not declared here. So: leave the scheme as Xcode last wrote it, and expect
+# `xcodegen generate` to show a transient diff that Xcode undoes.
 schemes:
   Wrathspeed:
     build:
