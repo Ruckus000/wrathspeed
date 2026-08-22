@@ -115,6 +115,7 @@
 		CFCA2597B2606BCEFF0E00D6 /* PlanMutationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */; };
 		D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E483C98F5D35228B28E66CCB /* CelebrationView.swift */; };
 		D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */; };
+		D34DE6FD21590BB8FA11E10C /* MarkAccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */; };
 		D3F25A0FFAE6C37D724AE434 /* WorkoutPreflightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */; };
 		D65FDBEDBA00C604B4BCE703 /* UITestOnboardingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0226C028B3AEA93CF981DCF2 /* UITestOnboardingHelper.swift */; };
 		D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */; };
@@ -195,6 +196,7 @@
 		15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WrathspeedApp.swift; sourceTree = "<group>"; };
 		16BA6A73DFA699CCFD7A5F29 /* WorkoutResultMatchActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutResultMatchActionTests.swift; sourceTree = "<group>"; };
 		16C406BC82830CFAEAF59093 /* PreflightLiveStartUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreflightLiveStartUITests.swift; sourceTree = "<group>"; };
+		1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAccessibilityUITests.swift; sourceTree = "<group>"; };
 		1D4F3DD7BCAA6DC7D7E5350D /* PlanChangeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChangeStore.swift; sourceTree = "<group>"; };
 		204CDE73903492B877A70262 /* WrathspeedWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WrathspeedWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		29E5D016423BA6095A79851E /* TapTargetUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapTargetUITests.swift; sourceTree = "<group>"; };
@@ -396,6 +398,7 @@
 				7F09743C5F592BD63C333F76 /* ExerciseMediaScreenshotUITests.swift */,
 				458B6D1DC77674D347C7ABF0 /* GuidedResumeUITests.swift */,
 				6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */,
+				1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */,
 				2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */,
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
 				CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */,
@@ -746,6 +749,7 @@
 				7A259D89083C1E7289D8FEDA /* ExerciseMediaScreenshotUITests.swift in Sources */,
 				837A08A89525E4FD9859C4F5 /* GuidedResumeUITests.swift in Sources */,
 				61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */,
+				D34DE6FD21590BB8FA11E10C /* MarkAccessibilityUITests.swift in Sources */,
 				75E07B2861F6C64B59F12907 /* Milestone4UITests.swift in Sources */,
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
 				29A8948FA9694CB749505CF7 /* PlanStartPreflightUITests.swift in Sources */,

@@ -52,13 +52,22 @@ struct WSMark: View {
         variant ?? (size >= Self.rakeFloor ? .raked : .solid)
     }
 
+    // Branching rather than stacking `.accessibilityHidden(label == nil)` with a label:
+    // a label or trait applied afterwards rebuilds the element and the hide is lost, which
+    // put an unlabelled image on the first onboarding screen.
+    @ViewBuilder
     var body: some View {
+        if let label {
+            shape.accessibilityLabel(label).accessibilityAddTraits(.isImage)
+        } else {
+            shape.accessibilityHidden(true)
+        }
+    }
+
+    private var shape: some View {
         WSMarkShape(variant: resolvedVariant)
             .fill(style.ink)
             .frame(width: size, height: size)
-            .accessibilityHidden(label == nil)
-            .accessibilityLabel(label ?? "")
-            .accessibilityAddTraits(.isImage)
     }
 }
 
