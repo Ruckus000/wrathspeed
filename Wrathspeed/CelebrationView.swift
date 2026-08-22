@@ -8,11 +8,10 @@ struct CelebrationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("\(WSFormat.weekdayDate(payload.date)) · \(payload.title.uppercased())")
-                .font(WSFont.ui(12, weight: .heavy))
-                .tracking(3)
+                .wsType(.label, weight: .heavy, tracking: 3)
                 .foregroundStyle(Color.black.opacity(0.55))
             Text("DONE.")
-                .font(WSFont.display(110))
+                .wsType(.hero)
                 .foregroundStyle(.white)
                 .padding(.top, 8)
             HStack {
@@ -28,10 +27,9 @@ struct CelebrationView: View {
             if let pr = payload.prCopy {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("★ NEW PR")
-                        .font(WSFont.ui(11, weight: .heavy))
-                        .tracking(2)
+                        .wsType(.label, weight: .heavy, tracking: 2)
                     Text(pr)
-                        .font(WSFont.ui(15, weight: .heavy))
+                        .wsType(.body, weight: .heavy)
                 }
                 .foregroundStyle(.white)
                 .padding(16)
@@ -48,27 +46,27 @@ struct CelebrationView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     WSEyebrow(text: "PACE SUGGESTION")
                     Text(suggestion.reason)
-                        .font(WSFont.ui(12, weight: .medium))
+                        .wsType(.label, weight: .medium)
                         .foregroundStyle(WSColor.text70)
                         .padding(.top, 6)
                     Text("VDOT \(WSFormat.vdot(payload.previousVDOT ?? store.profile?.vdot ?? 0)) → \(WSFormat.vdot(suggestion.newVDOT))")
-                        .font(WSFont.display(24))
+                        .wsType(.displayXS)
                         .foregroundStyle(.white)
                         .padding(.top, 8)
                     HStack(spacing: 10) {
                         Button("ACCEPT") { store.acceptVDOTSuggestion() }
-                            .font(WSFont.ui(13, weight: .heavy))
-                            .tracking(1)
+                            .wsType(.body, weight: .heavy, tracking: 1)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 44)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: 44)
                             .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                         Button("NOT NOW") { store.declineVDOTSuggestion() }
-                            .font(WSFont.ui(13, weight: .heavy))
-                            .tracking(1)
+                            .wsType(.body, weight: .heavy, tracking: 1)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 44)
+                            .padding(.vertical, 10)
+                            .frame(minHeight: 44)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                                     .stroke(Color.white.opacity(0.3), lineWidth: 1.5)
@@ -81,7 +79,7 @@ struct CelebrationView: View {
                 .padding(.top, 10)
             }
             Spacer()
-            WSPrimaryButton(title: "BACK TO TODAY", height: 60, fontSize: 22, fill: .white, textColor: .black) {
+            WSPrimaryButton(title: "BACK TO TODAY", height: 60, role: .displayXS, fill: .white, textColor: .black) {
                 store.celebration = nil
                 store.selectedTab = .today
             }
@@ -96,10 +94,10 @@ struct CelebrationView: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(WSFont.mono(10, weight: .bold))
+                .wsType(.metricS, weight: .bold)
                 .foregroundStyle(Color.black.opacity(0.55))
             Text(value)
-                .font(WSFont.display(34))
+                .wsType(.displayS)
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -108,10 +106,10 @@ struct CelebrationView: View {
     private func card(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
-                .font(WSFont.mono(10, weight: .bold))
+                .wsType(.metricS, weight: .bold)
                 .foregroundStyle(Color.white.opacity(0.8))
             Text(value)
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(.white)
         }
         .padding(16)

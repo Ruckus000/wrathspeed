@@ -2,6 +2,7 @@ import SwiftUI
 import WrathspeedCore
 
 struct LiveRunView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let blueprint: WorkoutBlueprint
@@ -12,19 +13,17 @@ struct LiveRunView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 Text(blueprint.title.uppercased())
-                    .font(WSFont.ui(12, weight: .bold))
-                    .tracking(2)
+                    .wsType(.label, weight: .bold, tracking: 2)
                     .foregroundStyle(WSColor.text50)
                 Spacer()
                 Text(stepCount)
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text((session.stepper?.currentStep?.name ?? blueprint.title).uppercased())
-                .font(WSFont.display(42))
-                .tracking(0.5)
+                .wsType(.displayM, tracking: 0.5)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 6)
@@ -33,13 +32,12 @@ struct LiveRunView: View {
                 .padding(.top, 14)
             VStack(spacing: 6) {
                 Text(paceHero)
-                    .font(WSFont.display(140))
+                    .wsType(.heroXL)
                     .foregroundStyle(WSColor.accent)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)
                 Text("CURRENT PACE /\(WSFormat.unitSuffix(store.unit))")
-                    .font(WSFont.ui(13, weight: .bold))
-                    .tracking(3)
+                    .wsType(.body, weight: .bold, tracking: 3)
                     .foregroundStyle(WSColor.text50)
             }
             .accessibilityElement(children: .combine)
@@ -61,7 +59,7 @@ struct LiveRunView: View {
                 transport
             }
             Text(statusText)
-                .font(WSFont.ui(11, weight: .medium))
+                .wsType(.label, weight: .medium)
                 .foregroundStyle(WSColor.text35)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
@@ -101,8 +99,7 @@ struct LiveRunView: View {
             style: store.cueStyle
         )
         return Text(model.text)
-            .font(WSFont.ui(12, weight: .heavy))
-            .tracking(1)
+            .wsType(.label, weight: .heavy, tracking: 1)
             .foregroundStyle(model.kind == .off ? .black : .white)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -143,20 +140,29 @@ struct LiveRunView: View {
 
     private var metricsRow: some View {
         let metrics = LiveMetric.allCases.filter { store.liveMetrics.contains($0) }
-        return HStack(spacing: 0) {
+        // Three columns of live numbers across one phone width. Once the type is large enough
+        // that a column would be narrower than its own value, they stack instead -- these are
+        // the numbers someone is reading mid-run, so squeezing them is the worst option.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 14))
+            : AnyLayout(HStackLayout(spacing: 0))
+        return layout {
             ForEach(Array(metrics.enumerated()), id: \.element) { index, metric in
                 VStack(spacing: 4) {
                     Text(metric.liveLabel(unit: store.unit))
-                        .font(WSFont.mono(10))
-                        .tracking(1)
+                        .wsType(.metricS, tracking: 1)
                         .foregroundStyle(WSColor.text40)
                     Text(metricValue(metric))
-                        .font(WSFont.display(30))
+                        .wsType(.displayS)
                         .foregroundStyle(WSColor.text)
                 }
                 .frame(maxWidth: .infinity)
                 if index < metrics.count - 1 {
-                    Rectangle().fill(WSColor.hairline).frame(width: 1, height: 44)
+                    if dynamicTypeSize.isAccessibilitySize {
+                        Rectangle().fill(WSColor.hairline).frame(height: 1)
+                    } else {
+                        Rectangle().fill(WSColor.hairline).frame(width: 1, height: 44)
+                    }
                 }
             }
         }
@@ -226,8 +232,7 @@ struct LiveRunView: View {
     private func circle(_ title: String, size: CGFloat, accessibilityLabel: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.ui(12, weight: .heavy))
-                .tracking(1)
+                .wsType(.label, weight: .heavy, tracking: 1)
                 .foregroundStyle(WSColor.text)
                 .frame(width: size, height: size)
                 .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 1.5))

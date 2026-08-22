@@ -8,20 +8,20 @@ struct ContentLicensesView: View {
         WSScreen {
             HStack {
                 Button("← BACK") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text50)
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text("CONTENT\nLICENSES")
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
                 .accessibilityAddTraits(.isHeader)
             Text("Wrathspeed bundles 58 third-party demonstration clips. They were sourced for a private build, not for public release: the anatomical renders below are not cleared for redistribution. See Content/LICENSE.md before shipping.")
-                .font(WSFont.ui(14, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 14)
@@ -52,10 +52,10 @@ struct ContentLicensesView: View {
     private func licenseBlock(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(WSFont.ui(13, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.accent)
             Text(body)
-                .font(WSFont.ui(14, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
         }
         .padding(.horizontal, WSSpace.gutter)
@@ -74,16 +74,15 @@ struct ExerciseAboutView: View {
             HStack {
                 Spacer()
                 Button("✕") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text40)
                     .frame(minWidth: 44, minHeight: 44)
             }
             Text("ABOUT THIS EXERCISE")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
             Text(exerciseName.uppercased())
-                .font(WSFont.display(32))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .padding(.top, 8)
             Image(systemName: symbolName)
@@ -92,11 +91,11 @@ struct ExerciseAboutView: View {
                 .padding(.top, 20)
                 .accessibilityHidden(true)
             Text(cue)
-                .font(WSFont.ui(15, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 16)
             Text("Local Wrathspeed guidance. No external media bundled.")
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 20)
             Spacer()

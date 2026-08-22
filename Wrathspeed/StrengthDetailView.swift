@@ -41,18 +41,17 @@ struct StrengthDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Button("← HISTORY") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Back to history")
                 Spacer()
                 Text(WSFormat.weekdayDate(result.startedAt))
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
             Text(sessionTitle)
-                .font(WSFont.display(40))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(2)
@@ -79,8 +78,7 @@ struct StrengthDetailView: View {
     private var setsSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("SETS")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -96,8 +94,7 @@ struct StrengthDetailView: View {
     private var sessionSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("SESSION")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -126,21 +123,21 @@ struct StrengthDetailView: View {
         return VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(exerciseName(for: log).uppercased())
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text)
                 Spacer()
                 Text(status)
-                    .font(WSFont.mono(10, weight: .bold))
+                    .wsType(.metricS, weight: .bold)
                     .foregroundStyle(log.skipped ? WSColor.text50 : WSColor.accent)
             }
             if !detail.isEmpty {
                 Text(detail)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text50)
             }
             if let note = log.note, !note.isEmpty {
                 Text("NOTE: \(note.uppercased())")
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
             }
         }
@@ -177,12 +174,12 @@ struct StrengthDetailView: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text40)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             Text(value)
-                .font(WSFont.display(28))
+                .wsType(.displayXS)
                 .foregroundStyle(WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)

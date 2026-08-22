@@ -47,7 +47,7 @@ struct MobilityRoutineView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(routine.title.uppercased())
-                .font(WSFont.display(32))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityIdentifier("routine_player_title")
                 .accessibilityAddTraits(.isHeader)
@@ -59,7 +59,7 @@ struct MobilityRoutineView: View {
                 // the label: outside the Button it grows the layout but leaves the
                 // button's own hit and accessibility frame tiny.
                 Text("✕")
-                    .font(WSFont.ui(13, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text40)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
@@ -77,12 +77,12 @@ struct MobilityRoutineView: View {
     private func activeView(_ current: RoutineItem) -> some View {
         Group {
             Text("MOVEMENT \(index + 1) / \(routine.items.count)")
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.accent)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 14)
             Text(current.movement.name.uppercased())
-                .font(WSFont.display(34))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 // The line limit first: minimumScaleFactor is inert without one.
                 .lineLimit(2)
@@ -97,7 +97,7 @@ struct MobilityRoutineView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 12)
             Text(current.movement.cue)
-                .font(WSFont.ui(15))
+                .wsType(.body)
                 .foregroundStyle(WSColor.text70)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -108,19 +108,18 @@ struct MobilityRoutineView: View {
             // and it puts the only system face on a screen that is otherwise all Anton.
             // The strength player's rest timer is display(100) for the same reason.
             Text("\(remaining)")
-                .font(WSFont.display(88))
+                .wsType(.hero)
                 .foregroundStyle(WSColor.accent)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
                 .accessibilityIdentifier("routine_player_timer")
                 .accessibilityLabel("\(remaining) seconds remaining")
             Text("SECONDS")
-                .font(WSFont.ui(12, weight: .bold))
-                .tracking(2)
+                .wsType(.label, weight: .bold, tracking: 2)
                 .foregroundStyle(WSColor.text50)
                 .frame(maxWidth: .infinity)
             HStack(spacing: 10) {
-                WSPrimaryButton(title: running ? "PAUSE" : "START", height: 58, fontSize: 20) {
+                WSPrimaryButton(title: running ? "PAUSE" : "START", height: 58, role: .control) {
                     running.toggle()
                     if running {
                         speech.speak(.stepStarted(current.movement.name))
@@ -128,7 +127,7 @@ struct MobilityRoutineView: View {
                 }
                 .accessibilityIdentifier("routine_player_start")
                 Button("NEXT →") { advance() }
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.text50)
                     .frame(width: 110, height: 58)
                     .contentShape(Rectangle())
@@ -144,11 +143,11 @@ struct MobilityRoutineView: View {
         VStack(alignment: .leading, spacing: 8) {
             WSEyebrow(text: "ROUTINE COMPLETE")
             Text("NICE.")
-                .font(WSFont.display(64))
+                .wsType(.displayXL)
                 .foregroundStyle(WSColor.text)
                 .accessibilityIdentifier("routine_player_complete")
             Text("THAT WAS THE WHOLE ROUTINE.")
-                .font(WSFont.ui(13, weight: .semibold))
+                .wsType(.body, weight: .semibold)
                 .foregroundStyle(WSColor.text50)
             WSOutlineButton(title: "DONE") { dismiss() }
                 .padding(.top, 28)

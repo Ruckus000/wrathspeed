@@ -23,10 +23,10 @@ struct WorkoutMoveDateSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("MOVE WORKOUT")
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
             Text(workout.blueprint.title.uppercased())
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.top, 8)
             DatePicker(
@@ -42,7 +42,7 @@ struct WorkoutMoveDateSheet: View {
             .accessibilityLabel("Select new workout date")
             Toggle(isOn: $reminderEnabled) {
                 Text("REMIND ME")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
             }
             .tint(WSColor.accent)
             .padding(.top, 12)
@@ -60,19 +60,19 @@ struct WorkoutMoveDateSheet: View {
             }
             if let validationMessage {
                 Text(validationMessage)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 8)
             }
             if let notice = store.reminderNotice {
                 Text(notice)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text70)
                     .padding(.top, 8)
             }
             Toggle(isOn: $allowOverride) {
                 Text("ALLOW QUALITY / LOAD WARNINGS")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
             }
             .tint(WSColor.accent)
             .padding(.top, 12)
@@ -126,19 +126,19 @@ struct ManagePlanView: View {
         WSScreen {
             HStack {
                 Button("← BACK") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text50)
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text("MANAGE\nPLAN")
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
             Text("AVAILABLE RUN DAYS")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 20)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
@@ -152,7 +152,7 @@ struct ManagePlanView: View {
             .padding(.horizontal, WSSpace.gutter)
             HStack {
                 Text("RUNS / WEEK")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 Spacer()
                 WSStepperControl(
                     valueText: "\(daysPerWeek)",
@@ -163,7 +163,7 @@ struct ManagePlanView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 16)
             Text("LONG RUN DAY")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
@@ -174,8 +174,7 @@ struct ManagePlanView: View {
             .padding(.horizontal, WSSpace.gutter)
             if let previewDiff, !previewDiff.isEmpty {
                 Text("FUTURE CHANGES")
-                    .font(WSFont.mono(10))
-                    .tracking(1.5)
+                    .wsType(.metricS, tracking: 1.5)
                     .foregroundStyle(WSColor.text40)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 18)
@@ -190,13 +189,13 @@ struct ManagePlanView: View {
                         Text("\(previewDiff.removed.count) removed")
                     }
                 }
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.horizontal, WSSpace.gutter)
             }
             if let errorMessage {
                 Text(errorMessage)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 8)

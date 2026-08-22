@@ -40,25 +40,24 @@ struct MobilityDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Button("← HISTORY") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Back to history")
                 Spacer()
                 Text(WSFormat.weekdayDate(result.startedAt))
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
             Text(routineTitle)
-                .font(WSFont.display(40))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(2)
                 .padding(.top, 18)
             if let routine {
                 Text(routine.category.displayName.uppercased())
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text50)
                     .padding(.top, 6)
             }
@@ -87,8 +86,7 @@ struct MobilityDetailView: View {
     private func movementsSection(routine: MobilityRoutineTemplate) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("MOVEMENTS")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -104,8 +102,7 @@ struct MobilityDetailView: View {
     private var sessionSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("SESSION")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -139,15 +136,15 @@ struct MobilityDetailView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(movement.name.uppercased())
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text)
                 if !detail.isEmpty {
                     Text(detail)
-                        .font(WSFont.mono(11))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.text50)
                 }
                 Text(status)
-                    .font(WSFont.mono(10, weight: .bold))
+                    .wsType(.metricS, weight: .bold)
                     .foregroundStyle(completed ? WSColor.accent : WSColor.text50)
             }
             Spacer(minLength: 0)
@@ -175,12 +172,12 @@ struct MobilityDetailView: View {
     private func stat(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text40)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             Text(value)
-                .font(WSFont.display(24))
+                .wsType(.displayXS)
                 .foregroundStyle(WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(2)

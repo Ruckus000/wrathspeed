@@ -84,11 +84,14 @@ enum UITestOnboardingHelper {
             seedCompletedOnboarding: seedCompletedOnboarding,
             skipCountdown: skipCountdown
         )
+        // As a launch *argument*, not a launch environment variable. The environment form was
+        // silently inert -- measured on iPhone 16e / iOS 26.0, the Settings title rendered at
+        // 69.3pt both with and without it, while the argument form takes it to 122.3pt. Every
+        // Dynamic Type assertion in this suite was passing at the default size.
         if let contentSizeCategory {
-            app.launchEnvironment["UIPreferredContentSizeCategoryName"] = contentSizeCategory
-        } else {
-            app.launchEnvironment.removeValue(forKey: "UIPreferredContentSizeCategoryName")
+            app.launchArguments += ["-UIPreferredContentSizeCategoryName", contentSizeCategory]
         }
+        app.launchEnvironment.removeValue(forKey: "UIPreferredContentSizeCategoryName")
     }
 
     static func configurePreservingStoreLaunch(_ app: XCUIApplication) {

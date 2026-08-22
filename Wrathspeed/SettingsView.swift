@@ -9,12 +9,12 @@ struct SettingsView: View {
         NavigationStack {
             WSScreen {
                 Text("SETTINGS")
-                    .font(WSFont.display(44))
+                    .wsType(.displayL)
                     .foregroundStyle(WSColor.text)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
                 section("LIVE RUN METRICS") {
-                    HStack(spacing: 8) {
+                    WSChipRow {
                         ForEach(LiveMetric.allCases, id: \.self) { metric in
                             WSChip(title: metric.chipLabel, selected: store.liveMetrics.contains(metric)) {
                                 store.toggleLiveMetric(metric)
@@ -23,7 +23,7 @@ struct SettingsView: View {
                     }
                 }
                 section("DATA DENSITY") {
-                    HStack(spacing: 8) {
+                    WSChipRow(spacing: 8) {
                         ForEach(DataDensity.allCases, id: \.self) { density in
                             WSChip(title: density.title, selected: store.dataDensity == density) {
                                 store.setDataDensity(density)
@@ -39,12 +39,11 @@ struct SettingsView: View {
                     } label: {
                         HStack {
                             Text("AUDIO CUES")
-                                .font(WSFont.ui(14, weight: .heavy))
+                                .wsType(.body, weight: .heavy)
                                 .foregroundStyle(WSColor.text)
                             Spacer()
                             Text(store.cuesEnabled ? "ON" : "OFF")
-                                .font(WSFont.ui(12, weight: .heavy))
-                                .tracking(1)
+                                .wsType(.label, weight: .heavy, tracking: 1)
                                 .foregroundStyle(store.cuesEnabled ? .white : WSColor.text)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
@@ -55,7 +54,7 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    HStack(spacing: 8) {
+                    WSChipRow(spacing: 8) {
                         ForEach(CueStyle.allCases, id: \.self) { style in
                             WSChip(title: style.title, selected: store.cueStyle == style) {
                                 store.setCueStyle(style)
@@ -65,7 +64,7 @@ struct SettingsView: View {
                     .padding(.top, 14)
                 }
                 section("UNITS") {
-                    HStack(spacing: 8) {
+                    WSChipRow(spacing: 8) {
                         WSChip(title: "Miles", selected: store.unit == .miles) { setUnit(.miles) }
                         WSChip(title: "Kilometers", selected: store.unit == .kilometers) { setUnit(.kilometers) }
                     }
@@ -75,7 +74,7 @@ struct SettingsView: View {
                         MovementLibraryView()
                     } label: {
                         Text("MOVEMENT LIBRARY ›")
-                            .font(WSFont.ui(14, weight: .heavy))
+                            .wsType(.body, weight: .heavy)
                             .foregroundStyle(WSColor.text)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
@@ -84,7 +83,7 @@ struct SettingsView: View {
                         ContentLicensesView()
                     } label: {
                         Text("CONTENT LICENSES ›")
-                            .font(WSFont.ui(14, weight: .heavy))
+                            .wsType(.body, weight: .heavy)
                             .foregroundStyle(WSColor.text)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
@@ -94,7 +93,7 @@ struct SettingsView: View {
                         Button("END NOT FEELING 100%") {
                             store.endNotFeeling100()
                         }
-                        .font(WSFont.ui(14, weight: .heavy))
+                        .wsType(.body, weight: .heavy)
                         .foregroundStyle(WSColor.accent)
                         .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
@@ -107,11 +106,11 @@ struct SettingsView: View {
                             store.showToast("DIAGNOSTICS COPIED")
                         }
                     }
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.accent)
                     .accessibilityLabel("Export redacted diagnostics to clipboard")
                     Text("Includes app version, schema version, and non-sensitive counts only.")
-                        .font(WSFont.mono(11))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.text40)
                         .padding(.top, 8)
                 }
@@ -123,11 +122,11 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 Text("VDOT · PACE ZONES")
-                                    .font(WSFont.ui(13, weight: .bold))
+                                    .wsType(.body, weight: .bold)
                                     .foregroundStyle(Color.white.opacity(0.6))
                                 Spacer()
                                 Text("\(WSFormat.vdot(profile.vdot)) ›")
-                                    .font(WSFont.mono(13, weight: .bold))
+                                    .wsType(.metric, weight: .bold)
                                     .foregroundStyle(WSColor.accent)
                             }
                             .padding(.vertical, 12)
@@ -137,18 +136,18 @@ struct SettingsView: View {
                     }
                 }
                 section("STRENGTH") {
-                    chipWrap(StrengthAbility.allCases.map(\.title), selected: store.strengthPrefs.ability.title) { title in
+                    chipGroup(StrengthAbility.allCases.map(\.title), selected: store.strengthPrefs.ability.title) { title in
                         if let item = StrengthAbility.allCases.first(where: { $0.title == title }) {
                             updateStrength { $0.ability = item }
                         }
                     }
-                    chipWrap(StrengthGoal.allCases.map(\.title), selected: store.strengthPrefs.goal.title) { title in
+                    chipGroup(StrengthGoal.allCases.map(\.title), selected: store.strengthPrefs.goal.title) { title in
                         if let item = StrengthGoal.allCases.first(where: { $0.title == title }) {
                             updateStrength { $0.goal = item }
                         }
                     }
                     .padding(.top, 10)
-                    HStack(spacing: 8) {
+                    WSChipRow(spacing: 8) {
                         ForEach([30, 45, 60], id: \.self) { minutes in
                             WSChip(title: "\(minutes) min", selected: store.strengthPrefs.durationMinutes == minutes) {
                                 updateStrength { $0.durationMinutes = minutes }
@@ -156,7 +155,7 @@ struct SettingsView: View {
                         }
                     }
                     .padding(.top, 10)
-                    HStack(spacing: 6) {
+                    WSChipRow(spacing: 6) {
                         ForEach(Weekday.allCases, id: \.self) { day in
                             WSChip(title: day.chipLabel, selected: store.strengthPrefs.preferredDays.contains(day)) {
                                 updateStrength { prefs in
@@ -172,7 +171,7 @@ struct SettingsView: View {
                         }
                     }
                     .padding(.top, 10)
-                    chipWrap(StrengthEquipment.allCases.map(\.title), selected: "") { title in
+                    chipGroup(StrengthEquipment.allCases.map(\.title), selected: "") { title in
                         if let item = StrengthEquipment.allCases.first(where: { $0.title == title }) {
                             updateStrength { prefs in
                                 if prefs.equipment.contains(item) {
@@ -185,7 +184,7 @@ struct SettingsView: View {
                     }
                     .padding(.top, 10)
                 }
-                WSOutlineButton(title: "REBUILD FUTURE WEEKS") {
+                WSOutlineButton(title: "REBUILD WEEKS") {
                     store.regeneratePlan()
                     store.showToast("FUTURE WEEKS REBUILT")
                 }
@@ -203,8 +202,7 @@ struct SettingsView: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
             content()
         }
@@ -212,8 +210,8 @@ struct SettingsView: View {
         .padding(.top, 22)
     }
 
-    private func chipWrap(_ titles: [String], selected: String, action: @escaping (String) -> Void) -> some View {
-        HStack(spacing: 8) {
+    private func chipGroup(_ titles: [String], selected: String, action: @escaping (String) -> Void) -> some View {
+        WSChipRow(spacing: 8) {
             ForEach(titles, id: \.self) { title in
                 let isOn: Bool = {
                     if selected.isEmpty {
@@ -250,8 +248,7 @@ struct PaceZonesView: View {
     var body: some View {
         WSScreen {
             Button("← SETTINGS") { dismiss() }
-                .font(WSFont.ui(13, weight: .heavy))
-                .tracking(1)
+                .wsType(.body, weight: .heavy, tracking: 1)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
@@ -259,12 +256,12 @@ struct PaceZonesView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 18)
             Text("PACE ZONES")
-                .font(WSFont.display(52))
+                .wsType(.displayL)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 4)
             Text("DANIELS %VO2MAX · PER \(WSFormat.unitLabel(store.unit))")
-                .font(WSFont.mono(12, weight: .medium))
+                .wsType(.metric, weight: .medium)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -276,18 +273,17 @@ struct PaceZonesView: View {
                             .frame(width: 6, height: 38)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(zone.rawValue.uppercased())
-                                .font(WSFont.ui(15, weight: .heavy))
-                                .tracking(0.5)
+                                .wsType(.body, weight: .heavy, tracking: 0.5)
                             Text(purpose(zone))
-                                .font(WSFont.ui(11, weight: .medium))
+                                .wsType(.label, weight: .medium)
                                 .foregroundStyle(WSColor.text45)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(pace(zone))
-                                .font(WSFont.display(24))
+                                .wsType(.displayXS)
                             Text(percent(zone))
-                                .font(WSFont.mono(9))
+                                .wsType(.metricS)
                                 .foregroundStyle(WSColor.text35)
                         }
                     }
@@ -298,8 +294,7 @@ struct PaceZonesView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 20)
             Text("RACE PREDICTIONS · RIEGEL")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -307,10 +302,10 @@ struct PaceZonesView: View {
                 ForEach(predictions, id: \.name) { row in
                     HStack {
                         Text(row.name)
-                            .font(WSFont.ui(14, weight: .heavy))
+                            .wsType(.body, weight: .heavy)
                         Spacer()
                         Text(row.time)
-                            .font(WSFont.mono(14, weight: .bold))
+                            .wsType(.metric, weight: .bold)
                             .foregroundStyle(WSColor.accent)
                     }
                     .padding(.vertical, 12)

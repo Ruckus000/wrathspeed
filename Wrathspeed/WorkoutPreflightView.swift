@@ -50,11 +50,11 @@ struct WorkoutPreflightView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("PREFLIGHT")
-                .font(WSFont.display(34))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityAddTraits(.isHeader)
             Text(blueprint.title.uppercased())
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.top, 8)
             locationSection
@@ -78,7 +78,7 @@ struct WorkoutPreflightView: View {
             .accessibilityLabel("Start workout")
             .padding(.top, 12)
             Button("CANCEL") { dismiss() }
-                .font(WSFont.ui(12, weight: .heavy))
+                .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.text50)
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .padding(.top, 8)
@@ -101,8 +101,7 @@ struct WorkoutPreflightView: View {
     private var locationSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("LOCATION")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.top, 14)
             HStack(spacing: 8) {
@@ -125,15 +124,15 @@ struct WorkoutPreflightView: View {
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 Text("TREADMILL SPEED")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.text45)
                     .padding(.top, 10)
                 Text("Set a target belt speed. We'll estimate distance until you confirm the treadmill total.")
-                    .font(WSFont.ui(12, weight: .medium))
+                    .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text50)
                 HStack {
                     Text(store.unit == .miles ? "MPH" : "KM/H")
-                        .font(WSFont.ui(14, weight: .heavy))
+                        .wsType(.body, weight: .heavy)
                     Spacer()
                     WSStepperControl(
                         valueText: String(format: "%.1f", manualTreadmillSpeedDisplay),
@@ -152,7 +151,7 @@ struct WorkoutPreflightView: View {
             preflightRow("GPS ROUTE", gps.label)
             if !gps.detail.isEmpty {
                 Text(gps.detail)
-                    .font(WSFont.ui(12, weight: .medium))
+                    .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text50)
             }
         }
@@ -161,24 +160,23 @@ struct WorkoutPreflightView: View {
     private var structureSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("STRUCTURE")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 16)
             ForEach(blueprint.steps.prefix(6)) { step in
                 HStack {
                     Text(step.name)
-                        .font(WSFont.ui(13, weight: .bold))
+                        .wsType(.body, weight: .bold)
                     Spacer()
                     Text(stepSummary(step))
-                        .font(WSFont.mono(11))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.text50)
                 }
                 .accessibilityElement(children: .combine)
             }
             if blueprint.steps.count > 6 {
                 Text("+\(blueprint.steps.count - 6) MORE")
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
         }
@@ -216,11 +214,11 @@ struct WorkoutPreflightView: View {
     private func preflightRow(_ label: String, _ value: String) -> some View {
         HStack {
             Text(label)
-                .font(WSFont.ui(12, weight: .heavy))
+                .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.text45)
             Spacer()
             Text(value)
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text)
         }
         .padding(.top, 10)

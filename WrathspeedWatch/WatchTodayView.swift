@@ -42,10 +42,10 @@ struct WatchTodayView: View {
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("TODAY")
-                .font(WSFont.ui(10, weight: .bold))
+                .wsType(.caption, weight: .bold)
                 .foregroundStyle(WSColor.accent)
             Text("No upcoming runs. Open iPhone to sync your plan.")
-                .font(WSFont.ui(12, weight: .medium))
+                .wsType(.label, weight: .medium)
                 .foregroundStyle(WSColor.text50)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -56,30 +56,30 @@ struct WatchTodayView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(dateEyebrow(blueprint))
-                    .font(WSFont.mono(10, weight: .bold))
+                    .wsType(.metricS, weight: .bold)
                     .foregroundStyle(WSColor.accent)
                     .accessibilityLabel(dateAccessibility(blueprint))
                 Spacer()
                 Text(Date.now, style: .time)
-                    .font(WSFont.mono(10))
+                    .wsType(.metricS)
                     .foregroundStyle(WSColor.text50)
             }
             Text(blueprint.title.uppercased())
-                .font(WSFont.display(28))
+                .wsType(.displayXS)
                 .foregroundStyle(WSColor.text)
                 .padding(.top, 12)
             Text(meta(blueprint))
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 8)
             Text(steps(blueprint))
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text35)
                 .padding(.top, 4)
             Button("START") {
                 active = startRequest(for: blueprint)
             }
-            .font(WSFont.ui(13, weight: .heavy))
+            .wsType(.body, weight: .heavy)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 44)
@@ -94,18 +94,18 @@ struct WatchTodayView: View {
     private func upcomingRow(_ blueprint: WorkoutBlueprint) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(dateEyebrow(blueprint))
-                .font(WSFont.mono(10, weight: .bold))
+                .wsType(.metricS, weight: .bold)
                 .foregroundStyle(WSColor.accent)
             Text(blueprint.title.uppercased())
-                .font(WSFont.ui(13, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text)
             Text(meta(blueprint))
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text50)
             Button("START") {
                 active = startRequest(for: blueprint)
             }
-            .font(WSFont.ui(12, weight: .heavy))
+            .wsType(.label, weight: .heavy)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 44)
@@ -173,11 +173,10 @@ struct WatchLiveView: View {
         let session = store.session
         VStack(alignment: .leading, spacing: 0) {
             Text((session.stepper?.currentStep?.name ?? blueprint.title).uppercased())
-                .font(WSFont.ui(10, weight: .bold))
-                .tracking(1)
+                .wsType(.caption, weight: .bold, tracking: 1)
                 .foregroundStyle(WSColor.accent)
             Text(pace)
-                .font(WSFont.display(58))
+                .wsType(.displayXL)
                 .foregroundStyle(WSColor.accent)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
@@ -185,8 +184,7 @@ struct WatchLiveView: View {
                 .accessibilityLabel("Current pace")
                 .accessibilityValue("\(pace) \(Units.compactUnitSuffix(unit)) per \(unit == .miles ? "mile" : "kilometre"). \(paceStatus.watchLabel)")
             Text("PACE /\(Units.compactUnitSuffix(unit)) · \(paceStatus.watchLabel)")
-                .font(WSFont.ui(9, weight: .bold))
-                .tracking(2)
+                .wsType(.caption, weight: .bold, tracking: 2)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 4)
                 .accessibilityLabel("Pace status")
@@ -212,7 +210,7 @@ struct WatchLiveView: View {
                     .accessibilityLabel("Heart rate")
                     .accessibilityValue(session.metrics.heartRate.map { "\(Int($0.rounded())) beats per minute" } ?? "Unavailable")
             }
-            .font(WSFont.mono(13))
+            .wsType(.metric)
             controls
                 .padding(.top, 8)
         }
@@ -274,8 +272,7 @@ struct WatchLiveView: View {
     private func controlButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.ui(10, weight: .heavy))
-                .tracking(0.5)
+                .wsType(.caption, weight: .heavy, tracking: 0.5)
                 .foregroundStyle(WSColor.text)
                 .frame(maxWidth: .infinity)
                 .frame(minHeight: 44)

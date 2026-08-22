@@ -32,19 +32,19 @@ struct TodayView: View {
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 26)
                 Text(orderTitle)
-                    .font(WSFont.display(58))
+                    .wsType(.displayXL)
                     .foregroundStyle(WSColor.text)
                     .lineSpacing(-2)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 6)
                 Text(orderMeta)
-                    .font(WSFont.ui(14, weight: .semibold))
+                    .wsType(.body, weight: .semibold)
                     .foregroundStyle(WSColor.text70)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
                 if store.dataDensity == .detailed, let steps = stepsLine {
                     Text(steps)
-                        .font(WSFont.mono(12, weight: .medium))
+                        .wsType(.metric, weight: .medium)
                         .foregroundStyle(WSColor.text40)
                         .padding(.horizontal, WSSpace.gutter)
                         .padding(.top, 8)
@@ -56,13 +56,11 @@ struct TodayView: View {
                 mobilitySection
                 HStack {
                     Button("NOT FEELING 100%?") { showN100 = true }
-                        .font(WSFont.ui(11, weight: .bold))
-                        .tracking(1)
+                        .wsType(.label, weight: .bold, tracking: 1)
                         .foregroundStyle(WSColor.text45)
                     Spacer()
                     Button("+ INSTANT RUN") { showInstant = true }
-                        .font(WSFont.ui(11, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.accent)
                 }
                 .padding(.horizontal, WSSpace.gutter)
@@ -86,13 +84,11 @@ struct TodayView: View {
     private var header: some View {
         HStack {
             Text(WSFormat.weekdayDate(Date()))
-                .font(WSFont.mono(12))
-                .tracking(1.5)
+                .wsType(.metric, tracking: 1.5)
                 .foregroundStyle(WSColor.text50)
             Spacer()
             Text("STREAK \(store.streak)")
-                .font(WSFont.ui(11, weight: .heavy))
-                .tracking(1.5)
+                .wsType(.label, weight: .heavy, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
@@ -106,27 +102,27 @@ struct TodayView: View {
         VStack(alignment: .leading, spacing: 0) {
             WSEyebrow(text: "PACE SUGGESTION")
             Text(pending.reason)
-                .font(WSFont.ui(12, weight: .medium))
+                .wsType(.label, weight: .medium)
                 .foregroundStyle(WSColor.text70)
                 .padding(.top, 6)
             Text("VDOT \(WSFormat.vdot(store.profile?.vdot ?? 0)) → \(WSFormat.vdot(pending.newVDOT))")
-                .font(WSFont.display(22))
+                .wsType(.displayXS)
                 .foregroundStyle(WSColor.text)
                 .padding(.top, 8)
             HStack(spacing: 10) {
                 Button("ACCEPT") { store.acceptVDOTSuggestion() }
-                    .font(WSFont.ui(12, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 42)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 42)
                     .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                 Button("NOT NOW") { store.declineVDOTSuggestion() }
-                    .font(WSFont.ui(12, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 42)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 42)
                     .overlay(
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .stroke(Color.white.opacity(0.28), lineWidth: 1.5)
@@ -146,7 +142,7 @@ struct TodayView: View {
     @ViewBuilder
     private var primaryAction: some View {
         if let workout = store.todaysRuns.first {
-            WSPrimaryButton(title: "START RUN →", height: 64, fontSize: 24) {
+            WSPrimaryButton(title: "START RUN →", height: 64, role: .displayXS) {
                 store.presentPreflight(blueprint: workout.blueprint)
             }
             .accessibilityLabel("Start today's run")
@@ -155,11 +151,10 @@ struct TodayView: View {
         } else if let done = store.todaysCompletedRuns.first, let result = done.result {
             VStack(alignment: .leading, spacing: 6) {
                 Text("MISSION COMPLETE ✓")
-                    .font(WSFont.ui(12, weight: .heavy))
-                    .tracking(2)
+                    .wsType(.label, weight: .heavy, tracking: 2)
                     .foregroundStyle(WSColor.accent)
                 Text("\(WSFormat.distance(result.distanceMeters, unit: store.unit)) · \(result.averagePaceSecPerKm.map { WSFormat.pace($0, unit: store.unit) } ?? "—")")
-                    .font(WSFont.ui(13, weight: .semibold))
+                    .wsType(.body, weight: .semibold)
                     .foregroundStyle(WSColor.text70)
             }
             .padding(16)
@@ -172,7 +167,7 @@ struct TodayView: View {
             .padding(.top, 20)
         } else if isRestDay {
             if let next = store.nextRunToPullForward {
-                WSPrimaryButton(title: "PULL FORWARD: \(next.blueprint.title.uppercased()) →", height: 64, fontSize: 20) {
+                WSPrimaryButton(title: "PULL FORWARD: \(next.blueprint.title.uppercased()) →", height: 64, role: .control) {
                     store.pullForwardAndStart(next)
                 }
                 .accessibilityLabel("Pull \(WSFormat.weekdayDate(next.date))'s \(next.blueprint.title) forward to today")
@@ -183,11 +178,11 @@ struct TodayView: View {
                 showInstant = true
             } label: {
                 Text("+ ADD AN INSTANT RUN")
-                    .font(WSFont.ui(14, weight: .heavy))
-                    .tracking(1.5)
+                    .wsType(.body, weight: .heavy, tracking: 1.5)
                     .foregroundStyle(Color.white.opacity(0.6))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 62)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 62)
                     .overlay(
                         RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                             .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
@@ -207,17 +202,15 @@ struct TodayView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("PLUS: \(session.title.uppercased())")
-                        .font(WSFont.ui(13, weight: .heavy))
-                        .tracking(0.5)
+                        .wsType(.body, weight: .heavy, tracking: 0.5)
                         .foregroundStyle(WSColor.text)
                     Text("\(session.durationMinutes) MIN · \(session.sets.count) EXERCISES")
-                        .font(WSFont.ui(11, weight: .medium))
+                        .wsType(.label, weight: .medium)
                         .foregroundStyle(WSColor.text45)
                 }
                 Spacer()
                 Text(isResume ? "RESUME →" : "GO →")
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.accent)
             }
             .padding(.horizontal, 16)
@@ -258,11 +251,10 @@ struct TodayView: View {
         return HStack {
             VStack(alignment: .leading, spacing: 3) {
                 Text(session.title.uppercased())
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(0.5)
+                    .wsType(.body, weight: .heavy, tracking: 0.5)
                     .foregroundStyle(WSColor.text)
                 Text("\(session.durationMinutes) MIN · \(session.movements.count) MOVEMENTS")
-                    .font(WSFont.ui(11, weight: .medium))
+                    .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text45)
             }
             Spacer()
@@ -273,8 +265,7 @@ struct TodayView: View {
                 // button's own bounds the size of the glyph run, about 14pt tall, which is
                 // what made this row intermittently impossible to tap.
                 Text(isResume ? "RESUME →" : "GO →")
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.accent)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
@@ -301,7 +292,7 @@ struct TodayView: View {
                 Spacer()
                 Text("\(WSFormat.distance(mileage.done, unit: store.unit)) / \(WSFormat.distanceValue(mileage.planned, unit: store.unit, fraction: 0)) \(WSFormat.unitSuffix(store.unit))")
             }
-            .font(WSFont.mono(10))
+            .wsType(.metricS)
             .foregroundStyle(WSColor.text40)
             HStack(spacing: 8) {
                 ForEach(weekCells) { cell in
@@ -314,7 +305,7 @@ struct TodayView: View {
                             )
                             .frame(height: 34)
                         Text(cell.letter)
-                            .font(WSFont.mono(9))
+                            .wsType(.metricS)
                             .foregroundStyle(cell.isToday ? WSColor.accent : WSColor.text40)
                     }
                     .frame(maxWidth: .infinity)

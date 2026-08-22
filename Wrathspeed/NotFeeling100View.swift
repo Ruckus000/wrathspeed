@@ -21,12 +21,11 @@ struct NotFeeling100View: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("NOT FEELING 100%")
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
             if store.n100 != nil {
                 Text("ACTIVE ADJUSTMENT")
-                    .font(WSFont.mono(10))
-                    .tracking(1.5)
+                    .wsType(.metricS, tracking: 1.5)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 12)
                 WSOutlineButton(title: "END ADJUSTMENT") {
@@ -51,7 +50,7 @@ struct NotFeeling100View: View {
             .accessibilityIdentifier("n100_start_date")
             HStack {
                 Text("DAYS")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 Spacer()
                 WSStepperControl(
                     valueText: "\(days)",
@@ -61,8 +60,7 @@ struct NotFeeling100View: View {
             }
             .padding(.top, 18)
             Text("MODE")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.top, 16)
             VStack(spacing: 8) {
@@ -72,8 +70,7 @@ struct NotFeeling100View: View {
             }
             .padding(.top, 10)
             Text("RETURN PACE")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.top, 16)
             HStack(spacing: 8) {
@@ -84,11 +81,11 @@ struct NotFeeling100View: View {
             .padding(.top, 10)
             if let errorMessage {
                 Text(errorMessage)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 8)
             }
-            WSPrimaryButton(title: store.n100 == nil ? "APPLY" : "UPDATE", height: 54, fontSize: 19) {
+            WSPrimaryButton(title: store.n100 == nil ? "APPLY" : "UPDATE", height: 54, role: .control) {
                 let adjustment = N100Adjustment(start: startDate, dayCount: days, mode: mode, returnPace: returnPace)
                 guard NotFeeling100Rules.isValidStart(start: startDate, dayCount: days) else {
                     errorMessage = "That start date isn't valid for this adjustment."
@@ -111,7 +108,7 @@ struct NotFeeling100View: View {
                         store.errorMessage = nil
                     }
                 }
-                .font(WSFont.ui(12, weight: .heavy))
+                .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.destructive)
                 .padding(.top, 12)
                 .accessibilityIdentifier("n100_discard_today")
