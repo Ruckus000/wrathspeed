@@ -191,7 +191,10 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 18)
-                .padding(.bottom, 30)
+                WSLockup(.caged, style: .monoLight)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 36)
+                    .padding(.bottom, 30)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
