@@ -40,6 +40,10 @@ struct OnboardingView: View {
                 }
                 Spacer()
             }
+            if step == 0 {
+                WSMark(size: 44, label: nil)
+                    .padding(.top, 12)
+            }
             WSEyebrow(text: eyebrow)
                 .padding(.top, 26)
             Text(headline)
@@ -82,6 +86,8 @@ struct OnboardingView: View {
     private var buildScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer()
+            WSMark(size: 44, label: nil)
+                .padding(.bottom, 20)
             WSEyebrow(text: "STAND BY")
             Text("BUILDING\nYOUR PLAN")
                 .font(WSFont.display(56))

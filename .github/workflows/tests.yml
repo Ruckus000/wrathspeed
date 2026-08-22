@@ -36,6 +36,12 @@ jobs:
             exit 1
           fi
 
+      # Seconds, and it catches the one thing the test suites cannot: the committed
+      # app icons are rendered from Design/WSMarkGeometry.swift, so editing the mark
+      # without re-running the renderer ships an icon that no longer matches the app.
+      - name: App icons match the mark geometry
+        run: Tools/brand/render-icons.sh --check
+
       # First because it takes seconds and covers the planner, stepper and cue
       # policy. No point spending ten minutes on the simulator if this is red.
       - name: WrathspeedCore package tests
