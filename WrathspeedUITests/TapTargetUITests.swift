@@ -35,6 +35,21 @@ final class TapTargetUITests: XCTestCase {
             "Mobility row action is \(mobility.frame.height)pt tall"
         )
 
+        // A library row: flush against its neighbours, so under 44pt an edge tap opens the
+        // wrong movement.
+        app.buttons["SETTINGS"].tap()
+        let libraryEntry = app.buttons["settings.movementLibrary"]
+        scrollTo(libraryEntry, in: app)
+        XCTAssertTrue(libraryEntry.waitForExistence(timeout: 6), "Movement library entry missing")
+        libraryEntry.tap()
+        let libraryRow = app.buttons["movement_row_dead-bug"]
+        XCTAssertTrue(libraryRow.waitForExistence(timeout: 8), "Dead bug row missing")
+        scrollTo(libraryRow, in: app)
+        XCTAssertGreaterThanOrEqual(
+            libraryRow.frame.height, 44,
+            "Movement library row is \(libraryRow.frame.height)pt tall"
+        )
+
         app.buttons["PLAN"].tap()
         app.buttons["plan_weekly_calendar"].tap()
         let next = app.buttons["weekly_calendar_next_week"]
@@ -66,13 +81,8 @@ final class TapTargetUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(close.frame.width / primary.frame.height, 44.0 / declaredPrimaryHeight)
     }
 
-    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, attempts: Int = 8) {
-        var tries = 0
-        while !element.exists && tries < attempts {
-            app.swipeUp()
-            tries += 1
-        }
-        if element.exists, !element.isHittable { app.swipeUp() }
+    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
+        UITestOnboardingHelper.scrollIntoView(element, in: app)
     }
 
     /// Settings → Coaching → AUDIO CUES. The value sits hard right, the label hard left,

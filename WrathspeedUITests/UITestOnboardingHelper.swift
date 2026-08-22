@@ -116,6 +116,20 @@ enum UITestOnboardingHelper {
     /// Backstop for any system alert that still reaches the screen -- Health or location,
     /// which other flows can raise. A UI test cannot dismiss these through `app`, because
     /// they belong to springboard.
+    /// Scrolls until `element` can actually be tapped.
+    ///
+    /// Checking `exists` is not enough on a WSScreen: it is an eager VStack inside a
+    /// ScrollView, so every row exists whether or not it is on screen. Only `isHittable`
+    /// tells the two apart, which is why the older exists-based loops never scrolled.
+    static func scrollIntoView(_ element: XCUIElement, in app: XCUIApplication, attempts: Int = 10) {
+        guard element.exists else { return }
+        var tries = 0
+        while !element.isHittable && tries < attempts {
+            app.swipeUp()
+            tries += 1
+        }
+    }
+
     static func dismissSystemAlertIfNeeded() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let alert = springboard.alerts.firstMatch

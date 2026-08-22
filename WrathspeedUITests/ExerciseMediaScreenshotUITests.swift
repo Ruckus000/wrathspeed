@@ -25,33 +25,25 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         app.buttons["SETTINGS"].tap()
 
         let library = app.buttons["settings.movementLibrary"]
-        var attempts = 0
-        while !library.exists && attempts < 8 {
-            app.swipeUp()
-            attempts += 1
-        }
         XCTAssertTrue(library.waitForExistence(timeout: 5), "Movement library entry missing from Settings")
-        if !library.isHittable { app.swipeUp() }
+        UITestOnboardingHelper.scrollIntoView(library, in: app)
         library.tap()
 
         XCTAssertTrue(
-            app.navigationBars["Movements"].waitForExistence(timeout: 8),
+            app.staticTexts["movement_library_title"].waitForExistence(timeout: 8),
             "Movement library did not open"
         )
         attach(app, named: "01-movement-library-list")
 
-        // Dead bug is a strength movement with a bundled anatomical-render clip.
-        let deadBug = app.buttons["Dead bug"].firstMatch
-        attempts = 0
-        while !deadBug.exists && attempts < 8 {
-            app.swipeUp()
-            attempts += 1
-        }
+        // Dead bug is a strength movement with a bundled anatomical-render clip. Matched by
+        // id rather than by its displayed name, which the design system uppercases.
+        let deadBug = app.buttons["movement_row_dead-bug"]
         XCTAssertTrue(deadBug.waitForExistence(timeout: 5), "Dead bug row missing from library")
+        UITestOnboardingHelper.scrollIntoView(deadBug, in: app)
         deadBug.tap()
 
         XCTAssertTrue(
-            app.navigationBars["Dead bug"].waitForExistence(timeout: 8),
+            app.staticTexts["movement_detail_dead-bug"].waitForExistence(timeout: 8),
             "Movement detail did not open"
         )
         // Let the looping player get past its first frame so the shot proves playback.
@@ -72,25 +64,16 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
 
         app.buttons["SETTINGS"].tap()
         let library = app.buttons["settings.movementLibrary"]
-        var attempts = 0
-        while !library.exists && attempts < 8 {
-            app.swipeUp()
-            attempts += 1
-        }
         XCTAssertTrue(library.waitForExistence(timeout: 5), "Movement library entry missing")
-        if !library.isHittable { app.swipeUp() }
+        UITestOnboardingHelper.scrollIntoView(library, in: app)
         library.tap()
-        XCTAssertTrue(app.navigationBars["Movements"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["movement_library_title"].waitForExistence(timeout: 8))
 
-        let birdDog = app.buttons["Bird dog"].firstMatch
-        attempts = 0
-        while !birdDog.exists && attempts < 8 {
-            app.swipeUp()
-            attempts += 1
-        }
+        let birdDog = app.buttons["movement_row_bird-dog"]
         XCTAssertTrue(birdDog.waitForExistence(timeout: 5), "Bird dog row missing from library")
+        UITestOnboardingHelper.scrollIntoView(birdDog, in: app)
         birdDog.tap()
-        XCTAssertTrue(app.navigationBars["Bird dog"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["movement_detail_bird-dog"].waitForExistence(timeout: 8))
 
         // The clip, not the symbol fallback: the media view exposes this only when a file
         // actually resolved.
