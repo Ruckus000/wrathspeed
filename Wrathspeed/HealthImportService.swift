@@ -4,6 +4,21 @@ import WrathspeedCore
 #if canImport(HealthKit)
 import HealthKit
 
+#if DEBUG
+/// Imports nothing and asks for nothing.
+///
+/// The live importer calls `HKHealthStore.requestAuthorization`, which puts a "Health
+/// Access" alert over the app. Under UI test that alert sits there unanswered and every
+/// later tap fails as "not hittable" -- which is what made GuidedResumeUITests look flaky.
+struct UITestingHealthImportService: HealthImporting {
+    var authorizationDenied: Bool { false }
+    func requestAuthorization() async throws {}
+    func importWorkouts(anchor: Data?, since: Date) async throws -> HealthImportResult {
+        HealthImportResult(workouts: [])
+    }
+}
+#endif
+
 public final class LiveHealthImportService: HealthImporting, @unchecked Sendable {
     private let healthStore = HKHealthStore()
     public private(set) var authorizationDenied = false

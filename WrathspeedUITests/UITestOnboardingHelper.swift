@@ -3,6 +3,9 @@ import XCTest
 @MainActor
 enum UITestOnboardingHelper {
     static let resetStoreLaunchArgument = "-uiTestingResetStore"
+    /// Marks every launch, including relaunches that deliberately keep the store, so the
+    /// app never reverts to production behaviour part-way through a test.
+    static let uiTestingLaunchArgument = "-uiTesting"
 
     static let englishLocaleArguments = [
         "-AppleLanguages", "(en)",
@@ -12,6 +15,13 @@ enum UITestOnboardingHelper {
     static let simulateLiveRecordingLaunchArgument = "-uiTestingSimulateLiveRecording"
     static let seedInProgressMobilityLaunchArgument = "-uiTestingSeedInProgressMobility"
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
+    // A UI test must not depend on what the generated plan happens to schedule today.
+    // Runs and strength sessions land on particular weekdays, so a test that reaches for
+    // "today's run" passes on some days and fails on others -- which is exactly how two
+    // tests here came to fail only on a Friday. There are two sanctioned ways around it:
+    // seed what you need with the arguments below, or navigate through the weekly
+    // calendar, which always shows a full week. Mobility sessions are generated for every
+    // day and need neither.
     static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
     static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
 
@@ -22,7 +32,7 @@ enum UITestOnboardingHelper {
         seedTodayRun: Bool = false,
         seedTodayStrength: Bool = false
     ) -> [String] {
-        var args = [resetStoreLaunchArgument] + englishLocaleArguments
+        var args = [resetStoreLaunchArgument, uiTestingLaunchArgument] + englishLocaleArguments
         if simulateLiveRecording {
             args.append(simulateLiveRecordingLaunchArgument)
         }
@@ -65,11 +75,12 @@ enum UITestOnboardingHelper {
     }
 
     static func configurePreservingStoreLaunch(_ app: XCUIApplication) {
-        app.launchArguments = englishLocaleArguments
+        app.launchArguments = [uiTestingLaunchArgument] + englishLocaleArguments
         app.launchEnvironment.removeValue(forKey: "UIPreferredContentSizeCategoryName")
     }
 
     static func completeOnboarding(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        dismissSystemAlertIfNeeded()
         if app.buttons["TODAY"].waitForExistence(timeout: 2) {
             dismissHealthPrimerIfNeeded(app)
             return
@@ -100,6 +111,22 @@ enum UITestOnboardingHelper {
         XCTAssertTrue(today.waitForExistence(timeout: 15), "Today tab did not appear after confirmation", file: file, line: line)
 
         dismissHealthPrimerIfNeeded(app)
+    }
+
+    /// Backstop for any system alert that still reaches the screen -- Health or location,
+    /// which other flows can raise. A UI test cannot dismiss these through `app`, because
+    /// they belong to springboard.
+    static func dismissSystemAlertIfNeeded() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let alert = springboard.alerts.firstMatch
+        guard alert.waitForExistence(timeout: 1) else { return }
+        for title in ["Allow While Using App", "Allow", "OK", "Don't Allow"] {
+            let button = alert.buttons[title]
+            if button.exists {
+                button.tap()
+                return
+            }
+        }
     }
 
     static func dismissBlockingAlertIfNeeded(_ app: XCUIApplication) {

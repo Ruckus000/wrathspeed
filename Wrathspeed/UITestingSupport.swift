@@ -2,6 +2,7 @@ import Foundation
 
 enum UITestingSupport {
     static let resetStoreLaunchArgument = "-uiTestingResetStore"
+    static let uiTestingLaunchArgument = "-uiTesting"
     static let simulateLiveRecordingLaunchArgument = "-uiTestingSimulateLiveRecording"
     static let seedInProgressMobilityLaunchArgument = "-uiTestingSeedInProgressMobility"
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
@@ -51,6 +52,24 @@ enum UITestingSupport {
         ProcessInfo.processInfo.arguments.contains(seedTodayRunLaunchArgument)
         #else
         false
+        #endif
+    }
+
+    /// True whenever the app is being driven by a UI test.
+    ///
+    /// Deliberately a separate argument from `resetStoreLaunchArgument`: a test that
+    /// relaunches to check persistence must keep its store, and keying "am I under test"
+    /// off the reset flag meant the app silently reverted to production behaviour on that
+    /// second launch -- raising a permission alert that blocked every later tap.
+    static var isUITesting: Bool {
+        #if DEBUG
+        // Hosted unit tests launch the app with no arguments at all, and some construct an
+        // AppStore without injecting a scheduler. That reached the live one and raised a
+        // real notification prompt, which then sat over the UI tests that ran afterwards.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return true }
+        return ProcessInfo.processInfo.arguments.contains(uiTestingLaunchArgument)
+        #else
+        return false
         #endif
     }
 

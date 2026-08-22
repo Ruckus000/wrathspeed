@@ -112,8 +112,15 @@ struct WSSelectRow<Accessory: View>: View {
                 RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                     .stroke(selected ? WSColor.accent : WSColor.border, lineWidth: selected ? 1.5 : 1)
             )
+            // The row is mostly Spacer. A background shape is not enough on its own here,
+            // so the tap target has to be declared explicitly.
+            .contentShape(RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous))
         }
         .buttonStyle(.plain)
+        // Matches WSChip. Without these the row renders its selection only as a tint, so
+        // VoiceOver cannot tell which option is chosen.
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

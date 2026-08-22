@@ -69,6 +69,7 @@
 		8B3795D4B54B98BF8F83A5DD /* WrathspeedCore in Frameworks */ = {isa = PBXBuildFile; productRef = 33AE900BF55746D394E8E507 /* WrathspeedCore */; };
 		8BF2323C62BB034AAF05DF5E /* SessionSyncMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E1D81FBC5B76A21992B75A7 /* SessionSyncMessage.swift */; };
 		936115BBAA2420FF91EDF8E2 /* WorkoutResultTreadmillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA6BD22CACFB4E918421417D /* WorkoutResultTreadmillTests.swift */; };
+		94178B25D46E2C45E5D80270 /* TapTargetUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E5D016423BA6095A79851E /* TapTargetUITests.swift */; };
 		95A677621DD67D00C1E86AA5 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B02A26CA46AFDFD4AB6E4E7B /* Archivo-Variable.ttf */; };
 		96987FC1BA1FFB5594E6EB0F /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7E8377F163FF1EEAE64A2840 /* Archivo-Variable.ttf */; };
 		9853F0A8A996720767E6BEE1 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */; };
@@ -185,6 +186,7 @@
 		16C406BC82830CFAEAF59093 /* PreflightLiveStartUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreflightLiveStartUITests.swift; sourceTree = "<group>"; };
 		1D4F3DD7BCAA6DC7D7E5350D /* PlanChangeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChangeStore.swift; sourceTree = "<group>"; };
 		204CDE73903492B877A70262 /* WrathspeedWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WrathspeedWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		29E5D016423BA6095A79851E /* TapTargetUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapTargetUITests.swift; sourceTree = "<group>"; };
 		2AD364BE6D5143E6554EDFCE /* MovementMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementMediaView.swift; sourceTree = "<group>"; };
 		2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Milestone4UITests.swift; sourceTree = "<group>"; };
 		2C2F88EFC2EB5D541B9AA700 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -377,6 +379,7 @@
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
 				CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */,
 				16C406BC82830CFAEAF59093 /* PreflightLiveStartUITests.swift */,
+				29E5D016423BA6095A79851E /* TapTargetUITests.swift */,
 				0226C028B3AEA93CF981DCF2 /* UITestOnboardingHelper.swift */,
 			);
 			path = WrathspeedUITests;
@@ -726,6 +729,7 @@
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
 				29A8948FA9694CB749505CF7 /* PlanStartPreflightUITests.swift in Sources */,
 				7EC60BAAACE48C992A0F0857 /* PreflightLiveStartUITests.swift in Sources */,
+				94178B25D46E2C45E5D80270 /* TapTargetUITests.swift in Sources */,
 				D65FDBEDBA00C604B4BCE703 /* UITestOnboardingHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

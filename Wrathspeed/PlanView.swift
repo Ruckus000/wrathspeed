@@ -112,6 +112,8 @@ struct PlanView: View {
                                         .foregroundStyle(WSColor.text)
                                 }
                                 .padding(.vertical, 11)
+                                // The row is mostly Spacer, which is not hit-testable.
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .overlay(alignment: .bottom) { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1) }
@@ -403,9 +405,23 @@ struct WorkoutDetailSheet: View {
                         .font(WSFont.display(32))
                         .foregroundStyle(WSColor.text)
                     Spacer()
-                    Button("✕") { dismiss() }
-                        .font(WSFont.ui(13, weight: .heavy))
-                        .foregroundStyle(WSColor.text40)
+                    Button {
+                        dismiss()
+                    } label: {
+                        // The glyph alone is about 9x13pt, and the frame only counts when
+                        // it is on the label: outside the Button it grows the layout but
+                        // leaves the button's own hit and accessibility frame tiny.
+                        Text("✕")
+                            .font(WSFont.ui(13, weight: .heavy))
+                            .foregroundStyle(WSColor.text40)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    // The row is baseline-aligned against a 32pt display title, which
+                    // clipped the 44pt box. Align its centre to that baseline instead.
+                    .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] }
+                    .accessibilityLabel("Close")
+                    .accessibilityIdentifier("workout_sheet_close")
                 }
                 Text(meta)
                     .font(WSFont.mono(12))

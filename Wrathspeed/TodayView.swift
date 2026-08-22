@@ -258,13 +258,19 @@ struct TodayView: View {
                     .foregroundStyle(WSColor.text45)
             }
             Spacer()
-            Button(isResume ? "RESUME →" : "GO →") {
+            Button {
                 guidedPlayer = .mobility(session)
+            } label: {
+                // The frame belongs on the label. Applied outside the Button it left the
+                // button's own bounds the size of the glyph run, about 14pt tall, which is
+                // what made this row intermittently impossible to tap.
+                Text(isResume ? "RESUME →" : "GO →")
+                    .font(WSFont.ui(13, weight: .heavy))
+                    .tracking(1)
+                    .foregroundStyle(WSColor.accent)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .font(WSFont.ui(13, weight: .heavy))
-            .tracking(1)
-            .foregroundStyle(WSColor.accent)
-            .frame(minHeight: 44)
             .accessibilityLabel(isResume ? "Resume \(session.title)" : "Start \(session.title)")
             .accessibilityIdentifier("mobility-row-\(session.routineID)")
         }

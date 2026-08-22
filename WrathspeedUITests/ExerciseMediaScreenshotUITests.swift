@@ -255,14 +255,21 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     }
 
     private func closeSheet(_ app: XCUIApplication) {
-        // The ✕ is a 9x13pt glyph, so it is not reliably hittable once a nested sheet
-        // has been over it; fall back to the dismiss gesture.
-        let close = app.buttons["\u{2715}"].firstMatch
+        // Matched by identifier, not by the ✕ glyph: the button carries an accessibility
+        // label now, which replaces the glyph as its label. Leaving the sheet open makes
+        // everything behind it unhittable, which is a confusing way for a later step to
+        // fail.
+        let close = app.buttons["workout_sheet_close"]
         if close.exists, close.isHittable {
             close.tap()
         } else {
             app.swipeDown()
         }
         RunLoop.current.run(until: Date().addingTimeInterval(0.7))
+        if close.exists {
+            // Still up: the gesture did not take. Try the button once more.
+            if close.isHittable { close.tap() }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.7))
+        }
     }
 }

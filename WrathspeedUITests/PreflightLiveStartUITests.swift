@@ -145,6 +145,20 @@ final class PreflightLiveStartUITests: XCTestCase {
             treadmillEvidence.waitForExistence(timeout: 5),
             "Saved treadmill run missing TREADMILL location evidence in History"
         )
+
+        // The history row is a NavigationLink laid out as label / Spacer / date, so its
+        // centre is empty. NavigationLink hit-tests the whole row where a plain-styled
+        // Button does not; this keeps that true.
+        let runRow = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] 'TREADMILL'")
+        ).firstMatch
+        if runRow.waitForExistence(timeout: 5) {
+            runRow.tap()
+            XCTAssertTrue(
+                app.buttons["Back to history"].waitForExistence(timeout: 6),
+                "Tapping the centre of a history row did not open the run detail"
+            )
+        }
     }
 
     private func confirmEndLiveWorkout(in app: XCUIApplication) {

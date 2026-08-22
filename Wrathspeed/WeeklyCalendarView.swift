@@ -80,8 +80,13 @@ struct WeeklyCalendarView: View {
             Button {
                 weekOffset = max(allowedOffsets.lowerBound, weekOffset - 1)
             } label: {
+                // The frame has to sit on the label: applied outside the Button it grows
+                // the layout but leaves the button's own bounds, and so its hit and
+                // accessibility frame, the size of the glyph run.
                 Text("PREV WEEK")
                     .font(WSFont.ui(12, weight: .heavy))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .disabled(weekOffset <= allowedOffsets.lowerBound)
             .accessibilityIdentifier("weekly_calendar_prev_week")
@@ -101,6 +106,8 @@ struct WeeklyCalendarView: View {
             } label: {
                 Text("NEXT WEEK")
                     .font(WSFont.ui(12, weight: .heavy))
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .disabled(weekOffset >= allowedOffsets.upperBound)
             .accessibilityIdentifier("weekly_calendar_next_week")

@@ -88,16 +88,34 @@ final class AppStore {
     private let strengthCatalogLoader: () throws -> StrengthCatalog
     private var repository: AppStateRepository?
     private var modelContext: ModelContext?
-    private var healthImporter: any HealthImporting = LiveHealthImportService()
-    private var reminderScheduler: any WorkoutReminderScheduling = LiveWorkoutReminderScheduler()
+    private var healthImporter: any HealthImporting = AppStore.defaultHealthImporter()
+
+    /// Under test the live importer raises the system "Health Access" alert, which then
+    /// blocks every subsequent interaction in that run.
+    static func defaultHealthImporter() -> any HealthImporting {
+        #if DEBUG
+        if UITestingSupport.isUITesting { return UITestingHealthImportService() }
+        #endif
+        return LiveHealthImportService()
+    }
+    private var reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler()
     private var didAttach = false
+
+    /// Under UI test the live scheduler would raise the system notification prompt, which
+    /// blocks every subsequent tap in that run.
+    static func defaultReminderScheduler() -> any WorkoutReminderScheduling {
+        #if DEBUG
+        if UITestingSupport.isUITesting { return UITestingWorkoutReminderScheduler() }
+        #endif
+        return LiveWorkoutReminderScheduler()
+    }
     private var toastTask: Task<Void, Never>?
 
     var unit: DistanceUnit { profile?.unit ?? DistanceUnit.default() }
 
     init(
         strengthCatalogLoader: @escaping () throws -> StrengthCatalog = { try StrengthCatalogLoader.load() },
-        reminderScheduler: any WorkoutReminderScheduling = LiveWorkoutReminderScheduler()
+        reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler()
     ) {
         self.strengthCatalogLoader = strengthCatalogLoader
         self.reminderScheduler = reminderScheduler

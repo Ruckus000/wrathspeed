@@ -51,6 +51,8 @@ struct SettingsView: View {
                                 .background(store.cuesEnabled ? WSColor.accent : Color.clear, in: Capsule())
                                 .overlay(Capsule().stroke(store.cuesEnabled ? WSColor.accent : WSColor.border, lineWidth: 1.5))
                         }
+                        // The row is mostly Spacer, which is not hit-testable on its own.
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     HStack(spacing: 8) {

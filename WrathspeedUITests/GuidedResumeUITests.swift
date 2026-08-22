@@ -41,6 +41,7 @@ final class GuidedResumeUITests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.buttons["TODAY"].waitForExistence(timeout: 15))
+        UITestOnboardingHelper.dismissSystemAlertIfNeeded()
         UITestOnboardingHelper.dismissBlockingAlertIfNeeded(app)
         app.buttons["TODAY"].tap()
 
@@ -50,9 +51,17 @@ final class GuidedResumeUITests: XCTestCase {
         }
         XCTAssertTrue(resume.waitForExistence(timeout: 10), "Resume affordance missing after relaunch")
         XCTAssertTrue(resume.label.hasPrefix("Resume"), "Expected resume label after relaunch, got \(resume.label)")
-        if !resume.isHittable {
+
+        // A single isHittable check then one swipe was a guess, and it intermittently
+        // failed under a full-suite run with the row present but not hittable. Scroll it
+        // into view and give it a bounded wait instead.
+        var settleAttempts = 0
+        while !resume.isHittable && settleAttempts < 6 {
             app.swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.4))
+            settleAttempts += 1
         }
+        XCTAssertTrue(resume.isHittable, "Resume row never became hittable")
         resume.tap()
         if !app.buttons["Close"].waitForExistence(timeout: 4) {
             let labeled = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Resume'")).firstMatch
