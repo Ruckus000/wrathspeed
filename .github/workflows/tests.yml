@@ -1,0 +1,107 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push to a PR makes the previous run's answer irrelevant, and macOS
+# runners bill at ten times the Linux rate.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Package, unit and UI tests
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          # The deployment target is iOS 26 and SWIFT_VERSION is 6.0. An older Xcode
+          # fails with availability errors that read as source bugs rather than as a
+          # toolchain mismatch, so check the version rather than let it get that far.
+          newest="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          sudo xcode-select -s "$newest"
+          xcodebuild -version
+          major="$(xcodebuild -version | head -1 | sed -E 's/^Xcode ([0-9]+).*/\1/')"
+          if [ "$major" -lt 26 ]; then
+            echo "::error::Xcode $major is older than the project's iOS 26 deployment target"
+            exit 1
+          fi
+
+      # First because it takes seconds and covers the planner, stepper and cue
+      # policy. No point spending ten minutes on the simulator if this is red.
+      - name: WrathspeedCore package tests
+        working-directory: WrathspeedCore
+        run: swift test
+
+      - name: Pick an iOS simulator
+        id: sim
+        run: |
+          python3 <<'PY' >> "$GITHUB_OUTPUT"
+          import json, subprocess, sys
+
+          # Resolved at run time rather than pinned. The runner image's device list
+          # moves -- it currently ships no iOS 26.0 runtime and no iPhone 16e outside
+          # 26.2 -- so a hardcoded name/OS destination rots silently into a red build
+          # that looks like a test failure.
+          raw = subprocess.run(
+              ["xcrun", "simctl", "list", "devices", "available", "--json"],
+              capture_output=True, text=True, check=True,
+          ).stdout
+          devices = json.loads(raw)["devices"]
+
+          candidates = []
+          for runtime, entries in devices.items():
+              key = runtime.rsplit(".", 1)[-1]          # e.g. iOS-26-2
+              if not key.startswith("iOS-"):
+                  continue
+              version = tuple(int(p) for p in key[len("iOS-"):].split("-"))
+              if version < (26,):                        # below the deployment target
+                  continue
+              for device in entries:
+                  if device.get("isAvailable") and device["name"].startswith("iPhone"):
+                      candidates.append((version, device["name"], device["udid"]))
+
+          if not candidates:
+              print("::error::No available iPhone simulator on iOS 26 or newer", file=sys.stderr)
+              subprocess.run(["xcrun", "simctl", "list", "devices", "available"])
+              raise SystemExit(1)
+
+          version, name, udid = max(candidates)
+          pretty = ".".join(str(p) for p in version)
+          print(f"udid={udid}")
+          print(f"label={name} (iOS {pretty})")
+          print(f"Selected {name} on iOS {pretty} -- {udid}", file=sys.stderr)
+          PY
+
+      - name: Boot the simulator
+        run: |
+          xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
+          xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
+
+      - name: App unit and UI tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Wrathspeed.xcodeproj \
+            -scheme Wrathspeed \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload result bundle
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: TestResults.xcresult
+          retention-days: 14
+          if-no-files-found: ignore

@@ -29,14 +29,19 @@ struct PlanView: View {
                 NavigationLink {
                     WeeklyCalendarView()
                 } label: {
+                    // The frame belongs on the label. Outside the link it grew the layout
+                    // but left the link's own hit and accessibility frame the size of the
+                    // glyph run -- 13.3pt -- which is what made this intermittently
+                    // impossible to tap.
                     Text("WEEKLY CALENDAR")
                         .font(WSFont.ui(12, weight: .heavy))
                         .tracking(1)
                         .foregroundStyle(WSColor.text50)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
-                .frame(minHeight: 44)
                 .accessibilityIdentifier("plan_weekly_calendar")
                 .accessibilityLabel("Open weekly calendar")
                 NavigationLink {
@@ -48,10 +53,12 @@ struct PlanView: View {
                         .font(WSFont.ui(12, weight: .heavy))
                         .tracking(1)
                         .foregroundStyle(WSColor.text50)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
-                .frame(minHeight: 44)
+                .accessibilityIdentifier("plan_manage_plan")
                 .accessibilityLabel("Manage plan schedule")
                 weekCalendar
                 if let situation = store.missedWorkSituation {
