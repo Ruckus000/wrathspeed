@@ -55,7 +55,11 @@ struct LiveRunView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 24)
             Spacer()
-            transport
+            if isWaitingForWatch {
+                waitingForWatchTransport
+            } else {
+                transport
+            }
             Text(statusText)
                 .font(WSFont.ui(11, weight: .medium))
                 .foregroundStyle(WSColor.text35)
@@ -169,6 +173,22 @@ struct LiveRunView: View {
             return WSFormat.distanceValue(metrics.distanceMeters, unit: store.unit)
         case .heartRate: return metrics.heartRate.map { "\(Int($0.rounded()))" } ?? "—"
         }
+    }
+
+    private var isWaitingForWatch: Bool {
+        store.session.launchState == .waitingForWatch
+    }
+
+    /// Nothing is recording yet while the Watch is being launched, so LAP/PAUSE/END are all
+    /// inert here -- END in particular cannot finish a session that was never created. Offer
+    /// the way out instead of three controls that do nothing.
+    private var waitingForWatchTransport: some View {
+        WSOutlineButton(title: "CANCEL", color: WSColor.destructive) {
+            store.cancelWatchLaunch()
+        }
+        .accessibilityLabel("Cancel waiting for Apple Watch")
+        .padding(.horizontal, WSSpace.gutter)
+        .padding(.bottom, 8)
     }
 
     private var transport: some View {

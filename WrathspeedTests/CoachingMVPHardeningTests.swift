@@ -18,6 +18,22 @@ final class CoachingMVPHardeningTests: XCTestCase {
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription"))
     }
 
+    /// Both targets run an HKWorkoutSession, and `workout-processing` is what keeps it
+    /// collecting once the app is backgrounded or the screen locks. The phone had only
+    /// `audio` and `location`, neither of which covers a treadmill run with cues off.
+    func testBothTargetsDeclareWorkoutProcessingBackgroundMode() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        for relativePath in ["Wrathspeed/Info.plist", "WrathspeedWatch/Info.plist"] {
+            let data = try Data(contentsOf: root.appending(path: relativePath))
+            let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+            let modes = try XCTUnwrap(plist["UIBackgroundModes"] as? [String], "\(relativePath) declares no UIBackgroundModes")
+            XCTAssertTrue(
+                modes.contains("workout-processing"),
+                "\(relativePath) is missing the workout-processing background mode, so its workout session stops when the app backgrounds"
+            )
+        }
+    }
+
     func testRoutePolicyUsesNoLocationForTreadmillAndEscalatesOutdoorAuthorization() {
         XCTAssertEqual(
             RouteLocationPolicy.action(
