@@ -521,7 +521,8 @@ struct WorkoutDetailSheet: View {
             WorkoutMoveDateSheet(workout: workout)
         }
         .sheet(item: $selectedRoutine) { routine in
-            NavigationStack { MobilityRoutineView(routine: routine) }
+            MobilityRoutineView(routine: routine)
+                .presentationBackground(WSColor.bgSheet)
         }
     }
 

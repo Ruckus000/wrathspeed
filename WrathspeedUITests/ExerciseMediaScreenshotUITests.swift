@@ -181,6 +181,10 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
         XCTAssertTrue(drills.exists, "Quality day has no Form drills routine")
 
         drills.tap()
+        XCTAssertTrue(
+            app.staticTexts["routine_player_title"].waitForExistence(timeout: 8),
+            "Routine player did not open"
+        )
         RunLoop.current.run(until: Date().addingTimeInterval(2.5))
         attach(app, named: "07-form-drills-routine-player")
     }
