@@ -27,6 +27,79 @@ struct WorkoutStepperTests {
         #expect(stepper.isComplete)
     }
 
+    /// `update` is driven by HealthKit's data callbacks, so it runs many times inside a single
+    /// step. Re-emitting `.started` on each of those made the live session speak the first
+    /// step's name -- "Warm up" -- on a loop for the whole of that step.
+    @Test func announcesTheFirstStepOnceAcrossRepeatedUpdates() {
+        let steps = [
+            WorkoutStep(name: "Warm up", target: .distance(meters: 1_000), intensity: .zone(.easy)),
+            WorkoutStep(name: "Long run", target: .distance(meters: 1_000), intensity: .zone(.easy)),
+        ]
+        let blueprint = WorkoutBlueprint(
+            date: Date(),
+            kind: .longRun,
+            title: "Test",
+            steps: steps,
+            plannedDistanceMeters: 2_000,
+            usesPaceTargets: true
+        )
+        var stepper = WorkoutStepper(blueprint: blueprint)
+        var starts = 0
+        for tick in 0..<6 {
+            let events = stepper.update(
+                metrics: LiveMetrics(elapsed: Double(tick) * 5, distanceMeters: Double(tick) * 20)
+            )
+            starts += events.filter { if case .started(0, _) = $0 { return true }; return false }.count
+        }
+        #expect(starts == 1)
+        #expect(stepper.stepIndex == 0)
+    }
+
+    /// A treadmill blueprint never auto-advances a distance step, so step 0 stays current for
+    /// the whole run -- the repeat had no end at all there.
+    @Test func manualTreadmillAnnouncesTheFirstStepOnce() {
+        let steps = [WorkoutStep(name: "Warm up", target: .distance(meters: 1_000), intensity: .zone(.easy))]
+        let blueprint = WorkoutBlueprint(
+            date: Date(),
+            kind: .easy,
+            title: "Test",
+            location: .treadmill,
+            steps: steps,
+            plannedDistanceMeters: 1_000,
+            usesPaceTargets: true
+        )
+        var stepper = WorkoutStepper(blueprint: blueprint, manualTreadmill: true)
+        var starts = 0
+        for tick in 0..<8 {
+            let events = stepper.update(
+                metrics: LiveMetrics(elapsed: Double(tick) * 30, distanceMeters: Double(tick) * 200)
+            )
+            starts += events.filter { if case .started = $0 { return true }; return false }.count
+        }
+        #expect(starts == 1)
+    }
+
+    /// Skipping before the first data callback lands already began the run, so the update that
+    /// follows must not announce step 0 after the fact.
+    @Test func skippingBeforeTheFirstUpdateDoesNotReannounceStepZero() {
+        let steps = [
+            WorkoutStep(name: "Warm up", target: .distance(meters: 1_000), intensity: .zone(.easy)),
+            WorkoutStep(name: "Long run", target: .distance(meters: 1_000), intensity: .zone(.easy)),
+        ]
+        let blueprint = WorkoutBlueprint(
+            date: Date(),
+            kind: .longRun,
+            title: "Test",
+            steps: steps,
+            plannedDistanceMeters: 2_000,
+            usesPaceTargets: true
+        )
+        var stepper = WorkoutStepper(blueprint: blueprint)
+        _ = stepper.skipCurrent(metrics: LiveMetrics(elapsed: 0, distanceMeters: 0))
+        let events = stepper.update(metrics: LiveMetrics(elapsed: 1, distanceMeters: 5))
+        #expect(!events.contains { if case .started(0, _) = $0 { return true }; return false })
+    }
+
     @Test func advancesOnDuration() {
         let steps = [WorkoutStep(name: "Run", target: .duration(seconds: 60), intensity: .rpe(5))]
         let blueprint = WorkoutBlueprint(
