@@ -84,7 +84,7 @@ final class AppStore {
         return MissedWorkService.detect(plan: plan)
     }
 
-    private let workoutCoordinator = WorkoutSessionCoordinator()
+    private let workoutCoordinator: WorkoutSessionCoordinator
     private let strengthCatalogLoader: () throws -> StrengthCatalog
     private var repository: AppStateRepository?
     private var modelContext: ModelContext?
@@ -115,10 +115,12 @@ final class AppStore {
 
     init(
         strengthCatalogLoader: @escaping () throws -> StrengthCatalog = { try StrengthCatalogLoader.load() },
-        reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler()
+        reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler(),
+        workoutCoordinator: WorkoutSessionCoordinator = WorkoutSessionCoordinator()
     ) {
         self.strengthCatalogLoader = strengthCatalogLoader
         self.reminderScheduler = reminderScheduler
+        self.workoutCoordinator = workoutCoordinator
     }
 
     var zones: PaceZones? {
@@ -801,7 +803,6 @@ final class AppStore {
                 source: resolvedSource,
                 unit: unit
             )
-            showWatchLaunchTimeout = workoutCoordinator.watchLaunchPhase == .timedOut
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -814,7 +815,6 @@ final class AppStore {
     func retryWatchLaunch() async {
         showWatchLaunchTimeout = false
         await workoutCoordinator.retryWatchLaunch()
-        showWatchLaunchTimeout = workoutCoordinator.watchLaunchPhase == .timedOut
     }
 
     func startOnPhoneAfterWatchTimeout() async {
@@ -1125,6 +1125,13 @@ final class AppStore {
         }, onFailure: { [weak self] error in
             self?.errorMessage = "Workout wasn't saved to Health: \(error.localizedDescription)"
         })
+        // The Watch wait times out 12 seconds after `start` returns, so this is the only
+        // place that can see `.timedOut`. Reading the phase after `await` -- which is what
+        // this replaces -- always saw `.waitingForWatch`, leaving the watch-not-ready sheet
+        // and its START ON PHONE fallback permanently unreachable.
+        workoutCoordinator.onWatchLaunchPhaseChange = { [weak self] phase in
+            self?.showWatchLaunchTimeout = phase == .timedOut
+        }
         session.onSnapshot = { [weak self] snapshot in
             self?.handleSessionSnapshot(snapshot)
         }

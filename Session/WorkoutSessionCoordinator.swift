@@ -13,8 +13,19 @@ final class WorkoutSessionCoordinator {
 
     let session = WorkoutSessionController()
     private let bridge = WCSessionBridge()
+    private let watchLaunchTimeout: Duration
     private var watchTimeoutTask: Task<Void, Never>?
     private(set) var watchLaunchPhase: WatchLaunchPhase = .idle
+
+    /// Fired on every `watchLaunchPhase` transition.
+    ///
+    /// The phase keeps moving long after the call that armed it has returned -- the timeout
+    /// lands `watchLaunchTimeout` later -- so reading `watchLaunchPhase` straight after
+    /// `start()` or `retryWatchLaunch()` only ever sees `.waitingForWatch`. That is exactly
+    /// how the watch-not-ready sheet came to be unreachable. Anything that has to react to
+    /// `.timedOut` must go through this.
+    var onWatchLaunchPhaseChange: ((WatchLaunchPhase) -> Void)?
+
     private var pendingBlueprint: WorkoutBlueprint?
     private var pendingVDOT: Double?
     private var pendingUnit: DistanceUnit?
@@ -22,6 +33,10 @@ final class WorkoutSessionCoordinator {
     private var pendingCuesEnabled = true
     private var pendingSource: WorkoutSource = .wrathspeedPhone
     private var pendingTreadmillSpeed: Double?
+
+    init(watchLaunchTimeout: Duration = .seconds(12)) {
+        self.watchLaunchTimeout = watchLaunchTimeout
+    }
 
     func configure(
         cuesEnabled: Bool,
@@ -43,7 +58,7 @@ final class WorkoutSessionCoordinator {
                 let attached = await self.session.attachMirrored(session: mirrored)
                 guard attached else { return }
                 self.watchTimeoutTask?.cancel()
-                self.watchLaunchPhase = .recording
+                self.setWatchLaunchPhase(.recording)
             }
         }
     }
@@ -79,16 +94,9 @@ final class WorkoutSessionCoordinator {
         session.cuesEnabled = cuesEnabled
 
         if WCSessionBridge.isWatchAppInstalled {
-            watchLaunchPhase = .waitingForWatch
+            setWatchLaunchPhase(.waitingForWatch)
             bridge.requestStart(blueprint, vdot: vdot, unit: unit)
-            watchTimeoutTask?.cancel()
-            watchTimeoutTask = Task { [weak self] in
-                try? await Task.sleep(for: .seconds(12))
-                guard let self, !Task.isCancelled else { return }
-                if self.watchLaunchPhase == .waitingForWatch, !self.session.isRunning {
-                    self.watchLaunchPhase = .timedOut
-                }
-            }
+            armWatchTimeout()
             try await session.start(
                 blueprint: blueprint,
                 zones: zones,
@@ -96,7 +104,7 @@ final class WorkoutSessionCoordinator {
             )
             if session.isRunning {
                 watchTimeoutTask?.cancel()
-                watchLaunchPhase = .recording
+                setWatchLaunchPhase(.recording)
             }
             return
         }
@@ -106,21 +114,14 @@ final class WorkoutSessionCoordinator {
             zones: zones,
             treadmillSpeedMetersPerSecond: treadmillSpeedMetersPerSecond
         )
-        watchLaunchPhase = session.isRunning ? .recording : .idle
+        setWatchLaunchPhase(session.isRunning ? .recording : .idle)
     }
 
     func retryWatchLaunch() async {
         guard let blueprint = pendingBlueprint else { return }
-        watchLaunchPhase = .waitingForWatch
+        setWatchLaunchPhase(.waitingForWatch)
         bridge.requestStart(blueprint, vdot: pendingVDOT, unit: pendingUnit)
-        watchTimeoutTask?.cancel()
-        watchTimeoutTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(12))
-            guard let self, !Task.isCancelled else { return }
-            if self.watchLaunchPhase == .waitingForWatch, !self.session.isRunning {
-                self.watchLaunchPhase = .timedOut
-            }
-        }
+        armWatchTimeout()
     }
 
     func startOnPhoneAfterWatchTimeout() async {
@@ -132,16 +133,45 @@ final class WorkoutSessionCoordinator {
                 zones: pendingZones,
                 treadmillSpeedMetersPerSecond: pendingTreadmillSpeed
             )
-            watchLaunchPhase = session.isRunning ? .recording : .idle
+            setWatchLaunchPhase(session.isRunning ? .recording : .idle)
         } catch {
-            watchLaunchPhase = .failed(error.localizedDescription)
+            setWatchLaunchPhase(.failed(error.localizedDescription))
         }
     }
 
     func cancelWatchLaunch() {
         watchTimeoutTask?.cancel()
-        watchLaunchPhase = .idle
+        setWatchLaunchPhase(.idle)
         pendingBlueprint = nil
         session.cancelPendingLaunch()
     }
+
+    private func setWatchLaunchPhase(_ phase: WatchLaunchPhase) {
+        guard watchLaunchPhase != phase else { return }
+        watchLaunchPhase = phase
+        onWatchLaunchPhaseChange?(phase)
+    }
+
+    /// Re-arms the wait for the Watch. Cancelling first matters: a retry must not leave the
+    /// previous attempt's timer running to fire against the new one.
+    private func armWatchTimeout() {
+        watchTimeoutTask?.cancel()
+        let timeout = watchLaunchTimeout
+        watchTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: timeout)
+            guard let self, !Task.isCancelled else { return }
+            if self.watchLaunchPhase == .waitingForWatch, !self.session.isRunning {
+                self.setWatchLaunchPhase(.timedOut)
+            }
+        }
+    }
+
+    #if DEBUG
+    /// Arms the Watch wait without HealthKit. The real entry point runs through
+    /// `session.start`, which needs a workout session the simulator cannot provide.
+    func testing_beginWatchLaunchWait() {
+        setWatchLaunchPhase(.waitingForWatch)
+        armWatchTimeout()
+    }
+    #endif
 }

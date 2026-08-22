@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppStore.self) private var store
     @Environment(\.modelContext) private var modelContext
+    @State private var pendingStart: PreflightRequest?
 
     var body: some View {
         @Bindable var store = store
@@ -36,9 +37,9 @@ struct RootView: View {
         .fullScreenCover(isPresented: $store.showHealthPermissionPrimer) {
             HealthPermissionPrimerView()
         }
-        .sheet(item: $store.pendingPreflight) { request in
-            WorkoutPreflightView(blueprint: request.blueprint, source: request.source) {
-                store.pendingPreflight = nil
+        .sheet(item: $store.pendingPreflight, onDismiss: startPendingWorkout) { request in
+            WorkoutPreflightView(blueprint: request.blueprint, source: request.source) { resolved in
+                pendingStart = resolved
             }
         }
         .fullScreenCover(item: $store.pendingRecoverySnapshot) { snapshot in
@@ -59,6 +60,15 @@ struct RootView: View {
                 LiveRunView(blueprint: blueprint)
             }
         }
+    }
+
+    /// Runs once the preflight sheet has actually gone, so the live cover below is free to
+    /// present. PlanView sequences its own hop into preflight the same way. Cancelling the
+    /// preflight leaves `pendingStart` nil, so this is a no-op on that path.
+    private func startPendingWorkout() {
+        guard let request = pendingStart else { return }
+        pendingStart = nil
+        Task { await store.start(request.blueprint, source: request.source) }
     }
 
     private var liveWorkoutPresented: Binding<Bool> {

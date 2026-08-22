@@ -77,8 +77,12 @@ final class PreflightLiveStartUITests: XCTestCase {
     /// START ON PHONE is the fallback offered when a paired watch fails to launch in time.
     /// A flat wait for it burns the whole ceiling on a simulator with no paired watch, where
     /// it can never appear. Racing it against the live-run control the callers assert on
-    /// next ends the wait as soon as either outcome is real, and proves one of them happened
-    /// rather than merely tolerating the timeout.
+    /// next ends the wait as soon as either outcome is real.
+    ///
+    /// Failing when neither shows up is load-bearing. This used to fall through silently on
+    /// the timeout, which is how a bug that made START ON PHONE permanently unreachable --
+    /// `showWatchLaunchTimeout` was read 12 seconds before it could ever be true -- survived
+    /// a green suite.
     private func handleWatchLaunchTimeoutIfNeeded(in app: XCUIApplication) {
         let startOnPhone = app.buttons["START ON PHONE"]
         let liveRunPause = app.buttons["Pause"]
@@ -91,6 +95,7 @@ final class PreflightLiveStartUITests: XCTestCase {
             if liveRunPause.exists { return }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
+        XCTFail("Neither the live run nor the watch-launch fallback appeared after START WORKOUT")
     }
 
     private func assertLiveRunOutdoorControls(in app: XCUIApplication) throws {

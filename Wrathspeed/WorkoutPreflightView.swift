@@ -7,13 +7,13 @@ struct WorkoutPreflightView: View {
     @Environment(\.dismiss) private var dismiss
     let blueprint: WorkoutBlueprint
     let source: WorkoutSource
-    var onStart: () -> Void
+    var onStart: (PreflightRequest) -> Void
 
     @State private var draftLocation: RunLocation
     @State private var manualTreadmillSpeedDisplay: Double
     @State private var didStart = false
 
-    init(blueprint: WorkoutBlueprint, source: WorkoutSource, onStart: @escaping () -> Void) {
+    init(blueprint: WorkoutBlueprint, source: WorkoutSource, onStart: @escaping (PreflightRequest) -> Void) {
         self.blueprint = blueprint
         self.source = source
         self.onStart = onStart
@@ -242,8 +242,10 @@ struct WorkoutPreflightView: View {
             blueprint: resolved,
             speedMetersPerSecond: resolvedTreadmillSpeed
         )
+        // Handed to RootView to start once this sheet has actually gone. Starting it here
+        // asked SwiftUI to present the live cover mid-dismissal, which UIKit refuses -- and
+        // because the cover's binding never changes back, it is never retried.
+        onStart(PreflightRequest(blueprint: resolved, source: source))
         store.pendingPreflight = nil
-        Task { await store.start(resolved, source: source) }
-        dismiss()
     }
 }

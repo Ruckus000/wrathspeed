@@ -18,7 +18,6 @@ final class WorkoutSessionController: NSObject {
     private(set) var isRunning = false
     private(set) var isPaused = false
     private(set) var blueprint: WorkoutBlueprint?
-    private(set) var lastCues: [Cue] = []
     private(set) var launchState: LaunchState = .idle
     var cuesEnabled = true
     var zones: PaceZones?
@@ -585,36 +584,27 @@ final class WorkoutSessionController: NSObject {
         sessionState = .recording
         publishSnapshot()
         routeRecorder.begin(for: blueprint?.location ?? .outdoor)
-        if let first = blueprint?.steps.first {
-            speech.speak(.stepStarted(first.name))
-        }
+        // The opening step is announced by the stepper's own `.started` event on the first
+        // data callback, the same path every later step uses. Speaking it here as well said
+        // it twice.
         #if os(iOS)
         startLiveActivity()
         #endif
     }
 
     private func handle(events: [StepEvent]) {
-        guard let step = stepper?.currentStep ?? blueprint?.steps.last else {
-            lastCues = cuePolicy.evaluate(
-                step: nil,
-                usesPaceTargets: blueprint?.usesPaceTargets ?? false,
-                zones: zones,
-                metrics: metrics,
-                events: events,
-                splitUnit: splitUnit
-            )
-            lastCues.forEach(speech.speak)
-            return
-        }
-        lastCues = cuePolicy.evaluate(
-            step: step,
+        // `evaluate` takes the step as an optional and the two arms of the guard this
+        // replaces differed only in passing it or nil, which is what the expression already
+        // yields when there is no current step.
+        let cues = cuePolicy.evaluate(
+            step: stepper?.currentStep ?? blueprint?.steps.last,
             usesPaceTargets: blueprint?.usesPaceTargets ?? false,
             zones: zones,
             metrics: metrics,
             events: events,
             splitUnit: splitUnit
         )
-        lastCues.forEach(speech.speak)
+        cues.forEach(speech.speak)
     }
 
     private func endSyncMessageData() -> Data? {
