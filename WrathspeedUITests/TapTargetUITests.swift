@@ -14,6 +14,12 @@ final class TapTargetUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// Apple's minimum of 44pt, less a hundredth of a point of floating-point slack.
+    /// SwiftUI lays a control declared at 44pt out as 43.99999999999997 and XCUITest
+    /// reports that verbatim, so a bare `>= 44` fails on a control that is exactly right.
+    /// The slack is three orders of magnitude below anything a finger could tell apart.
+    private let minimumHitTarget = 44.0 - 0.01
+
     /// Apple's minimum is 44x44pt. These three were measurably below it and each caused a
     /// real failure: the plan sheet's close glyph at 9x13, and the mobility and week-nav
     /// buttons at ~13pt tall, which made them intermittently impossible to tap under a
@@ -31,7 +37,7 @@ final class TapTargetUITests: XCTestCase {
         scrollTo(mobility, in: app)
         XCTAssertTrue(mobility.waitForExistence(timeout: 6), "No mobility row on Today")
         XCTAssertGreaterThanOrEqual(
-            mobility.frame.height, 44,
+            mobility.frame.height, minimumHitTarget,
             "Mobility row action is \(mobility.frame.height)pt tall"
         )
 
@@ -46,16 +52,32 @@ final class TapTargetUITests: XCTestCase {
         XCTAssertTrue(libraryRow.waitForExistence(timeout: 8), "Dead bug row missing")
         scrollTo(libraryRow, in: app)
         XCTAssertGreaterThanOrEqual(
-            libraryRow.frame.height, 44,
+            libraryRow.frame.height, minimumHitTarget,
             "Movement library row is \(libraryRow.frame.height)pt tall"
         )
 
+        // The two plan-header links. This test tapped WEEKLY CALENDAR without ever
+        // measuring it, and it was 13.3pt -- the same frame-outside-the-label defect as
+        // the mobility row, on the control every plan-tab test has to get through first.
         app.buttons["PLAN"].tap()
-        app.buttons["plan_weekly_calendar"].tap()
+        let weeklyCalendar = app.buttons["plan_weekly_calendar"]
+        XCTAssertTrue(weeklyCalendar.waitForExistence(timeout: 8), "Plan tab did not appear")
+        XCTAssertGreaterThanOrEqual(
+            weeklyCalendar.frame.height, minimumHitTarget,
+            "Weekly calendar link is \(weeklyCalendar.frame.height)pt tall"
+        )
+        let managePlan = app.buttons["plan_manage_plan"]
+        XCTAssertTrue(managePlan.waitForExistence(timeout: 6), "Manage plan link missing")
+        XCTAssertGreaterThanOrEqual(
+            managePlan.frame.height, minimumHitTarget,
+            "Manage plan link is \(managePlan.frame.height)pt tall"
+        )
+
+        weeklyCalendar.tap()
         let next = app.buttons["weekly_calendar_next_week"]
         XCTAssertTrue(next.waitForExistence(timeout: 8), "Weekly calendar did not open")
         XCTAssertGreaterThanOrEqual(
-            next.frame.height, 44,
+            next.frame.height, minimumHitTarget,
             "Next week button is \(next.frame.height)pt tall"
         )
 
@@ -72,13 +94,17 @@ final class TapTargetUITests: XCTestCase {
         // check scale-invariant.
         let primary = app.buttons["Start workout"]
         XCTAssertTrue(primary.waitForExistence(timeout: 4), "Sheet has no START button to calibrate against")
+        // Converting back into declared points rather than comparing raw ratios: the ratio
+        // form failed on iPhone Air by 5e-8, on a control that measures exactly 44pt once
+        // the scale is divided out.
         let declaredPrimaryHeight = 56.0
+        let sheetScale = primary.frame.height / declaredPrimaryHeight
         XCTAssertGreaterThanOrEqual(
-            close.frame.height / primary.frame.height,
-            44.0 / declaredPrimaryHeight,
+            close.frame.height / sheetScale,
+            minimumHitTarget,
             "Workout sheet close button is \(close.frame.height)pt against a \(primary.frame.height)pt START button, i.e. under 44pt"
         )
-        XCTAssertGreaterThanOrEqual(close.frame.width / primary.frame.height, 44.0 / declaredPrimaryHeight)
+        XCTAssertGreaterThanOrEqual(close.frame.width / sheetScale, minimumHitTarget)
     }
 
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
