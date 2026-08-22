@@ -78,7 +78,7 @@ Test budget unchanged: **14 / 15** new unit functions (existing tests extended; 
 | Test | File | Notes |
 |---|---|---|
 | `testOnboardingPreviewAndConfirmationReachMainTabs` | `OnboardingFlowUITests` | Shared `UITestOnboardingHelper` |
-| `testHistoryShowsEmptyRunsStateAfterOnboarding` | `HistoryEmptyStateUITests` | Shared helper |
+| `testHistoryShowsEmptyRunsStateWithNoRecordedRuns` | `HistoryEmptyStateUITests` | Shared helper |
 | `testWeeklyCalendarAndManagePlanFlows` | `Milestone4UITests` | Shared helper |
 | `testDynamicTypeKeepsPlanActionsReachable` | `Milestone4UITests` | Shared helper |
 | `testPreflightOutdoorAndTreadmillReachLiveRun` | `PreflightLiveStartUITests` | **New** — uses `-uiTestingSimulateLiveRecording` (DEBUG live-run seam; no HealthKit on simulator) |

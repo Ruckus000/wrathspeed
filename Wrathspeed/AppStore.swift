@@ -201,6 +201,16 @@ final class AppStore {
             }
             applyPersistedState(.initial)
             finishAttach()
+#if DEBUG
+            // Ordering here is load-bearing. It runs after `reset()` and
+            // `applyPersistedState(.initial)`, or the seeded plan is wiped along with the
+            // store; after `finishAttach()`, because `confirmOnboarding` calls
+            // `seedInProgressMobilityForUITestingIfNeeded`, which records a mobility result
+            // and needs `loadGuidedSessionResults()` to have run first; and in the reset
+            // branch only, so the other path's `importHealthWorkouts()` never fires in a
+            // sequence the real onboarding flow does not produce.
+            seedCompletedOnboardingForUITestingIfNeeded()
+#endif
             return
         }
         let state: PersistedState
@@ -256,7 +266,7 @@ final class AppStore {
             try repository.save(currentPersistedState())
             pushWatchWorkouts()
 #if DEBUG
-            if !UITestingSupport.shouldResetStore {
+            if !UITestingSupport.shouldResetStore && !UITestingSupport.shouldSeedCompletedOnboarding {
                 showHealthPermissionPrimer = true
             }
 #else
@@ -1341,6 +1351,35 @@ final class AppStore {
 
     func setForcePlanChangeFailureForTesting(_ value: Bool) {
         repository?.forcePlanChangeFailure = value
+    }
+
+    /// Reaches Today without replaying onboarding, for the sixteen UI tests whose subject
+    /// is not onboarding. Replaying nine taps and a plan build was about four fifths of the
+    /// whole UI suite's runtime.
+    ///
+    /// Deliberately routed through the same two calls `OnboardingView` makes, with no
+    /// hand-assigned `plan` or `hasOnboarded`, so the seeded store cannot drift from the
+    /// tapped one -- and so the three seeds `confirmOnboarding` already runs come for free.
+    /// The inputs reproduce exactly what `UITestOnboardingHelper.completeOnboarding`
+    /// produces: `OnboardingInputs()` defaults, because the helper taps NEXT past every step
+    /// without selecting anything; `.miles`, the one row it does tap; and the race date that
+    /// `OnboardingView.normalizeDraftInputs()` fills in on the first advance, without which
+    /// `OnboardingValidator` rejects the default `.race` goal as `.missingRaceDate`.
+    func seedCompletedOnboardingForUITestingIfNeeded() {
+        guard UITestingSupport.shouldSeedCompletedOnboarding, !hasOnboarded else { return }
+        var inputs = OnboardingInputs()
+        inputs.unit = .miles
+        inputs.raceDate = Calendar.current.date(
+            byAdding: .weekOfYear,
+            value: inputs.goalKind.minimumWeeks,
+            to: Date()
+        )
+        do {
+            let draft = try generateOnboardingDraft(from: inputs)
+            confirmOnboarding(draft: draft)
+        } catch {
+            errorMessage = "Couldn’t seed onboarding for UI testing: \(error.localizedDescription)"
+        }
     }
 
     func seedInProgressMobilityForUITestingIfNeeded() {

@@ -12,3 +12,9 @@
 .idea
 .env
 .media-cache/
+
+# Local tooling caches and scratch planning docs -- not part of the app.
+# Listed explicitly so `git add -A` cannot sweep them into a commit.
+.serena/
+CURSOR_*.md
+design_handoff_wrathspeed_ui/

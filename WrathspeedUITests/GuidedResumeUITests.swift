@@ -8,7 +8,7 @@ final class GuidedResumeUITests: XCTestCase {
 
     func testMobilitySessionResumesAfterRelaunch() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app, presentMobilityPreRun: true)
+        UITestOnboardingHelper.configureFreshLaunch(app, presentMobilityPreRun: true, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

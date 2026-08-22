@@ -20,7 +20,7 @@ final class TapTargetUITests: XCTestCase {
     /// full-suite run.
     func testKeyControlsMeetTheMinimumHitTargetHeight() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -89,7 +89,7 @@ final class TapTargetUITests: XCTestCase {
     /// so the centre of the row is Spacer.
     func testAudioCuesRowTogglesWhenTappedInItsCentre() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -119,7 +119,7 @@ final class TapTargetUITests: XCTestCase {
     /// value right, nothing in between.
     func testPaceZonesRowOpensWhenTappedInItsCentre() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -143,7 +143,7 @@ final class TapTargetUITests: XCTestCase {
     /// established that.
     func testSelectRowSelectsWhenTappedInItsCentre() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

@@ -24,13 +24,20 @@ enum UITestOnboardingHelper {
     // day and need neither.
     static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
     static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
+    // Builds and confirms the plan at launch through the same AppStore calls the onboarding
+    // screen makes. Opt-in and defaulted off, so no test can silently lose its onboarding
+    // coverage just by forgetting a parameter -- OnboardingFlowUITests keeps the real taps.
+    static let seedCompletedOnboardingLaunchArgument = "-uiTestingSeedCompletedOnboarding"
+    static let skipCountdownLaunchArgument = "-uiTestingSkipCountdown"
 
     static func freshLaunchArguments(
         simulateLiveRecording: Bool = false,
         seedInProgressMobility: Bool = false,
         presentMobilityPreRun: Bool = false,
         seedTodayRun: Bool = false,
-        seedTodayStrength: Bool = false
+        seedTodayStrength: Bool = false,
+        seedCompletedOnboarding: Bool = false,
+        skipCountdown: Bool = false
     ) -> [String] {
         var args = [resetStoreLaunchArgument, uiTestingLaunchArgument] + englishLocaleArguments
         if simulateLiveRecording {
@@ -48,6 +55,12 @@ enum UITestOnboardingHelper {
         if seedTodayStrength {
             args.append(seedTodayStrengthLaunchArgument)
         }
+        if seedCompletedOnboarding {
+            args.append(seedCompletedOnboardingLaunchArgument)
+        }
+        if skipCountdown {
+            args.append(skipCountdownLaunchArgument)
+        }
         return args
     }
 
@@ -58,14 +71,18 @@ enum UITestOnboardingHelper {
         seedInProgressMobility: Bool = false,
         presentMobilityPreRun: Bool = false,
         seedTodayRun: Bool = false,
-        seedTodayStrength: Bool = false
+        seedTodayStrength: Bool = false,
+        seedCompletedOnboarding: Bool = false,
+        skipCountdown: Bool = false
     ) {
         app.launchArguments = freshLaunchArguments(
             simulateLiveRecording: simulateLiveRecording,
             seedInProgressMobility: seedInProgressMobility,
             presentMobilityPreRun: presentMobilityPreRun,
             seedTodayRun: seedTodayRun,
-            seedTodayStrength: seedTodayStrength
+            seedTodayStrength: seedTodayStrength,
+            seedCompletedOnboarding: seedCompletedOnboarding,
+            skipCountdown: skipCountdown
         )
         if let contentSizeCategory {
             app.launchEnvironment["UIPreferredContentSizeCategoryName"] = contentSizeCategory
@@ -80,11 +97,28 @@ enum UITestOnboardingHelper {
     }
 
     static func completeOnboarding(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        dismissSystemAlertIfNeeded()
+        // Branch on the launch arguments this test object was configured with, not on a
+        // screen probe: the fast path must never quietly degrade into the slow one. A seed
+        // that stopped working has to fail here rather than hide behind a slow green run.
+        if app.launchArguments.contains(seedCompletedOnboardingLaunchArgument) {
+            XCTAssertTrue(
+                app.buttons["TODAY"].waitForExistence(timeout: 15),
+                "Seeded launch did not reach Today — onboarding seed failed",
+                file: file,
+                line: line
+            )
+            // No health primer to dismiss: the app suppresses it on a seeded launch, exactly
+            // as it already does on a reset one.
+            return
+        }
+
+        // The in-app check goes first because it is the cheap one. `dismissSystemAlertIfNeeded`
+        // waits on springboard, which cannot return early when there is no alert to find.
         if app.buttons["TODAY"].waitForExistence(timeout: 2) {
             dismissHealthPrimerIfNeeded(app)
             return
         }
+        dismissSystemAlertIfNeeded()
 
         tapNext(times: 2, in: app, file: file, line: line)
 

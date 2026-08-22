@@ -18,7 +18,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// Settings → Movement library, then a movement that has a bundled clip.
     func testMovementLibraryShowsClips() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -58,7 +58,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// render, so it gets its own shot to check it does not look out of place.
     func testBirdDogHasAClip() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -141,7 +141,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// A non-quality day gets a warm-up and a cool-down, and no drills.
     func testEasyDayHasWarmupAndCooldownWithoutDrills() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
         attach(app, named: "04-plan-tab")
@@ -164,7 +164,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// A quality day additionally gets the Form drills block, and it opens.
     func testQualityDayHasFormDrills() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -190,7 +190,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// move-date sheet, which nothing else exercises.
     func testWorkoutDetailPresentsMoveDateSheet() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -213,7 +213,7 @@ final class ExerciseMediaScreenshotUITests: XCTestCase {
     /// skipping and quietly losing the coverage on most days.
     func testStrengthPlayerShowsClip() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app, seedTodayStrength: true)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedTodayStrength: true, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

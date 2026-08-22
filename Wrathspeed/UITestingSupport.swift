@@ -8,6 +8,8 @@ enum UITestingSupport {
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
     static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
     static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
+    static let seedCompletedOnboardingLaunchArgument = "-uiTestingSeedCompletedOnboarding"
+    static let skipCountdownLaunchArgument = "-uiTestingSkipCountdown"
 
     /// True when UI tests pass `-uiTestingResetStore` in Debug builds only.
     static var shouldResetStore: Bool {
@@ -50,6 +52,30 @@ enum UITestingSupport {
     static var shouldSeedTodayRun: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains(seedTodayRunLaunchArgument)
+        #else
+        false
+        #endif
+    }
+
+    /// Builds and confirms the onboarding plan at launch, through the same API the
+    /// onboarding screen calls, so a test whose subject is not onboarding does not have to
+    /// replay nine taps and a plan build to reach Today.
+    static var shouldSeedCompletedOnboarding: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(seedCompletedOnboardingLaunchArgument)
+        #else
+        false
+        #endif
+    }
+
+    /// Skips the three-second pre-roll before a session starts collecting.
+    ///
+    /// Deliberately its own argument rather than keying off `isUITesting`: hosted unit
+    /// tests set that too, and `SessionRecoveryTests` needs a real countdown to cancel
+    /// during.
+    static var shouldSkipCountdown: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(skipCountdownLaunchArgument)
         #else
         false
         #endif

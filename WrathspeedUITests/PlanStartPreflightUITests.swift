@@ -11,7 +11,7 @@ final class PlanStartPreflightUITests: XCTestCase {
 
     func testStartingAWorkoutFromThePlanTabOpensPreflight() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

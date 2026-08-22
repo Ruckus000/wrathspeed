@@ -6,9 +6,9 @@ final class HistoryEmptyStateUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    func testHistoryShowsEmptyRunsStateAfterOnboarding() throws {
+    func testHistoryShowsEmptyRunsStateWithNoRecordedRuns() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

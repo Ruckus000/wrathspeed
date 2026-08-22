@@ -13,7 +13,8 @@ final class PreflightLiveStartUITests: XCTestCase {
         UITestOnboardingHelper.configureFreshLaunch(
             app,
             simulateLiveRecording: true,
-            seedTodayRun: true
+            seedTodayRun: true,
+            seedCompletedOnboarding: true
         )
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
@@ -73,10 +74,22 @@ final class PreflightLiveStartUITests: XCTestCase {
         start.tap()
     }
 
+    /// START ON PHONE is the fallback offered when a paired watch fails to launch in time.
+    /// A flat wait for it burns the whole ceiling on a simulator with no paired watch, where
+    /// it can never appear. Racing it against the live-run control the callers assert on
+    /// next ends the wait as soon as either outcome is real, and proves one of them happened
+    /// rather than merely tolerating the timeout.
     private func handleWatchLaunchTimeoutIfNeeded(in app: XCUIApplication) {
         let startOnPhone = app.buttons["START ON PHONE"]
-        if startOnPhone.waitForExistence(timeout: 14) {
-            startOnPhone.tap()
+        let liveRunPause = app.buttons["Pause"]
+        let deadline = Date().addingTimeInterval(14)
+        while Date() < deadline {
+            if startOnPhone.exists {
+                startOnPhone.tap()
+                return
+            }
+            if liveRunPause.exists { return }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
     }
 

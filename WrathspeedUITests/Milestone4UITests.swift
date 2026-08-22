@@ -8,7 +8,7 @@ final class Milestone4UITests: XCTestCase {
 
     func testWeeklyCalendarAndManagePlanFlows() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app)
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 
@@ -38,7 +38,7 @@ final class Milestone4UITests: XCTestCase {
 
     func testDynamicTypeKeepsPlanActionsReachable() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app, contentSizeCategory: "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge")
+        UITestOnboardingHelper.configureFreshLaunch(app, contentSizeCategory: "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge", seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

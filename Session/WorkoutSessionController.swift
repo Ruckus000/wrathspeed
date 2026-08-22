@@ -304,7 +304,12 @@ final class WorkoutSessionController: NSObject {
         #else
         let skipCountdown = false
         #endif
-        #if DEBUG
+        #if DEBUG && os(iOS)
+        // A separate launch argument rather than `UITestingSupport.isUITesting`: that is
+        // also true for hosted unit tests, and `SessionRecoveryTests` cancels during a real
+        // countdown.
+        let shouldSleep = !skipCountdown && !testing_skipCountdownSleep && !UITestingSupport.shouldSkipCountdown
+        #elseif DEBUG
         let shouldSleep = !skipCountdown && !testing_skipCountdownSleep
         #else
         let shouldSleep = !skipCountdown
