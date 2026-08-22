@@ -182,6 +182,35 @@ final class AppStore {
 
     var streak: Int { streakCount() }
 
+    /// True only inside the pause window itself, not the easier-return days that follow it.
+    /// `transformDuring` skips every run in that window, which is what makes those days read
+    /// as rest days in the first place.
+    var isN100PauseActive: Bool {
+        guard let n100, n100.mode == .pause else { return false }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return today >= calendar.startOfDay(for: n100.start) && today < n100.windowEnd(calendar: calendar)
+    }
+
+    /// The next scheduled run, when today has none of its own and the plan's own rules allow
+    /// moving it here. Nil rather than a disabled button: the alternative is offering an
+    /// action whose only outcome is an error alert.
+    ///
+    /// Not offered during an N100 pause, where `upcomingRuns` returns the first run *after*
+    /// the block -- pulling that into the window is what the user opted out of.
+    var nextRunToPullForward: ScheduledWorkout? {
+        guard todaysRuns.isEmpty, todaysCompletedRuns.isEmpty else { return nil }
+        guard !isN100PauseActive else { return nil }
+        guard let plan, let next = upcomingRuns.first else { return nil }
+        let validation = PlanScheduleService.canMove(
+            workout: next,
+            to: Date(),
+            plan: plan,
+            profile: profile
+        )
+        return validation.allowed ? next : nil
+    }
+
     /// Base plan stored in persistence; overlay applied at read time.
     var displayPlan: TrainingPlan? {
         guard let plan else { return nil }
@@ -806,6 +835,27 @@ final class AppStore {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Moves a future run onto today and opens preflight for it.
+    ///
+    /// Moving rather than starting it where it sits is what keeps Today honest afterwards:
+    /// the result lands on a workout dated today, so `todaysCompletedRuns` and the week bar
+    /// show it. `move` reports refusal through `errorMessage`, which RootView already
+    /// surfaces, so the guard needs no second failure channel.
+    func pullForwardAndStart(_ workout: ScheduledWorkout) {
+        // Passing the reminder settings through deliberately: `move` defaults
+        // `reminderEnabled` to false and assigns it unconditionally, so the plain call would
+        // silently clear a reminder the user had set.
+        move(
+            workout,
+            to: Date(),
+            allowWarnings: true,
+            scheduledTimeMinutes: workout.scheduledTimeMinutes,
+            reminderEnabled: workout.reminderEnabled
+        )
+        guard let moved = todaysRuns.first else { return }
+        presentPreflight(blueprint: moved.blueprint)
     }
 
     func presentPreflight(blueprint: WorkoutBlueprint, source: WorkoutSource = .wrathspeedPhone) {

@@ -47,6 +47,7 @@
 		54C2D20468188657C73AE520 /* WeeklyCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623774FFF1E871E49DE1774E /* WeeklyCalendarView.swift */; };
 		5556FA81D699935F03C32F92 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */; };
 		556A60ABC61F61595652376D /* MovementLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4BF4A4556588718FF9A783E /* MovementLibraryView.swift */; };
+		557970FB8AD1B53075F8D839 /* RestDayPullForwardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7071648CA9E805515DB3C919 /* RestDayPullForwardTests.swift */; };
 		5674EA7501E0D1ACB1B57B34 /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		58D3E009B40C2F83CDB436C4 /* WorkoutSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D06D0F6FA44533D12866252C /* WorkoutSessionController.swift */; };
 		599682F4FB24ADD240653999 /* SessionRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1EF278B0F4CE19776DCFDA /* SessionRecoveryView.swift */; };
@@ -217,6 +218,7 @@
 		6C83236791022F5208F5DC89 /* WatchStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStore.swift; sourceTree = "<group>"; };
 		6CD1315E7BF466C7E327115A /* ContentLicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentLicensesView.swift; sourceTree = "<group>"; };
 		6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryEmptyStateUITests.swift; sourceTree = "<group>"; };
+		7071648CA9E805515DB3C919 /* RestDayPullForwardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestDayPullForwardTests.swift; sourceTree = "<group>"; };
 		72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Wrathspeed.entitlements; sourceTree = "<group>"; };
 		74D4ADFAE3CDB660B9C53179 /* Wrathspeed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Wrathspeed.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanMutationTests.swift; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 				F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */,
 				4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */,
 				7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */,
+				7071648CA9E805515DB3C919 /* RestDayPullForwardTests.swift */,
 				C49FE3FC05C57B7375BEAE9F /* SessionRecoveryTests.swift */,
 				EC19A1E4D3A32B80A2304748 /* StrengthMediaCoverageTests.swift */,
 				643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */,
@@ -779,6 +782,7 @@
 				35057545D76FE3DA5D2A1B62 /* OnboardingFlowTests.swift in Sources */,
 				CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */,
 				CFCA2597B2606BCEFF0E00D6 /* PlanMutationTests.swift in Sources */,
+				557970FB8AD1B53075F8D839 /* RestDayPullForwardTests.swift in Sources */,
 				5B005FDC0F626F9936D5FA74 /* SessionRecoveryTests.swift in Sources */,
 				AC92B4BF12CD54FF75AE5273 /* StrengthMediaCoverageTests.swift in Sources */,
 				42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */,

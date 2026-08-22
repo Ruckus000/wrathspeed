@@ -171,6 +171,14 @@ struct TodayView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 20)
         } else if isRestDay {
+            if let next = store.nextRunToPullForward {
+                WSPrimaryButton(title: "PULL FORWARD: \(next.blueprint.title.uppercased()) →", height: 64, fontSize: 20) {
+                    store.pullForwardAndStart(next)
+                }
+                .accessibilityLabel("Pull \(WSFormat.weekdayDate(next.date))'s \(next.blueprint.title) forward to today")
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 20)
+            }
             Button {
                 showInstant = true
             } label: {
@@ -188,7 +196,7 @@ struct TodayView: View {
             }
             .buttonStyle(.plain)
             .padding(.horizontal, WSSpace.gutter)
-            .padding(.top, 20)
+            .padding(.top, store.nextRunToPullForward == nil ? 20 : 10)
         }
     }
 
