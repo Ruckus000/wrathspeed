@@ -97,6 +97,30 @@ final class WatchLaunchTimeoutTests: XCTestCase {
         XCTAssertTrue(store.showWatchLaunchTimeout, "A second failed attempt must surface the sheet again")
     }
 
+    /// The timer used to be armed before `session.start` was awaited, so it ran while the
+    /// HealthKit permission sheet was up and displaced it -- stranding the authorization
+    /// request, after which no workout could start at all. A start that never gets going must
+    /// leave no timer behind.
+    func testAStartThatNeverGetsGoingArmsNoTimer() async throws {
+        let coordinator = WorkoutSessionCoordinator(watchLaunchTimeout: timeout)
+        let store = try makeStore(coordinator: coordinator)
+
+        // `.finishing` makes coordinator.start return at its opening guard, before any of the
+        // launch sequence runs -- reachable without HealthKit or a paired Watch.
+        coordinator.session.testing_prepareForEndTest(blueprint: makeBlueprint(), state: .finishing)
+        try await coordinator.start(
+            blueprint: makeBlueprint(),
+            vdot: nil,
+            zones: nil,
+            cuesEnabled: false
+        )
+
+        await waitPastTimeout()
+
+        XCTAssertNotEqual(coordinator.watchLaunchPhase, .timedOut)
+        XCTAssertFalse(store.showWatchLaunchTimeout, "A start that never began must not raise the watch-not-ready actions")
+    }
+
     func testARecordingSessionSuppressesTheTimeout() async throws {
         let coordinator = WorkoutSessionCoordinator(watchLaunchTimeout: timeout)
         let store = try makeStore(coordinator: coordinator)

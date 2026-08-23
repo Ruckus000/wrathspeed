@@ -48,11 +48,6 @@ struct RootView: View {
         .fullScreenCover(item: $store.pendingRecoverySnapshot) { snapshot in
             SessionRecoveryView(snapshot: snapshot)
         }
-        .sheet(isPresented: $store.showWatchLaunchTimeout) {
-            WatchLaunchTimeoutView()
-                .presentationDetents([.medium])
-                .presentationBackground(WSColor.bgSheet)
-        }
         .sheet(item: $store.pendingTreadmillDistance) { pending in
             TreadmillDistanceSheet(pending: pending)
                 .presentationDetents([.medium, .large])

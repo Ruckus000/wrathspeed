@@ -96,15 +96,23 @@ final class WorkoutSessionCoordinator {
         if WCSessionBridge.isWatchAppInstalled {
             setWatchLaunchPhase(.waitingForWatch)
             bridge.requestStart(blueprint, vdot: vdot, unit: unit)
-            armWatchTimeout()
+            // Cancelled here but armed below. The twelve seconds must measure how long the
+            // Watch has had to mirror back, not how long the user spent on the HealthKit
+            // permission sheet that `session.start` raises -- a first run spent longer than
+            // that on the toggle list, the timeout sheet displaced the system prompt, and the
+            // authorization request was left queued forever, after which no workout could
+            // start at all. `session.start` returns as soon as `startWatchApp` succeeds while
+            // the Watch is still being waited on, so arming after it is the honest moment.
+            watchTimeoutTask?.cancel()
             try await session.start(
                 blueprint: blueprint,
                 zones: zones,
                 treadmillSpeedMetersPerSecond: treadmillSpeedMetersPerSecond
             )
             if session.isRunning {
-                watchTimeoutTask?.cancel()
                 setWatchLaunchPhase(.recording)
+            } else {
+                armWatchTimeout()
             }
             return
         }

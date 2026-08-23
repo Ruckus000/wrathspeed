@@ -58,38 +58,3 @@ struct SessionRecoveryView: View {
         try? JSONDecoder().decode(WorkoutBlueprint.self, from: snapshot.blueprintData)
     }
 }
-
-struct WatchLaunchTimeoutView: View {
-    @Environment(AppStore.self) private var store
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("WATCH\nNOT READY")
-                .wsType(.displayS)
-                .foregroundStyle(WSColor.text)
-            Text("Apple Watch did not connect within 12 seconds.")
-                .wsType(.body, weight: .medium)
-                .foregroundStyle(WSColor.text50)
-                .padding(.top, 12)
-            Spacer(minLength: 20)
-            WSPrimaryButton(title: "RETRY WATCH") {
-                Task { await store.retryWatchLaunch() }
-            }
-            WSOutlineButton(title: "START ON PHONE") {
-                Task { await store.startOnPhoneAfterWatchTimeout() }
-            }
-            .padding(.top, 10)
-            Button("CANCEL") {
-                store.cancelWatchLaunch()
-            }
-            .wsType(.label, weight: .heavy)
-            .foregroundStyle(WSColor.destructive)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .padding(.top, 12)
-        }
-        .padding(.horizontal, 24)
-        .padding(.top, 40)
-        .padding(.bottom, 52)
-        .background(WSColor.bgSheet.ignoresSafeArea())
-    }
-}
