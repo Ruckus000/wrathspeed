@@ -371,6 +371,24 @@ final class FloatingTabBarUITests: XCTestCase {
         }
     }
 
+    // The unit matrix can only measure the whole bar, so the per-tab hit region is asserted
+    // here, where the frames are the real ones the system hit-tests against. An earlier draft
+    // sized the tab content to a fixed 44pt inside a 56pt bar, which left a dead strip that
+    // looked tappable and was not -- nothing in the unit tests could see it.
+    func testEveryTabPresentsA44PointTarget() {
+        let app = XCUIApplication()
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
+        app.launch()
+        XCTAssertTrue(app.buttons["TODAY"].waitForExistence(timeout: 20))
+        UITestOnboardingHelper.completeOnboarding(app)
+
+        for tab in ["TODAY", "PLAN", "HISTORY", "SETTINGS"] {
+            let frame = app.buttons[tab].frame
+            XCTAssertGreaterThanOrEqual(frame.height, 44, "\(tab) is only \(frame.height)pt tall")
+            XCTAssertGreaterThanOrEqual(frame.width, 44, "\(tab) is only \(frame.width)pt wide")
+        }
+    }
+
     func testEveryTabIsReachableByName() {
         let app = XCUIApplication()
         UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
@@ -423,8 +441,10 @@ git commit -m "Guard the floating bar against trapping content"
 Append inside `WSLayoutMatrixTests`, after `testTabBarHeightIsIdenticalAtEveryTextSize`:
 
 ```swift
-    /// The bar does not scale, so its targets have to be big enough at the default size and stay
-    /// that way. Four tabs divide the capsule, so each one is as tall as the capsule itself.
+    /// The bar does not scale, so its footprint has to be right at the default size and stay
+    /// that way. Note this measures the *bar*, not the individual buttons -- a tab whose content
+    /// is smaller than its cell would still pass here, so the real per-tab hit region is asserted
+    /// in FloatingTabBarUITests.testEveryTabPresentsA44PointTarget.
     func testEachTabIsAtLeast44PointsAtEveryTextSize() {
         var selection = AppTab.today
         let binding = Binding(get: { selection }, set: { selection = $0 })
