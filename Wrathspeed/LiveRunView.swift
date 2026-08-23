@@ -2,7 +2,6 @@ import SwiftUI
 import WrathspeedCore
 
 struct LiveRunView: View {
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let blueprint: WorkoutBlueprint
@@ -11,11 +10,11 @@ struct LiveRunView: View {
     var body: some View {
         let session = store.session
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
+            WSRow(alignment: .firstTextBaseline) {
                 Text(blueprint.title.uppercased())
                     .wsType(.label, weight: .bold, tracking: 2)
                     .foregroundStyle(WSColor.text50)
-                Spacer()
+            } trailing: {
                 Text(stepCount)
                     .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
@@ -140,32 +139,41 @@ struct LiveRunView: View {
 
     private var metricsRow: some View {
         let metrics = LiveMetric.allCases.filter { store.liveMetrics.contains($0) }
-        // Three columns of live numbers across one phone width. Once the type is large enough
-        // that a column would be narrower than its own value, they stack instead -- these are
-        // the numbers someone is reading mid-run, so squeezing them is the worst option.
-        let layout = dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(spacing: 14))
-            : AnyLayout(HStackLayout(spacing: 0))
-        return layout {
-            ForEach(Array(metrics.enumerated()), id: \.element) { index, metric in
-                VStack(spacing: 4) {
-                    Text(metric.liveLabel(unit: store.unit))
-                        .wsType(.metricS, tracking: 1)
-                        .foregroundStyle(WSColor.text40)
-                    Text(metricValue(metric))
-                        .wsType(.displayS)
-                        .foregroundStyle(WSColor.text)
-                }
-                .frame(maxWidth: .infinity)
-                if index < metrics.count - 1 {
-                    if dynamicTypeSize.isAccessibilitySize {
-                        Rectangle().fill(WSColor.hairline).frame(height: 1)
-                    } else {
+        // Three columns of live numbers across one phone width. Measured rather than
+        // thresholded, like every other row: they stay in a line exactly while the values fit
+        // and stack when they do not. These are the numbers someone reads mid-run, so squeezing
+        // them is the worst of the options. WSRow takes two slots, not three, hence ViewThatFits
+        // directly.
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                ForEach(Array(metrics.enumerated()), id: \.element) { index, metric in
+                    metricColumn(metric)
+                    if index < metrics.count - 1 {
                         Rectangle().fill(WSColor.hairline).frame(width: 1, height: 44)
                     }
                 }
             }
+            VStack(spacing: 14) {
+                ForEach(Array(metrics.enumerated()), id: \.element) { index, metric in
+                    metricColumn(metric)
+                    if index < metrics.count - 1 {
+                        Rectangle().fill(WSColor.hairline).frame(height: 1)
+                    }
+                }
+            }
         }
+    }
+
+    private func metricColumn(_ metric: LiveMetric) -> some View {
+        VStack(spacing: 4) {
+            Text(metric.liveLabel(unit: store.unit))
+                .wsType(.metricS, tracking: 1)
+                .foregroundStyle(WSColor.text40)
+            Text(metricValue(metric))
+                .wsType(.displayS)
+                .foregroundStyle(WSColor.text)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func metricValue(_ metric: LiveMetric) -> String {

@@ -224,10 +224,10 @@ struct OnboardingView: View {
                         inputs.recentDistanceDisplay = min(42, current + 0.5)
                     }
                 )
-                HStack {
+                WSRow {
                     Text("TIME")
                         .wsType(.body, weight: .heavy)
-                    Spacer()
+                } trailing: {
                     WSStepperControl(
                         valueText: timeLabel,
                         decrement: { adjustRecentTime(by: -5) },
@@ -310,14 +310,18 @@ struct OnboardingView: View {
                 Text("FIRST WEEK")
                     .wsType(.body, weight: .heavy)
                 ForEach(firstWeekWorkouts(draft)) { workout in
-                    HStack {
-                        Text(WSFormat.weekdayDate(workout.date))
-                            .wsType(.metric)
-                            .foregroundStyle(WSColor.text45)
-                            .frame(width: 92, alignment: .leading)
-                        Text(workout.blueprint.title.uppercased())
-                            .wsType(.body, weight: .heavy)
-                        Spacer()
+                    WSRow {
+                        // Kept together so the stacked arrangement does not break this
+                        // group onto separate lines of its own.
+                        HStack(spacing: 10) {
+                            Text(WSFormat.weekdayDate(workout.date))
+                                .wsType(.metric)
+                                .foregroundStyle(WSColor.text45)
+                                .frame(width: 92, alignment: .leading)
+                            Text(workout.blueprint.title.uppercased())
+                                .wsType(.body, weight: .heavy)
+                        }
+                    } trailing: {
                         Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: inputs.unit, fraction: 0))
                             .wsType(.metric)
                             .foregroundStyle(WSColor.text45)
@@ -341,10 +345,10 @@ struct OnboardingView: View {
     }
 
     private func stepperRow(_ title: String, text: String, down: @escaping () -> Void, up: @escaping () -> Void) -> some View {
-        HStack {
+        WSRow {
             Text(title)
                 .wsType(.body, weight: .heavy)
-            Spacer()
+        } trailing: {
             WSStepperControl(valueText: text, decrement: down, increment: up)
         }
     }

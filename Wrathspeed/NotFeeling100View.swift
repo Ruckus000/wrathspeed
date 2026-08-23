@@ -48,10 +48,10 @@ struct NotFeeling100View: View {
             .tint(WSColor.accent)
             .padding(.top, 16)
             .accessibilityIdentifier("n100_start_date")
-            HStack {
+            WSRow {
                 Text("DAYS")
                     .wsType(.body, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSStepperControl(
                     valueText: "\(days)",
                     decrement: { days = max(3, days - 1) },

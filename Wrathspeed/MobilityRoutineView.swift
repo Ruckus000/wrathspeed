@@ -45,13 +45,13 @@ struct MobilityRoutineView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        WSRow(alignment: .firstTextBaseline) {
             Text(routine.title.uppercased())
                 .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityIdentifier("routine_player_title")
                 .accessibilityAddTraits(.isHeader)
-            Spacer()
+        } trailing: {
             Button {
                 dismiss()
             } label: {

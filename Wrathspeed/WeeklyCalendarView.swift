@@ -162,15 +162,19 @@ struct WeeklyCalendarView: View {
     }
 
     private func weekWorkoutRow(_ workout: ScheduledWorkout) -> some View {
-        HStack(spacing: 10) {
-            Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
-                .wsType(.metric, weight: .bold)
-                .foregroundStyle(WSColor.text45)
-                .frame(width: 34, alignment: .leading)
-            Text(workout.blueprint.title.uppercased())
-                .wsType(.body, weight: .heavy)
-                .foregroundStyle(WSColor.text)
-            Spacer()
+        WSRow(spacing: 10) {
+            // Kept together so the stacked arrangement does not break this
+            // group onto separate lines of its own.
+            HStack(spacing: 10) {
+                Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
+                    .wsType(.metric, weight: .bold)
+                    .foregroundStyle(WSColor.text45)
+                    .frame(width: 34, alignment: .leading)
+                Text(workout.blueprint.title.uppercased())
+                    .wsType(.body, weight: .heavy)
+                    .foregroundStyle(WSColor.text)
+            }
+        } trailing: {
             Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
                 .wsType(.metric)
         }

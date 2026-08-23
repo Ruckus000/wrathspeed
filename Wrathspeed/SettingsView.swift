@@ -37,11 +37,11 @@ struct SettingsView: View {
                         store.session.cuesEnabled = store.cuesEnabled
                         store.save()
                     } label: {
-                        HStack {
+                        WSRow {
                             Text("AUDIO CUES")
                                 .wsType(.body, weight: .heavy)
                                 .foregroundStyle(WSColor.text)
-                            Spacer()
+                        } trailing: {
                             Text(store.cuesEnabled ? "ON" : "OFF")
                                 .wsType(.label, weight: .heavy, tracking: 1)
                                 .foregroundStyle(store.cuesEnabled ? .white : WSColor.text)
@@ -120,11 +120,11 @@ struct SettingsView: View {
                         NavigationLink {
                             PaceZonesView()
                         } label: {
-                            HStack {
+                            WSRow {
                                 Text("VDOT · PACE ZONES")
                                     .wsType(.body, weight: .bold)
                                     .foregroundStyle(Color.white.opacity(0.6))
-                                Spacer()
+                            } trailing: {
                                 Text("\(WSFormat.vdot(profile.vdot)) ›")
                                     .wsType(.metric, weight: .bold)
                                     .foregroundStyle(WSColor.accent)
@@ -267,18 +267,22 @@ struct PaceZonesView: View {
                 .padding(.top, 12)
             VStack(spacing: 0) {
                 ForEach(zoneOrder, id: \.self) { zone in
-                    HStack(spacing: 14) {
-                        RoundedRectangle(cornerRadius: 2, style: .continuous)
-                            .fill(swatch(zone))
-                            .frame(width: 6, height: 38)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(zone.rawValue.uppercased())
-                                .wsType(.body, weight: .heavy, tracking: 0.5)
-                            Text(purpose(zone))
-                                .wsType(.label, weight: .medium)
-                                .foregroundStyle(WSColor.text45)
+                    WSRow(spacing: 14) {
+                        // Kept together so the stacked arrangement does not break this
+                        // group onto separate lines of its own.
+                        HStack(spacing: 14) {
+                            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                                .fill(swatch(zone))
+                                .frame(width: 6, height: 38)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(zone.rawValue.uppercased())
+                                    .wsType(.body, weight: .heavy, tracking: 0.5)
+                                Text(purpose(zone))
+                                    .wsType(.label, weight: .medium)
+                                    .foregroundStyle(WSColor.text45)
+                            }
                         }
-                        Spacer()
+                    } trailing: {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(pace(zone))
                                 .wsType(.displayXS)
@@ -300,10 +304,10 @@ struct PaceZonesView: View {
                 .padding(.top, 22)
             VStack(spacing: 0) {
                 ForEach(predictions, id: \.name) { row in
-                    HStack {
+                    WSRow {
                         Text(row.name)
                             .wsType(.body, weight: .heavy)
-                        Spacer()
+                    } trailing: {
                         Text(row.time)
                             .wsType(.metric, weight: .bold)
                             .foregroundStyle(WSColor.accent)

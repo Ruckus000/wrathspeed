@@ -54,11 +54,11 @@ struct TodayView: View {
                     strengthRow(strength, isResume: store.resumableStrengthSession != nil)
                 }
                 mobilitySection
-                HStack {
+                WSRow {
                     Button("NOT FEELING 100%?") { showN100 = true }
                         .wsType(.label, weight: .bold, tracking: 1)
                         .foregroundStyle(WSColor.text45)
-                    Spacer()
+                } trailing: {
                     Button("+ INSTANT RUN") { showInstant = true }
                         .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.accent)
@@ -82,11 +82,11 @@ struct TodayView: View {
     }
 
     private var header: some View {
-        HStack {
+        WSRow {
             Text(WSFormat.weekdayDate(Date()))
                 .wsType(.metric, tracking: 1.5)
                 .foregroundStyle(WSColor.text50)
-            Spacer()
+        } trailing: {
             Text("STREAK \(store.streak)")
                 .wsType(.label, weight: .heavy, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
@@ -199,7 +199,7 @@ struct TodayView: View {
         Button {
             guidedPlayer = .strength(session)
         } label: {
-            HStack {
+            WSRow {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("PLUS: \(session.title.uppercased())")
                         .wsType(.body, weight: .heavy, tracking: 0.5)
@@ -208,7 +208,7 @@ struct TodayView: View {
                         .wsType(.label, weight: .medium)
                         .foregroundStyle(WSColor.text45)
                 }
-                Spacer()
+            } trailing: {
                 Text(isResume ? "RESUME →" : "GO →")
                     .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.accent)
@@ -248,7 +248,7 @@ struct TodayView: View {
 
     private func mobilityRow(_ session: MobilitySession) -> some View {
         let isResume = store.isMobilityRoutineResumable(session)
-        return HStack {
+        return WSRow {
             VStack(alignment: .leading, spacing: 3) {
                 Text(session.title.uppercased())
                     .wsType(.body, weight: .heavy, tracking: 0.5)
@@ -257,7 +257,7 @@ struct TodayView: View {
                     .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text45)
             }
-            Spacer()
+        } trailing: {
             Button {
                 guidedPlayer = .mobility(session)
             } label: {
@@ -287,9 +287,9 @@ struct TodayView: View {
     private var weekBar: some View {
         let mileage = weekMileage
         return VStack(alignment: .leading, spacing: 10) {
-            HStack {
+            WSRow {
                 Text("THIS WEEK")
-                Spacer()
+            } trailing: {
                 Text("\(WSFormat.distance(mileage.done, unit: store.unit)) / \(WSFormat.distanceValue(mileage.planned, unit: store.unit, fraction: 0)) \(WSFormat.unitSuffix(store.unit))")
             }
             .wsType(.metricS)

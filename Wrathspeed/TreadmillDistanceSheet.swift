@@ -30,19 +30,19 @@ struct TreadmillDistanceSheet: View {
                 .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 12)
-            HStack {
+            WSRow {
                 Text("ESTIMATE")
                     .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.text45)
-                Spacer()
+            } trailing: {
                 Text(WSFormat.distance(pending.estimateMeters, unit: store.unit))
                     .wsType(.metric)
             }
             .padding(.top, 20)
-            HStack {
+            WSRow {
                 Text("ACTUAL")
                     .wsType(.body, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSStepperControl(
                     valueText: String(format: "%.2f %@", actualDisplay, WSFormat.unitLabel(store.unit)),
                     decrement: { actualDisplay = max(0.1, actualDisplay - 0.1) },
