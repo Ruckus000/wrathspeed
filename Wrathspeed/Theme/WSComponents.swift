@@ -485,6 +485,10 @@ struct WSScreen<Content: View>: View {
             .padding(.bottom, 28 + bottomBarInset)
         }
         .scrollIndicators(.hidden)
+        // Identified so UI tests can target the screen's own scroll view rather than
+        // app.scrollViews.firstMatch, which is ambiguous wherever a screen nests a horizontal
+        // scroll view inside this one -- PlanView's week strip does exactly that.
+        .accessibilityIdentifier("ws.screen.scroll")
         .background(WSColor.bg.ignoresSafeArea())
     }
 }

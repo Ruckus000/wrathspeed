@@ -14,15 +14,21 @@ final class FloatingTabBarUITests: XCTestCase {
 
         for tab in ["TODAY", "PLAN", "HISTORY", "SETTINGS"] {
             app.buttons[tab].tap()
-            let scroll = app.scrollViews.firstMatch
-            guard scroll.waitForExistence(timeout: 5) else { continue }
+            let scroll = app.scrollViews["ws.screen.scroll"]
+            guard scroll.waitForExistence(timeout: 5) else {
+                XCTFail("\(tab) has no WSScreen scroll view — it cannot be checked for trapped content")
+                continue
+            }
             for _ in 0 ..< 12 { scroll.swipeUp(velocity: .fast) }
 
             let bar = app.buttons["SETTINGS"].frame
             let candidates = (0 ..< app.buttons.count)
                 .map { app.buttons.element(boundBy: $0) }
                 .filter { $0.exists && $0.frame.height > 0 && $0.frame.minY < bar.minY }
-            guard let lowest = candidates.max(by: { $0.frame.maxY < $1.frame.maxY }) else { continue }
+            guard let lowest = candidates.max(by: { $0.frame.maxY < $1.frame.maxY }) else {
+                XCTFail("\(tab) exposed no buttons above the bar to check")
+                continue
+            }
             XCTAssertTrue(lowest.isHittable,
                           "\(tab): '\(lowest.label)' is under the floating bar and cannot be tapped")
         }
