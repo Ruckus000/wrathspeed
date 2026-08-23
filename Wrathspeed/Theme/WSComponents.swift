@@ -364,6 +364,14 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .settings: "SETTINGS"
         }
     }
+    var symbol: String {
+        switch self {
+        case .today: "bolt.fill"
+        case .plan: "calendar"
+        case .history: "chart.line.uptrend.xyaxis"
+        case .settings: "slider.horizontal.3"
+        }
+    }
 }
 
 struct WSTabBar: View {
