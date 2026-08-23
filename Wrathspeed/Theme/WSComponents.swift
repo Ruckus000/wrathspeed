@@ -384,35 +384,63 @@ struct WSTabBar: View {
     /// What a scroll view underneath has to clear.
     static var footprint: CGFloat { height + gap }
 
+    @Namespace private var activeTab
+
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
             ForEach(AppTab.allCases) { tab in
                 Button {
-                    selection = tab
+                    withAnimation(.snappy(duration: 0.25)) { selection = tab }
                 } label: {
-                    Text(tab.label)
-                        .wsType(.chromeTab)
-                        .lineLimit(1)
-                        .foregroundStyle(selection == tab ? WSColor.accent : WSColor.text35)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 44)
+                    tabContent(tab)
                 }
                 .buttonStyle(.plain)
-                // The bar deliberately does not grow with Dynamic Type: Apple exempts tab bars
-                // from the Larger Text criteria precisely because a bar that scaled would take
-                // roughly a quarter of the screen, and it is on screen at all times. Long-press
-                // surfaces the label at full size through the system's large content viewer,
-                // and VoiceOver reads it regardless.
+                // Inactive tabs show no text at all, so the name has to be declared. The UI
+                // suites navigate by tab name and would otherwise lose three of four queries.
+                .accessibilityLabel(tab.label)
+                .accessibilityAddTraits(selection == tab ? [.isButton, .isSelected] : .isButton)
+                // The bar deliberately does not grow with Dynamic Type -- Apple exempts tab bars
+                // from the Larger Text criteria because a bar that scaled would take roughly a
+                // quarter of the screen. Long-press shows the icon and the label at full size.
                 .accessibilityShowsLargeContentViewer {
-                    Text(tab.label)
+                    Label(tab.label, systemImage: tab.symbol)
                 }
             }
         }
-        .padding(.bottom, 22)
-        .background(WSColor.bg)
-        .overlay(alignment: .top) {
-            Rectangle().fill(WSColor.hairline).frame(height: 1)
+        .padding(.horizontal, 6)
+        .frame(height: Self.height)
+        .background(WSColor.bgAlert, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(WSColor.hairlineStrong, lineWidth: 1))
+        .padding(.horizontal, 16)
+        .padding(.bottom, Self.gap)
+    }
+
+    @ViewBuilder
+    private func tabContent(_ tab: AppTab) -> some View {
+        let isSelected = selection == tab
+        HStack(spacing: 7) {
+            Image(systemName: tab.symbol)
+                // Fixed, like the label: this is chrome, not content.
+                .font(.system(size: 20, weight: .semibold))
+                .accessibilityHidden(true)
+            if isSelected {
+                Text(tab.label)
+                    .wsType(.chromeTab)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
         }
+        .foregroundStyle(isSelected ? WSColor.bg : WSColor.text50)
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.height - 12)
+        .background {
+            if isSelected {
+                Capsule(style: .continuous)
+                    .fill(WSColor.accent)
+                    .matchedGeometryEffect(id: "activeTab", in: activeTab)
+            }
+        }
+        .contentShape(Capsule(style: .continuous))
     }
 }
 
