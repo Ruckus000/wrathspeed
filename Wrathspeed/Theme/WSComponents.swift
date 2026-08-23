@@ -377,7 +377,8 @@ enum AppTab: String, CaseIterable, Identifiable {
 struct WSTabBar: View {
     @Binding var selection: AppTab
 
-    /// The capsule itself. Four tabs divide it, so this is also each tap target's height.
+    /// The capsule itself. Each tab fills its full height, so this is also each tap target's
+    /// height.
     static let height: CGFloat = 56
     /// How far it floats above the safe area.
     static let gap: CGFloat = 8
@@ -431,16 +432,23 @@ struct WSTabBar: View {
             }
         }
         .foregroundStyle(isSelected ? WSColor.bg : WSColor.text50)
-        .frame(maxWidth: .infinity)
-        .frame(height: Self.height - 12)
+        // Fills the capsule's full height so the whole cell is tappable. Sizing the content to
+        // 44pt instead would leave a dead strip top and bottom that still looks like part of
+        // the bar, and would put the tap target exactly on the 44pt floor with nothing spare.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
             if isSelected {
                 Capsule(style: .continuous)
                     .fill(WSColor.accent)
+                    // Inset so the accent pill still reads as 44pt inside the 56pt bar; the
+                    // tap target stays the full cell.
+                    .padding(.vertical, 6)
                     .matchedGeometryEffect(id: "activeTab", in: activeTab)
             }
         }
-        .contentShape(Capsule(style: .continuous))
+        // Rectangle, not Capsule: a capsule hit region narrows to a point at each tab seam,
+        // which is where two icons are closest together.
+        .contentShape(Rectangle())
     }
 }
 
