@@ -88,18 +88,22 @@ struct MainTabView: View {
 
     var body: some View {
         @Bindable var store = store
-        VStack(spacing: 0) {
-            Group {
-                switch store.selectedTab {
-                case .today: TodayView()
-                case .plan: PlanView()
-                case .history: HistoryView()
-                case .settings: SettingsView()
-                }
+        Group {
+            switch store.selectedTab {
+            case .today: TodayView()
+            case .plan: PlanView()
+            case .history: HistoryView()
+            case .settings: SettingsView()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // An overlay rather than a VStack row: in a stack the bar subtracted its full height
+        // from every screen whether or not the screen needed it. Floating, content runs under
+        // and beside it, and screens that end in a Spacer get the height back outright.
+        .overlay(alignment: .bottom) {
             WSTabBar(selection: $store.selectedTab)
         }
+        .environment(\.wsBottomBarInset, WSTabBar.footprint)
         .background(WSColor.bg.ignoresSafeArea())
     }
 }
