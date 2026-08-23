@@ -101,8 +101,17 @@ jobs:
           xcrun simctl boot "${{ steps.sim.outputs.udid }}" || true
           xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
 
-      # Unit tests first: they take seconds and fail fast.
-      - name: App unit tests
+      # One invocation for both bundles, deliberately. This was split in two with a
+      # `simctl erase` between them, on the theory that the app-hosted unit bundle left
+      # persisted state that derailed the seeded UI launches. That was wrong twice over:
+      # the UI launches pass -uiTestingResetStore, and Persistence.reset deletes every
+      # @Model type, so there is nothing left to inherit; and the bisection that motivated
+      # the split had "warm second run: green", which is the same unit-then-UI order and
+      # should have been red if state were the cause. The real fault was a springboard
+      # workout-background-access notice that `springboard.alerts` cannot see, fixed in
+      # UITestOnboardingHelper. Splitting bought a second build and a re-boot on a runner
+      # that bills at ten times Linux, for nothing.
+      - name: App unit and UI tests
         run: |
           set -o pipefail
           xcodebuild test \
@@ -110,40 +119,6 @@ jobs:
             -scheme Wrathspeed \
             -configuration Debug \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
-            -only-testing:WrathspeedTests \
-            -resultBundlePath UnitTestResults.xcresult
-
-      # The unit bundle is hosted BY the app, so running it boots the real app with no test
-      # launch arguments and leaves persisted state behind. A seeded UI launch on top of that
-      # state does not produce the plan the calendar tests look for, and they fail hunting for
-      # workouts that were never scheduled. It is entirely order-dependent, which is why this
-      # suite has been intermittently red: one xcodebuild invocation runs unit then UI on one
-      # simulator, so CI hit it on most runs and never on a developer's warm device.
-      #
-      # Reproduced by bisection on a freshly erased iPhone Air / iOS 26.5:
-      #   UI bundle alone                  green
-      #   unit bundle, then UI bundle      3 calendar tests fail
-      #   UI bundle, then unit bundle      green
-      #
-      # Erasing here gives the UI tests the pristine device they are written against, and keeps
-      # the unit tests first so they still fail fast.
-      - name: Reset the simulator between the two bundles
-        run: |
-          set -euo pipefail
-          xcrun simctl shutdown "${{ steps.sim.outputs.udid }}" || true
-          xcrun simctl erase "${{ steps.sim.outputs.udid }}"
-          xcrun simctl boot "${{ steps.sim.outputs.udid }}"
-          xcrun simctl bootstatus "${{ steps.sim.outputs.udid }}" -b
-
-      - name: App UI tests
-        run: |
-          set -o pipefail
-          xcodebuild test \
-            -project Wrathspeed.xcodeproj \
-            -scheme Wrathspeed \
-            -configuration Debug \
-            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
-            -only-testing:WrathspeedUITests \
             -resultBundlePath TestResults.xcresult
 
       - name: Upload result bundle
@@ -151,10 +126,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: xcresult-${{ github.run_id }}
-          # Both bundles: a unit failure and a UI failure now land in different files, and the
-          # one you need is whichever step went red.
-          path: |
-            UnitTestResults.xcresult
-            TestResults.xcresult
+          path: TestResults.xcresult
           retention-days: 14
           if-no-files-found: ignore
