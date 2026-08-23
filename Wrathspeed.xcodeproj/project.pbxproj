@@ -85,6 +85,7 @@
 		9853F0A8A996720767E6BEE1 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D8EF318C5CCFE6B6F58ABA /* PlanView.swift */; };
 		98B8C197F0F4356B42DAADCC /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		991C5E1FE8470358DC6DD1A4 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
+		9953DDA6A2256BD883E523B0 /* FloatingTabBarUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89F2D90B5ECD79BB65212FD /* FloatingTabBarUITests.swift */; };
 		9A57448FED50E18F7D79E249 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B54428B37BB9AF7065D03896 /* PrivacyInfo.xcprivacy */; };
 		9A909F6A29B02E45418643B4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E19C683D7C4D990ABC4FA2 /* RootView.swift */; };
 		9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03AE48A3DEECC9F2161D4BF /* CoachingCopy.swift */; };
@@ -106,6 +107,7 @@
 		BE4E7CAD827D8BFDF70A074A /* WrathspeedWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A8A9306765F167518D9C5A70 /* WrathspeedWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BF7B7D4590471BA709DB9BAD /* WrathspeedWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB921F1FAAD5039EBD71AD69 /* WrathspeedWatchApp.swift */; };
 		C3F10E2CA0F7A4A56925CFA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */; };
+		C4CEF76CF81DED1D7E5C2432 /* WSTabBarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A7AC54D376239E484B6BD4 /* WSTabBarTests.swift */; };
 		C5ABE30016A04262D243ADA9 /* StrengthCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */; };
 		C5C3B436CDF986130BAD38C3 /* WorkoutResultMatchActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BA6A73DFA699CCFD7A5F29 /* WorkoutResultMatchActionTests.swift */; };
 		C6F5EA8D16FF6B78EC7338B5 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */; };
@@ -242,6 +244,7 @@
 		7071648CA9E805515DB3C919 /* RestDayPullForwardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestDayPullForwardTests.swift; sourceTree = "<group>"; };
 		72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Wrathspeed.entitlements; sourceTree = "<group>"; };
 		74D4ADFAE3CDB660B9C53179 /* Wrathspeed.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Wrathspeed.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		79A7AC54D376239E484B6BD4 /* WSTabBarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSTabBarTests.swift; sourceTree = "<group>"; };
 		7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanMutationTests.swift; sourceTree = "<group>"; };
 		7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveRunView.swift; sourceTree = "<group>"; };
 		7E8377F163FF1EEAE64A2840 /* Archivo-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo-Variable.ttf"; sourceTree = "<group>"; };
@@ -305,6 +308,7 @@
 		F2FC8D270CE0AC2F405E6658 /* WatchTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTodayView.swift; sourceTree = "<group>"; };
 		F496DF678C9371178579F128 /* WrathspeedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowTests.swift; sourceTree = "<group>"; };
+		F89F2D90B5ECD79BB65212FD /* FloatingTabBarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabBarUITests.swift; sourceTree = "<group>"; };
 		F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = mobility_catalog.json; sourceTree = "<group>"; };
 		FD7196FABE0089AB0A194C01 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FE5F45C0CD88B74614790F6D /* WorkoutResultRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutResultRecordTests.swift; sourceTree = "<group>"; };
@@ -385,6 +389,7 @@
 				DA6BD22CACFB4E918421417D /* WorkoutResultTreadmillTests.swift */,
 				5A37992E14C3ADABCFD41467 /* WSLayoutMatrixTests.swift */,
 				45783DB7053C7A126781F384 /* WSMarkTests.swift */,
+				79A7AC54D376239E484B6BD4 /* WSTabBarTests.swift */,
 				BB3A2C907ECC3558370C169D /* WSTypeTests.swift */,
 			);
 			path = WrathspeedTests;
@@ -410,6 +415,7 @@
 			isa = PBXGroup;
 			children = (
 				7F09743C5F592BD63C333F76 /* ExerciseMediaScreenshotUITests.swift */,
+				F89F2D90B5ECD79BB65212FD /* FloatingTabBarUITests.swift */,
 				458B6D1DC77674D347C7ABF0 /* GuidedResumeUITests.swift */,
 				6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */,
 				1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */,
@@ -761,6 +767,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7A259D89083C1E7289D8FEDA /* ExerciseMediaScreenshotUITests.swift in Sources */,
+				9953DDA6A2256BD883E523B0 /* FloatingTabBarUITests.swift in Sources */,
 				837A08A89525E4FD9859C4F5 /* GuidedResumeUITests.swift in Sources */,
 				61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */,
 				D34DE6FD21590BB8FA11E10C /* MarkAccessibilityUITests.swift in Sources */,
@@ -829,6 +836,7 @@
 				42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */,
 				926669ED1FE14A6A98F72213 /* WSLayoutMatrixTests.swift in Sources */,
 				C8EC45819625F10E3B59BC9F /* WSMarkTests.swift in Sources */,
+				C4CEF76CF81DED1D7E5C2432 /* WSTabBarTests.swift in Sources */,
 				BAF6681421E0E52D5B31AA54 /* WSTypeTests.swift in Sources */,
 				CA2C6BFB50A108A54512C6D4 /* WatchLaunchTimeoutTests.swift in Sources */,
 				6D1E826E8B9EC666BE7D1D5C /* WorkoutReminderTests.swift in Sources */,

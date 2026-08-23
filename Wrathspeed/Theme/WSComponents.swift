@@ -364,40 +364,109 @@ enum AppTab: String, CaseIterable, Identifiable {
         case .settings: "SETTINGS"
         }
     }
+    var symbol: String {
+        switch self {
+        case .today: "bolt.fill"
+        case .plan: "calendar"
+        case .history: "chart.line.uptrend.xyaxis"
+        case .settings: "slider.horizontal.3"
+        }
+    }
 }
 
 struct WSTabBar: View {
     @Binding var selection: AppTab
 
+    /// The capsule itself. Each tab fills its full height, so this is also each tap target's
+    /// height.
+    static let height: CGFloat = 56
+    /// How far it floats above the safe area.
+    static let gap: CGFloat = 8
+    /// What a scroll view underneath has to clear.
+    static var footprint: CGFloat { height + gap }
+
+    @Namespace private var activeTab
+
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
             ForEach(AppTab.allCases) { tab in
                 Button {
-                    selection = tab
+                    withAnimation(.snappy(duration: 0.25)) { selection = tab }
                 } label: {
-                    Text(tab.label)
-                        .wsType(.chromeTab)
-                        .lineLimit(1)
-                        .foregroundStyle(selection == tab ? WSColor.accent : WSColor.text35)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 44)
+                    tabContent(tab)
                 }
                 .buttonStyle(.plain)
-                // The bar deliberately does not grow with Dynamic Type: Apple exempts tab bars
-                // from the Larger Text criteria precisely because a bar that scaled would take
-                // roughly a quarter of the screen, and it is on screen at all times. Long-press
-                // surfaces the label at full size through the system's large content viewer,
-                // and VoiceOver reads it regardless.
+                // Inactive tabs show no text at all, so the name has to be declared. The UI
+                // suites navigate by tab name and would otherwise lose three of four queries.
+                .accessibilityLabel(tab.label)
+                .accessibilityAddTraits(selection == tab ? [.isButton, .isSelected] : .isButton)
+                // The bar deliberately does not grow with Dynamic Type -- Apple exempts tab bars
+                // from the Larger Text criteria because a bar that scaled would take roughly a
+                // quarter of the screen. Long-press shows the icon and the label at full size.
                 .accessibilityShowsLargeContentViewer {
-                    Text(tab.label)
+                    Label(tab.label, systemImage: tab.symbol)
                 }
             }
         }
-        .padding(.bottom, 22)
-        .background(WSColor.bg)
-        .overlay(alignment: .top) {
-            Rectangle().fill(WSColor.hairline).frame(height: 1)
+        .padding(.horizontal, 6)
+        .frame(height: Self.height)
+        .background(WSColor.bgAlert, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(WSColor.hairlineStrong, lineWidth: 1))
+        .padding(.horizontal, 16)
+        .padding(.bottom, Self.gap)
+    }
+
+    @ViewBuilder
+    private func tabContent(_ tab: AppTab) -> some View {
+        let isSelected = selection == tab
+        HStack(spacing: 7) {
+            Image(systemName: tab.symbol)
+                // Fixed, like the label: this is chrome, not content.
+                .font(.system(size: 20, weight: .semibold))
+                .accessibilityHidden(true)
+            if isSelected {
+                Text(tab.label)
+                    .wsType(.chromeTab)
+                    .lineLimit(1)
+                    .fixedSize()
+            }
         }
+        .foregroundStyle(isSelected ? WSColor.bg : WSColor.text50)
+        // Fills the capsule's full height so the whole cell is tappable. Sizing the content to
+        // 44pt instead would leave a dead strip top and bottom that still looks like part of
+        // the bar, and would put the tap target exactly on the 44pt floor with nothing spare.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            if isSelected {
+                Capsule(style: .continuous)
+                    .fill(WSColor.accent)
+                    // Inset so the accent pill still reads as 44pt inside the 56pt bar; the
+                    // tap target stays the full cell.
+                    .padding(.vertical, 6)
+                    .matchedGeometryEffect(id: "activeTab", in: activeTab)
+            }
+        }
+        // Rectangle, not Capsule: a capsule hit region narrows to a point at each tab seam,
+        // which is where two icons are closest together.
+        .contentShape(Rectangle())
+    }
+}
+
+private struct WSBottomBarInsetKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    /// How much room the floating tab bar needs at the bottom of a scroll view so its last row
+    /// is not trapped underneath. Zero on screens with no bar over them.
+    ///
+    /// Note this propagates into sheets and covers presented from inside the tab content —
+    /// PlanView's workout sheets, TodayView's players — where the bar is not actually visible.
+    /// None of them uses WSScreen today; one that did would get clearance for a bar that isn't
+    /// there, and should set this back to 0.
+    var wsBottomBarInset: CGFloat {
+        get { self[WSBottomBarInsetKey.self] }
+        set { self[WSBottomBarInsetKey.self] = newValue }
     }
 }
 
@@ -405,15 +474,21 @@ struct WSScreen<Content: View>: View {
     var topPadding: CGFloat = 10
     @ViewBuilder var content: () -> Content
 
+    @Environment(\.wsBottomBarInset) private var bottomBarInset
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 content()
             }
             .padding(.top, topPadding)
-            .padding(.bottom, 28)
+            .padding(.bottom, 28 + bottomBarInset)
         }
         .scrollIndicators(.hidden)
+        // Identified so UI tests can target the screen's own scroll view rather than
+        // app.scrollViews.firstMatch, which is ambiguous wherever a screen nests a horizontal
+        // scroll view inside this one -- PlanView's week strip does exactly that.
+        .accessibilityIdentifier("ws.screen.scroll")
         .background(WSColor.bg.ignoresSafeArea())
     }
 }
