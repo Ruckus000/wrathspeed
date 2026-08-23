@@ -74,11 +74,11 @@ struct StrengthPlayerView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        WSRow(alignment: .firstTextBaseline) {
             Text("\(session.title.uppercased()) · \(session.durationMinutes) MIN")
                 .wsType(.label, weight: .bold, tracking: 2)
                 .foregroundStyle(WSColor.text50)
-            Spacer()
+        } trailing: {
             Button("FINISH") { finishSession() }
                 .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.accent)
@@ -101,7 +101,7 @@ struct StrengthPlayerView: View {
 
     private func activeView(_ current: StrengthSet) -> some View {
         Group {
-            HStack {
+            WSRow {
                 Button("← PREVIOUS") { goPrevious() }
                     .wsType(.label, weight: .heavy)
                     .foregroundStyle(canGoPrevious ? WSColor.text50 : WSColor.text35)
@@ -109,7 +109,7 @@ struct StrengthPlayerView: View {
                     .frame(minHeight: 44)
                     .accessibilityLabel(canGoPrevious ? "Previous" : "Previous, unavailable")
                     .accessibilityHint(canGoPrevious ? "" : "At the first exercise")
-                Spacer()
+            } trailing: {
                 Button("NEXT →") { goNext() }
                     .wsType(.label, weight: .heavy)
                     .foregroundStyle(canGoNext ? WSColor.text50 : WSColor.text35)
@@ -160,10 +160,10 @@ struct StrengthPlayerView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
             }
-            HStack {
+            WSRow {
                 Text("REPS")
                     .wsType(.label, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSStepperControl(
                     valueText: "\(reps)",
                     decrement: { reps = max(1, reps - 1); persistProgressIfNeeded(force: true) },
@@ -172,10 +172,10 @@ struct StrengthPlayerView: View {
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 12)
-            HStack {
+            WSRow {
                 Text("LOAD")
                     .wsType(.label, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSChipRow {
                     WSChip(title: "KG", selected: loadUnit == "kg") {
                         applyLoadUnit("kg")
@@ -206,10 +206,10 @@ struct StrengthPlayerView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
                 .onChange(of: note) { _, _ in persistProgressIfNeeded(force: true) }
-            HStack {
+            WSRow {
                 Text("REST")
                     .wsType(.label, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSStepperControl(
                     valueText: "\(remaining)s",
                     decrement: { remaining = max(0, remaining - 5); persistProgressIfNeeded(force: true) },
@@ -262,10 +262,10 @@ struct StrengthPlayerView: View {
                 Text("\(logs.filter(\.completed).count) SETS LOGGED")
                     .wsType(.body, weight: .semibold)
                     .foregroundStyle(Color.white.opacity(0.6))
-                HStack {
+                WSRow {
                     Text("DIFFICULTY")
                         .wsType(.label, weight: .heavy)
-                    Spacer()
+                } trailing: {
                     WSStepperControl(
                         valueText: "RPE \(difficultyRPE)",
                         decrement: { difficultyRPE = max(1, difficultyRPE - 1); try? persistCompleted(force: true) },

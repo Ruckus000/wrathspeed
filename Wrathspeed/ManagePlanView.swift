@@ -150,10 +150,10 @@ struct ManagePlanView: View {
                 }
             }
             .padding(.horizontal, WSSpace.gutter)
-            HStack {
+            WSRow {
                 Text("RUNS / WEEK")
                     .wsType(.body, weight: .heavy)
-                Spacer()
+            } trailing: {
                 WSStepperControl(
                     valueText: "\(daysPerWeek)",
                     decrement: { daysPerWeek = max(3, daysPerWeek - 1) },

@@ -65,11 +65,11 @@ struct MovementLibraryView: View {
     }
 
     private func row(_ entry: MovementLibraryEntry) -> some View {
-        HStack {
+        WSRow {
             Text(entry.name.uppercased())
                 .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text)
-            Spacer()
+        } trailing: {
             Text("›")
                 .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text40)

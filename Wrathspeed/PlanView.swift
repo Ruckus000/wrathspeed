@@ -104,11 +104,11 @@ struct PlanView: View {
                             Button {
                                 selectedWeek = week.start
                             } label: {
-                                HStack {
+                                WSRow {
                                     Text(weekLabel(week.start, workouts: week.workouts))
                                         .wsType(.body, weight: .bold)
                                         .foregroundStyle(Color.white.opacity(0.65))
-                                    Spacer()
+                                } trailing: {
                                     Text("\(WSFormat.distance(week.workouts.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }, unit: store.unit)) ›")
                                         .wsType(.metric)
                                         .foregroundStyle(WSColor.text)
@@ -246,24 +246,28 @@ struct PlanView: View {
             if converted { return "\(workout.blueprint.title.uppercased()) (CONVERTED)" }
             return workout.blueprint.title.uppercased()
         }()
-        return HStack(spacing: 10) {
-            Text(weekday(workout.date))
-                .wsType(.metric, weight: .bold)
-                .foregroundStyle(isToday ? WSColor.accent : WSColor.text45)
-                .frame(width: 34, alignment: .leading)
-            Text(title)
-                .wsType(.body, weight: completed ? .bold : .heavy)
-                .strikethrough(completed)
-                .foregroundStyle(WSColor.text)
-                .lineLimit(1)
-            if workout.blueprint.kind.isQuality, !converted {
-                Text("Q")
-                    .wsType(.caption, weight: .heavy)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+        return WSRow(spacing: 10) {
+            // Kept together so the stacked arrangement does not break this
+            // group onto separate lines of its own.
+            HStack(spacing: 10) {
+                Text(weekday(workout.date))
+                    .wsType(.metric, weight: .bold)
+                    .foregroundStyle(isToday ? WSColor.accent : WSColor.text45)
+                    .frame(width: 34, alignment: .leading)
+                Text(title)
+                    .wsType(.body, weight: completed ? .bold : .heavy)
+                    .strikethrough(completed)
+                    .foregroundStyle(WSColor.text)
+                    .lineLimit(1)
+                if workout.blueprint.kind.isQuality, !converted {
+                    Text("Q")
+                        .wsType(.caption, weight: .heavy)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
+                }
             }
-            Spacer()
+        } trailing: {
             Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
                 .wsType(.metric)
                 .foregroundStyle(WSColor.text)
@@ -310,20 +314,24 @@ struct WeekDetailView: View {
                 .padding(.top, 12)
             VStack(spacing: 0) {
                 ForEach(workouts) { workout in
-                    HStack(alignment: .top, spacing: 14) {
-                        Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
-                            .wsType(.metric, weight: .bold)
-                            .foregroundStyle(Color.white.opacity(0.55))
-                            .frame(width: 34, alignment: .leading)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(workout.blueprint.title.uppercased())
-                                .wsType(.body, weight: .heavy)
-                                .foregroundStyle(WSColor.text)
-                            Text(subline(workout))
-                                .wsType(.metric, weight: .medium)
-                                .foregroundStyle(WSColor.text40)
+                    WSRow(alignment: .top, spacing: 14) {
+                        // Kept together so the stacked arrangement does not break this
+                        // group onto separate lines of its own.
+                        HStack(spacing: 14) {
+                            Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
+                                .wsType(.metric, weight: .bold)
+                                .foregroundStyle(Color.white.opacity(0.55))
+                                .frame(width: 34, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(workout.blueprint.title.uppercased())
+                                    .wsType(.body, weight: .heavy)
+                                    .foregroundStyle(WSColor.text)
+                                Text(subline(workout))
+                                    .wsType(.metric, weight: .medium)
+                                    .foregroundStyle(WSColor.text40)
+                            }
                         }
-                        Spacer()
+                    } trailing: {
                         Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
                             .wsType(.metric)
                     }
@@ -401,11 +409,11 @@ struct WorkoutDetailSheet: View {
         // and everything below the fold would otherwise be unreachable.
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
+                WSRow(alignment: .firstTextBaseline) {
                     Text(workout.blueprint.title.uppercased())
                         .wsType(.displayS)
                         .foregroundStyle(WSColor.text)
-                    Spacer()
+                } trailing: {
                     Button {
                         dismiss()
                     } label: {
@@ -430,10 +438,10 @@ struct WorkoutDetailSheet: View {
                     .padding(.top, 6)
                 VStack(spacing: 0) {
                     ForEach(workout.blueprint.steps) { step in
-                        HStack {
+                        WSRow {
                             Text(step.name)
                                 .wsType(.body, weight: .bold)
-                            Spacer()
+                        } trailing: {
                             Text(stepLabel(step))
                                 .wsType(.metric)
                                 .foregroundStyle(WSColor.text50)
@@ -484,7 +492,7 @@ struct WorkoutDetailSheet: View {
                     VStack(spacing: 0) {
                         ForEach(routines) { routine in
                             Button { selectedRoutine = routine } label: {
-                                HStack {
+                                WSRow {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(routine.title.uppercased())
                                             .wsType(.body, weight: .bold)
@@ -493,7 +501,7 @@ struct WorkoutDetailSheet: View {
                                             .wsType(.metric)
                                             .foregroundStyle(WSColor.text50)
                                     }
-                                    Spacer()
+                                } trailing: {
                                     Text("›")
                                         .wsType(.body, weight: .heavy)
                                         .foregroundStyle(WSColor.text40)

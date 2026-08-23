@@ -178,10 +178,10 @@ struct InstantRunView: View {
         value: Binding<Double>,
         range: ClosedRange<Double>
     ) -> some View {
-        HStack {
+        WSRow {
             Text(label)
                 .wsType(.body, weight: .heavy)
-            Spacer()
+        } trailing: {
             WSStepperControl(
                 valueText: String(format: "%.1f %@", value.wrappedValue, WSFormat.unitLabel(store.unit)),
                 decrement: { value.wrappedValue = max(range.lowerBound, value.wrappedValue - 0.5) ; rebuildPreview() },
@@ -192,10 +192,10 @@ struct InstantRunView: View {
     }
 
     private var durationStepper: some View {
-        HStack {
+        WSRow {
             Text("DURATION")
                 .wsType(.body, weight: .heavy)
-            Spacer()
+        } trailing: {
             WSStepperControl(
                 valueText: "\(Int(durationMinutes)) MIN",
                 decrement: { durationMinutes = max(10, durationMinutes - 5); rebuildPreview() },
@@ -206,10 +206,10 @@ struct InstantRunView: View {
     }
 
     private func minuteStepper(label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
-        HStack {
+        WSRow {
             Text(label)
                 .wsType(.body, weight: .heavy)
-            Spacer()
+        } trailing: {
             WSStepperControl(
                 valueText: minuteLabel(value.wrappedValue),
                 decrement: { value.wrappedValue = max(range.lowerBound, value.wrappedValue - 0.5); rebuildPreview() },
@@ -228,10 +228,10 @@ struct InstantRunView: View {
     }
 
     private func repsStepper(label: String, value: Binding<Int>) -> some View {
-        HStack {
+        WSRow {
             Text(label)
                 .wsType(.body, weight: .heavy)
-            Spacer()
+        } trailing: {
             WSStepperControl(
                 valueText: "\(value.wrappedValue)",
                 decrement: { value.wrappedValue = max(1, value.wrappedValue - 1); rebuildPreview() },
@@ -253,9 +253,9 @@ struct InstantRunView: View {
                 .wsType(.metric)
                 .foregroundStyle(WSColor.text50)
             ForEach(blueprint.steps.prefix(4)) { step in
-                HStack {
+                WSRow {
                     Text(step.name)
-                    Spacer()
+                } trailing: {
                     Text(stepLabel(step))
                         .wsType(.metric)
                         .foregroundStyle(WSColor.text50)

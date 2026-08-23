@@ -179,11 +179,11 @@ struct WSSelectRow<Accessory: View>: View {
 
     var body: some View {
         Button(action: action) {
-            HStack {
+            WSRow {
                 Text(title)
                     .wsType(.body)
                     .foregroundStyle(WSColor.text)
-                Spacer(minLength: 12)
+            } trailing: {
                 accessory()
             }
             .padding(.horizontal, 16)
@@ -248,19 +248,16 @@ struct WSHairlineRow: View {
     var valueColor: Color = WSColor.text
     var showDivider: Bool = true
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
     var body: some View {
         VStack(spacing: 0) {
-            // Label and value sit side by side until the text is large enough that sharing a
-            // line would squeeze either of them narrower than its own longest word -- which is
-            // what produces mid-word breaks like "STR/ENG/TH". Apple's rule for this is to wrap
-            // side-by-side elements vertically rather than let them collide.
-            layout {
+            // Was an isAccessibilitySize threshold, now WSRow. The threshold was wrong in both
+            // directions: it stacked short pairs that fitted fine, and missed squeezes below the
+            // accessibility sizes. WSRow measures instead.
+            WSRow {
                 Text(label)
                     .wsType(.body)
                     .foregroundStyle(Color.white.opacity(0.60))
-                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 12) }
+            } trailing: {
                 Text(value)
                     .wsType(.metric, weight: .bold)
                     .foregroundStyle(valueColor)
@@ -271,12 +268,6 @@ struct WSHairlineRow: View {
                 Rectangle().fill(WSColor.hairline).frame(height: 1)
             }
         }
-    }
-
-    private var layout: AnyLayout {
-        dynamicTypeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
-            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 0))
     }
 }
 

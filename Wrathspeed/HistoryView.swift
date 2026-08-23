@@ -230,11 +230,11 @@ struct HistoryView: View {
             RunDetailView(result: result)
         } label: {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline) {
+                WSRow(alignment: .firstTextBaseline) {
                     Text(title(for: result))
                         .wsType(.body, weight: .heavy)
                         .foregroundStyle(WSColor.text)
-                    Spacer()
+                } trailing: {
                     Text("\(WSFormat.weekdayDate(result.startedAt)) ›")
                         .wsType(.metricS)
                         .foregroundStyle(WSColor.text40)
@@ -377,13 +377,13 @@ struct RunDetailView: View {
 
     var body: some View {
         WSScreen {
-            HStack {
+            WSRow {
                 Button("← HISTORY") { dismiss() }
                     .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Back to history")
-                Spacer()
+            } trailing: {
                 Text(WSFormat.weekdayDate(currentResult.startedAt))
                     .wsType(.metric)
                     .foregroundStyle(WSColor.text40)

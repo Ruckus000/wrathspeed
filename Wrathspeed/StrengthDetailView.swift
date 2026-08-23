@@ -39,13 +39,13 @@ struct StrengthDetailView: View {
 
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
+            WSRow {
                 Button("← HISTORY") { dismiss() }
                     .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Back to history")
-                Spacer()
+            } trailing: {
                 Text(WSFormat.weekdayDate(result.startedAt))
                     .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
@@ -121,11 +121,11 @@ struct StrengthDetailView: View {
         let status = log.skipped ? "SKIPPED" : (log.completed ? "COMPLETED" : "INCOMPLETE")
         let detail = setDetail(log)
         return VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
+            WSRow(alignment: .firstTextBaseline) {
                 Text(exerciseName(for: log).uppercased())
                     .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text)
-                Spacer()
+            } trailing: {
                 Text(status)
                     .wsType(.metricS, weight: .bold)
                     .foregroundStyle(log.skipped ? WSColor.text50 : WSColor.accent)

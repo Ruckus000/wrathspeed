@@ -130,10 +130,10 @@ struct WorkoutPreflightView: View {
                 Text("Set a target belt speed. We'll estimate distance until you confirm the treadmill total.")
                     .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text50)
-                HStack {
+                WSRow {
                     Text(store.unit == .miles ? "MPH" : "KM/H")
                         .wsType(.body, weight: .heavy)
-                    Spacer()
+                } trailing: {
                     WSStepperControl(
                         valueText: String(format: "%.1f", manualTreadmillSpeedDisplay),
                         decrement: { manualTreadmillSpeedDisplay = max(1, manualTreadmillSpeedDisplay - 0.5) },
@@ -164,10 +164,10 @@ struct WorkoutPreflightView: View {
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 16)
             ForEach(blueprint.steps.prefix(6)) { step in
-                HStack {
+                WSRow {
                     Text(step.name)
                         .wsType(.body, weight: .bold)
-                    Spacer()
+                } trailing: {
                     Text(stepSummary(step))
                         .wsType(.metric)
                         .foregroundStyle(WSColor.text50)
@@ -212,11 +212,11 @@ struct WorkoutPreflightView: View {
     }
 
     private func preflightRow(_ label: String, _ value: String) -> some View {
-        HStack {
+        WSRow {
             Text(label)
                 .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.text45)
-            Spacer()
+        } trailing: {
             Text(value)
                 .wsType(.metric)
                 .foregroundStyle(WSColor.text)
