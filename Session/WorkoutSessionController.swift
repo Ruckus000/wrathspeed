@@ -44,7 +44,9 @@ final class WorkoutSessionController: NSObject {
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
     private var startedAt: Date?
-    private var isPrimary = true
+    /// True when this device owns the session, false when it is mirroring the Watch's.
+    /// Read by the live screen to say which device is actually recording.
+    private(set) var isPrimary = true
     private var applyingRemote = false
     private let routeRecorder: any WorkoutRouteRecording
     private var pauseStartedAt: Date?

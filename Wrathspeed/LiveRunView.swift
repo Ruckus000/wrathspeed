@@ -187,12 +187,30 @@ struct LiveRunView: View {
 
     /// Nothing is recording yet while the Watch is being launched, so LAP/PAUSE/END are all
     /// inert here -- END in particular cannot finish a session that was never created. Offer
-    /// the way out instead of three controls that do nothing.
+    /// the way out instead of three controls that do nothing, and the full set of recoveries
+    /// once the Watch has run out of time.
+    ///
+    /// Inline rather than a sheet: this view is itself a fullScreenCover, so presenting one
+    /// from RootView while it is up would be a second presentation from a view already
+    /// presenting -- the failure this codebase has hit twice before.
+    @ViewBuilder
     private var waitingForWatchTransport: some View {
-        WSOutlineButton(title: "CANCEL", color: WSColor.destructive) {
-            store.cancelWatchLaunch()
+        VStack(spacing: 10) {
+            if store.showWatchLaunchTimeout {
+                WSPrimaryButton(title: "RETRY WATCH", height: 52, role: .control) {
+                    Task { await store.retryWatchLaunch() }
+                }
+                .accessibilityLabel("Retry launching Apple Watch")
+                WSOutlineButton(title: "START ON PHONE") {
+                    Task { await store.startOnPhoneAfterWatchTimeout() }
+                }
+                .accessibilityLabel("Start this workout on iPhone instead")
+            }
+            WSOutlineButton(title: "CANCEL", color: WSColor.destructive) {
+                store.cancelWatchLaunch()
+            }
+            .accessibilityLabel("Cancel waiting for Apple Watch")
         }
-        .accessibilityLabel("Cancel waiting for Apple Watch")
         .padding(.horizontal, WSSpace.gutter)
         .padding(.bottom, 8)
     }
@@ -242,11 +260,19 @@ struct LiveRunView: View {
     }
 
     private var statusText: String {
+        // launchState stays .waitingForWatch after the timeout, so without this the screen
+        // would go on claiming it is still waiting underneath the recovery actions.
+        if store.showWatchLaunchTimeout {
+            return "Apple Watch did not connect within 12 seconds."
+        }
         switch store.session.launchState {
-        case .idle: "Starting…"
-        case .waitingForWatch: "Waiting for Apple Watch to start…"
-        case .recording: WCSessionBridge.isWatchAppInstalled ? "Watch is recording. Phone can disconnect." : "Phone is recording."
-        case let .failed(message): "Couldn’t start: \(message)"
+        case .idle: return "Starting…"
+        case .waitingForWatch: return "Waiting for Apple Watch to start…"
+        // Who is recording is answered by who owns the session, not by whether a Watch app
+        // happens to be installed. Keyed off the latter, START ON PHONE ended with the phone
+        // recording while the screen said the Watch was and the phone could disconnect.
+        case .recording: return store.session.isPrimary ? "Phone is recording." : "Watch is recording. Phone can disconnect."
+        case let .failed(message): return "Couldn’t start: \(message)"
         }
     }
 }
