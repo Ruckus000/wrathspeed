@@ -377,6 +377,13 @@ enum AppTab: String, CaseIterable, Identifiable {
 struct WSTabBar: View {
     @Binding var selection: AppTab
 
+    /// The capsule itself. Four tabs divide it, so this is also each tap target's height.
+    static let height: CGFloat = 56
+    /// How far it floats above the safe area.
+    static let gap: CGFloat = 8
+    /// What a scroll view underneath has to clear.
+    static var footprint: CGFloat { height + gap }
+
     var body: some View {
         HStack {
             ForEach(AppTab.allCases) { tab in
@@ -409,9 +416,24 @@ struct WSTabBar: View {
     }
 }
 
+private struct WSBottomBarInsetKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    /// How much room the floating tab bar needs at the bottom of a scroll view so its last row
+    /// is not trapped underneath. Zero on screens with no bar over them.
+    var wsBottomBarInset: CGFloat {
+        get { self[WSBottomBarInsetKey.self] }
+        set { self[WSBottomBarInsetKey.self] = newValue }
+    }
+}
+
 struct WSScreen<Content: View>: View {
     var topPadding: CGFloat = 10
     @ViewBuilder var content: () -> Content
+
+    @Environment(\.wsBottomBarInset) private var bottomBarInset
 
     var body: some View {
         ScrollView {
@@ -419,7 +441,7 @@ struct WSScreen<Content: View>: View {
                 content()
             }
             .padding(.top, topPadding)
-            .padding(.bottom, 28)
+            .padding(.bottom, 28 + bottomBarInset)
         }
         .scrollIndicators(.hidden)
         .background(WSColor.bg.ignoresSafeArea())
