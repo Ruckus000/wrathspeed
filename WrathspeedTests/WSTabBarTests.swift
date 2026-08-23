@@ -18,12 +18,17 @@ final class WSTabBarTests: XCTestCase {
     }
 
     // A ScrollView is greedy and reports the height it was proposed, not its content, so the
-    // clearance cannot be measured through WSScreen directly. This pins the arithmetic; the
-    // proof that the clearance is actually enough is the end-of-scroll tap in
-    // FloatingTabBarUITests, which is the only thing that really shows it.
-    func testFootprintIsTheCapsulePlusItsGap() {
-        XCTAssertEqual(WSTabBar.footprint, WSTabBar.height + WSTabBar.gap, accuracy: 0.001)
-        XCTAssertGreaterThan(WSTabBar.footprint, 0)
+    // clearance cannot be measured through WSScreen directly. The real proof that the clearance
+    // is actually enough is the end-of-scroll tap in FloatingTabBarUITests, which is the only
+    // thing that really shows it.
+    //
+    // Pins the metrics themselves rather than the arithmetic between them: asserting that
+    // footprint equals height + gap only restates footprint's definition. Changing either
+    // number should be a deliberate act that updates this test.
+    func testMetricsAreTheOnesTheLayoutWasBuiltAround() {
+        XCTAssertEqual(WSTabBar.height, 56)
+        XCTAssertEqual(WSTabBar.gap, 8)
+        XCTAssertEqual(WSTabBar.footprint, 64)
     }
 
     func testTabHeightClearsTheFortyFourPointFloor() {
