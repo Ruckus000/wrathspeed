@@ -24,6 +24,10 @@ final class WorkoutSessionController: NSObject {
     var splitUnit: DistanceUnit = .kilometers
     var cueStyle: CueStyle = .standard
     var resultSource: WorkoutSource = .wrathspeedPhone
+    /// Set by the coordinator from the WatchConnectivity bridge before each start, rather than
+    /// read from a global here: both have to act on the same snapshot or the phone can begin a
+    /// solo workout after the Watch has already been asked to start one.
+    var watchAppIsInstalled = false
     var treadmillTargetSpeedMetersPerSecond: Double?
     var usesManualTreadmillDistance = false
     var pendingActualTreadmillDistance: Double?
@@ -137,7 +141,7 @@ final class WorkoutSessionController: NSObject {
         configuration.locationType = blueprint.location == .outdoor ? .outdoor : .indoor
 
         #if os(iOS)
-        if WCSessionBridge.isWatchAppInstalled {
+        if watchAppIsInstalled {
             launchState = .waitingForWatch
             do {
                 try await startWatchApp(configuration)

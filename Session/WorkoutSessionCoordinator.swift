@@ -13,6 +13,10 @@ final class WorkoutSessionCoordinator {
 
     let session = WorkoutSessionController()
     private let bridge = WCSessionBridge()
+
+    /// Whether a paired Watch can take this workout. Observable through `bridge`, so a view
+    /// reading it updates when WatchConnectivity finishes activating.
+    var isWatchAppAvailable: Bool { bridge.isWatchAppInstalled }
     private let watchLaunchTimeout: Duration
     private var watchTimeoutTask: Task<Void, Never>?
     private(set) var watchLaunchPhase: WatchLaunchPhase = .idle
@@ -92,8 +96,13 @@ final class WorkoutSessionCoordinator {
         session.resultSource = source
         session.zones = zones
         session.cuesEnabled = cuesEnabled
+        // One snapshot for both decisions. The controller used to re-read the global itself,
+        // so a state change mid-start could have it take the phone path while this branch had
+        // already told the Watch to start.
+        let watchAvailable = bridge.isWatchAppInstalled
+        session.watchAppIsInstalled = watchAvailable
 
-        if WCSessionBridge.isWatchAppInstalled {
+        if watchAvailable {
             setWatchLaunchPhase(.waitingForWatch)
             bridge.requestStart(blueprint, vdot: vdot, unit: unit)
             // Cancelled here but armed below. The twelve seconds must measure how long the
