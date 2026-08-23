@@ -127,17 +127,18 @@ final class TapTargetUITests: XCTestCase {
         scrollTo(row, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 6), "AUDIO CUES row not found in Settings")
 
-        let before = row.label
+        XCTAssertEqual(row.label, "AUDIO CUES, ON", "Cues should start on after a store reset")
         row.tap()
 
         // The row's label carries its own state ("AUDIO CUES, ON" / "... OFF"), so a real
-        // toggle shows up as a label change without needing a separate probe.
-        let changed = NSPredicate(format: "label != %@", before)
-        let expectation = XCTNSPredicateExpectation(predicate: changed, object: row)
-        let result = XCTWaiter.wait(for: [expectation], timeout: 5)
-        XCTAssertEqual(
-            result, .completed,
-            "Tapping the centre of the AUDIO CUES row did nothing. Label stayed '\(before)'."
+        // toggle shows up as a label change. Deliberately a fresh query rather than a
+        // predicate wait on `row`: toggling rebuilds the row's accessibility element, and a
+        // `firstMatch` reference held across the tap goes stale mid-wait. That is how this
+        // failed on CI -- the waiter timed out hunting the old "AUDIO CUES, ON" element while
+        // the pill had visibly flipped to OFF.
+        XCTAssertTrue(
+            app.buttons["AUDIO CUES, OFF"].waitForExistence(timeout: 5),
+            "Tapping the centre of the AUDIO CUES row did not toggle it off"
         )
     }
 
