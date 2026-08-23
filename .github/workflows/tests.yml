@@ -1,8 +1,16 @@
 name: Tests
 
 on:
+  # Deliberately unfiltered by base branch. A `branches:` filter here means a PR whose
+  # base is another PR's branch gets no run at all -- and GitHub renders "no workflow
+  # applies" identically to "the run has not started yet", so a stacked PR sits looking
+  # like it is waiting on CI that will never arrive. Two PRs in the tab bar / rows stack
+  # sat that way until someone thought to run `gh run list` and saw an empty array.
+  # Changing a PR's base does not fire a run either, since `edited` is not one of the
+  # default trigger types, so retargeting cannot rescue it after the fact.
   pull_request:
-    branches: [main]
+  # This one stays filtered: without it every push to a topic branch would run the whole
+  # macOS suite a second time alongside its own pull_request run.
   push:
     branches: [main]
 
