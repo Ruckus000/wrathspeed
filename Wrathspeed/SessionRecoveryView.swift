@@ -8,20 +8,20 @@ struct SessionRecoveryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("SESSION\nRECOVERY")
-                .font(WSFont.display(38))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityAddTraits(.isHeader)
             Text(recoveryMessage)
-                .font(WSFont.ui(14, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 12)
             if let blueprint = decodedBlueprint {
                 Text(blueprint.title.uppercased())
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 10)
                 Text("\(WSFormat.duration(snapshot.elapsedSeconds)) · \(WSFormat.distance(snapshot.distanceMeters, unit: store.unit))")
-                    .font(WSFont.mono(13))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
                     .padding(.top, 6)
             }
@@ -65,10 +65,10 @@ struct WatchLaunchTimeoutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("WATCH\nNOT READY")
-                .font(WSFont.display(36))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
             Text("Apple Watch did not connect within 12 seconds.")
-                .font(WSFont.ui(14, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 12)
             Spacer(minLength: 20)
@@ -82,7 +82,7 @@ struct WatchLaunchTimeoutView: View {
             Button("CANCEL") {
                 store.cancelWatchLaunch()
             }
-            .font(WSFont.ui(12, weight: .heavy))
+            .wsType(.label, weight: .heavy)
             .foregroundStyle(WSColor.destructive)
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.top, 12)

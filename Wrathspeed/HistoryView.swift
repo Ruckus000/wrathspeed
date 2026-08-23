@@ -15,7 +15,7 @@ struct HistoryView: View {
         NavigationStack {
             WSScreen {
                 Text("HISTORY")
-                    .font(WSFont.display(44))
+                    .wsType(.displayL)
                     .foregroundStyle(WSColor.text)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
@@ -72,7 +72,7 @@ struct HistoryView: View {
                 )
                 HStack(spacing: 8) {
                     if failure.canRetry {
-                        WSPrimaryButton(title: "RETRY IMPORT", height: 44, fontSize: 16) {
+                        WSPrimaryButton(title: "RETRY IMPORT", height: 44, role: .control) {
                             Task { await store.importHealthWorkouts() }
                         }
                         .accessibilityLabel("Retry Apple Health import")
@@ -91,7 +91,7 @@ struct HistoryView: View {
     }
 
     private var healthImportManualAction: some View {
-        WSOutlineButton(title: "IMPORT FROM APPLE HEALTH", height: 44) {
+        WSOutlineButton(title: "IMPORT FROM HEALTH", height: 44) {
             Task { await store.importHealthWorkouts() }
         }
         .padding(.horizontal, WSSpace.gutter)
@@ -108,13 +108,12 @@ struct HistoryView: View {
                         .accessibilityHidden(true)
                 }
                 Text(title)
-                    .font(WSFont.ui(11, weight: .heavy))
-                    .tracking(1.5)
+                    .wsType(.label, weight: .heavy, tracking: 1.5)
                     .foregroundStyle(Color.white.opacity(0.85))
             }
             if let message {
                 Text(message)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(.white)
             }
         }
@@ -134,11 +133,10 @@ struct HistoryView: View {
     private func weeklyRecapCard(eyebrow: String, headline: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(eyebrow)
-                .font(WSFont.ui(11, weight: .heavy))
-                .tracking(2)
+                .wsType(.label, weight: .heavy, tracking: 2)
                 .foregroundStyle(Color.white.opacity(0.75))
             Text(headline)
-                .font(WSFont.display(26))
+                .wsType(.displayXS)
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.75)
                 .lineLimit(3)
@@ -158,8 +156,7 @@ struct HistoryView: View {
         if summaries.count >= 2 {
             VStack(alignment: .leading, spacing: 8) {
                 Text("FOUR-WEEK LOAD")
-                    .font(WSFont.mono(10))
-                    .tracking(1.5)
+                    .wsType(.metricS, tracking: 1.5)
                     .foregroundStyle(WSColor.text40)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 18)
@@ -167,11 +164,11 @@ struct HistoryView: View {
                     ForEach(Array(summaries.enumerated()), id: \.offset) { _, summary in
                         HStack {
                             Text(WSFormat.weekdayDate(summary.weekStart))
-                                .font(WSFont.mono(11))
+                                .wsType(.metric)
                                 .foregroundStyle(WSColor.text50)
                                 .frame(width: 88, alignment: .leading)
                             Text(WSFormat.weeklyLoadLine(summary, unit: store.unit))
-                                .font(WSFont.mono(11))
+                                .wsType(.metric)
                                 .foregroundStyle(WSColor.text)
                                 .multilineTextAlignment(.trailing)
                             Spacer(minLength: 0)
@@ -235,11 +232,11 @@ struct HistoryView: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(title(for: result))
-                        .font(WSFont.ui(15, weight: .heavy))
+                        .wsType(.body, weight: .heavy)
                         .foregroundStyle(WSColor.text)
                     Spacer()
                     Text("\(WSFormat.weekdayDate(result.startedAt)) ›")
-                        .font(WSFont.mono(10))
+                        .wsType(.metricS)
                         .foregroundStyle(WSColor.text40)
                 }
                 HStack(spacing: 16) {
@@ -249,18 +246,18 @@ struct HistoryView: View {
                         Text(WSFormat.pace(pace, unit: store.unit))
                     }
                 }
-                .font(WSFont.mono(13))
+                .wsType(.metric)
                 .foregroundStyle(Color.white.opacity(0.75))
                 .padding(.top, 6)
                 if result.isUnavailableInHealth {
                     Text("UNAVAILABLE IN HEALTH")
-                        .font(WSFont.mono(10, weight: .bold))
+                        .wsType(.metricS, weight: .bold)
                         .foregroundStyle(WSColor.text50)
                         .padding(.top, 5)
                 }
                 if let comparison = store.comparison(for: result) {
                     Text(comparison)
-                        .font(WSFont.mono(11, weight: .medium))
+                        .wsType(.metric, weight: .medium)
                         .foregroundStyle(WSColor.accent)
                         .padding(.top, 5)
                 }
@@ -299,7 +296,7 @@ struct HistoryView: View {
 
     private func emptyState(_ message: String) -> some View {
         Text(message)
-            .font(WSFont.mono(12))
+            .wsType(.metric)
             .foregroundStyle(WSColor.text45)
             .padding(.vertical, 24)
             .accessibilityLabel(message)
@@ -311,9 +308,9 @@ struct HistoryView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Text(strengthSessionTitle(for: result))
-                    .font(WSFont.ui(15, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 Text("\(result.setLogs.filter(\.completed).count) sets · \(WSFormat.weekdayDate(result.startedAt))")
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text50)
             }
             .padding(.vertical, 16)
@@ -334,9 +331,9 @@ struct HistoryView: View {
         } label: {
             VStack(alignment: .leading, spacing: 6) {
                 Text(mobilityRoutineTitle(for: result))
-                    .font(WSFont.ui(15, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 Text("\(result.completedMovementIDs.count) movements · \(WSFormat.weekdayDate(result.startedAt))")
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text50)
             }
             .padding(.vertical, 16)
@@ -382,20 +379,19 @@ struct RunDetailView: View {
         WSScreen {
             HStack {
                 Button("← HISTORY") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Back to history")
                 Spacer()
                 Text(WSFormat.weekdayDate(currentResult.startedAt))
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text(title)
-                .font(WSFont.display(46))
+                .wsType(.displayL)
                 .foregroundStyle(WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(2)
@@ -418,7 +414,7 @@ struct RunDetailView: View {
             .padding(.horizontal, WSSpace.gutter)
             if let comparison = store.comparison(for: currentResult) {
                 Text(comparison)
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
@@ -447,7 +443,7 @@ struct RunDetailView: View {
             .accessibilityHidden(true)
         } else if currentResult.location == .outdoor {
             Text("ROUTE UNAVAILABLE")
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 16)
@@ -460,8 +456,7 @@ struct RunDetailView: View {
         let splits = store.resolvedSplits(for: currentResult)
         if !splits.isEmpty {
             Text(targetPace == nil ? "SPLITS" : "SPLITS · VS TARGET")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -477,8 +472,7 @@ struct RunDetailView: View {
     private var sessionSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("SESSION")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 22)
@@ -507,7 +501,7 @@ struct RunDetailView: View {
             .padding(.horizontal, WSSpace.gutter)
             if currentResult.isUnavailableInHealth {
                 Text("LOCAL RUN RECORD KEPT. APPLE HEALTH EVIDENCE WAS REMOVED OR IS NO LONGER AVAILABLE.")
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
@@ -555,12 +549,12 @@ struct RunDetailView: View {
         let workout = store.plan?.workouts.first { $0.id == suggestedID }
         return VStack(alignment: .leading, spacing: 10) {
             Text("MATCH TO PLAN?")
-                .font(WSFont.ui(13, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.accent)
             Text(workout?.blueprint.title.uppercased() ?? "PLANNED RUN")
-                .font(WSFont.ui(15, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             HStack(spacing: 8) {
-                WSPrimaryButton(title: "CONFIRM", height: 44, fontSize: 16) {
+                WSPrimaryButton(title: "CONFIRM", height: 44, role: .control) {
                     store.confirmHealthMatch(currentResult, scheduledWorkoutID: suggestedID)
                 }
                 .accessibilityLabel("Confirm match to plan")
@@ -602,16 +596,16 @@ struct RunDetailView: View {
         }
         return HStack(spacing: 12) {
             Text(String(format: "%02d", split.index))
-                .font(WSFont.mono(11, weight: .bold))
+                .wsType(.metric, weight: .bold)
                 .foregroundStyle(WSColor.text50)
                 .frame(width: 26, alignment: .leading)
             Text(paceLabel)
-                .font(WSFont.ui(15, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .frame(width: 64, alignment: .leading)
             if let comparison {
                 if reduceMotion {
                     Text(comparison.faster ? "FASTER" : "SLOWER")
-                        .font(WSFont.mono(10, weight: .bold))
+                        .wsType(.metricS, weight: .bold)
                         .foregroundStyle(comparison.faster ? WSColor.accent : WSColor.text50)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
@@ -626,7 +620,7 @@ struct RunDetailView: View {
                     .frame(height: 8)
                 }
                 Text(comparison.delta)
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(comparison.faster ? WSColor.accent : WSColor.text50)
                     .frame(width: 48, alignment: .trailing)
             } else {
@@ -646,12 +640,12 @@ struct RunDetailView: View {
     private func stat(_ label: String, _ value: String, accent: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text40)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             Text(value)
-                .font(WSFont.display(32))
+                .wsType(.displayS)
                 .foregroundStyle(accent ? WSColor.accent : WSColor.text)
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)

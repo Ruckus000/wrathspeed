@@ -37,20 +37,6 @@ enum WSSpace {
     static let sheetBottom: CGFloat = 52
 }
 
-enum WSFont {
-    static func display(_ size: CGFloat, relativeTo textStyle: Font.TextStyle = .largeTitle) -> Font {
-        .custom("Anton", size: size, relativeTo: textStyle)
-    }
-
-    static func ui(_ size: CGFloat, weight: Font.Weight = .bold, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        .custom("Archivo", size: size, relativeTo: textStyle).weight(weight)
-    }
-
-    static func mono(_ size: CGFloat, weight: Font.Weight = .semibold, relativeTo textStyle: Font.TextStyle = .body) -> Font {
-        .system(size: size, weight: weight, design: .monospaced).leading(.loose)
-    }
-}
-
 enum WSMotion {
     static let sheet: Double = 0.25
     static let pop: Double = 0.30
@@ -92,7 +78,7 @@ struct WSZoneBand: View {
                     Spacer()
                     Text(highLabel)
                 }
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(WSColor.text40)
             }
         }

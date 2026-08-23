@@ -19,8 +19,7 @@ struct PlanView: View {
                 weekHeadline
                 if store.lastUndoDescription != nil {
                     Button("UNDO LAST CHANGE") { store.undoLastPlanChange() }
-                        .font(WSFont.ui(12, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.accent)
                         .padding(.horizontal, WSSpace.gutter)
                         .padding(.top, 8)
@@ -34,8 +33,7 @@ struct PlanView: View {
                     // glyph run -- 13.3pt -- which is what made this intermittently
                     // impossible to tap.
                     Text("WEEKLY CALENDAR")
-                        .font(WSFont.ui(12, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.text50)
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
@@ -50,8 +48,7 @@ struct PlanView: View {
                     }
                 } label: {
                     Text("MANAGE PLAN")
-                        .font(WSFont.ui(12, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.text50)
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
@@ -65,8 +62,7 @@ struct PlanView: View {
                     Button("REVIEW MISSED WORK (\(situation.missedWorkouts.count))") {
                         showMissedWork = true
                     }
-                    .font(WSFont.ui(12, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.accent)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
@@ -77,7 +73,7 @@ struct PlanView: View {
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 14)
                 Text(planMeta)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
@@ -99,8 +95,7 @@ struct PlanView: View {
                 .padding(.top, 18)
                 if upcomingWeeks.count > 1 {
                     Text("UPCOMING")
-                        .font(WSFont.mono(10))
-                        .tracking(1)
+                        .wsType(.metricS, tracking: 1)
                         .foregroundStyle(WSColor.text40)
                         .padding(.horizontal, WSSpace.gutter)
                         .padding(.top, 18)
@@ -111,11 +106,11 @@ struct PlanView: View {
                             } label: {
                                 HStack {
                                     Text(weekLabel(week.start, workouts: week.workouts))
-                                        .font(WSFont.ui(13, weight: .bold))
+                                        .wsType(.body, weight: .bold)
                                         .foregroundStyle(Color.white.opacity(0.65))
                                     Spacer()
                                     Text("\(WSFormat.distance(week.workouts.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }, unit: store.unit)) ›")
-                                        .font(WSFont.mono(12))
+                                        .wsType(.metric)
                                         .foregroundStyle(WSColor.text)
                                 }
                                 .padding(.vertical, 11)
@@ -160,7 +155,7 @@ struct PlanView: View {
                 ForEach(days, id: \.date) { day in
                     VStack(spacing: 4) {
                         Text(day.label)
-                            .font(WSFont.mono(10))
+                            .wsType(.metricS)
                             .foregroundStyle(day.isToday ? WSColor.accent : WSColor.text40)
                         Circle()
                             .fill(day.hasWorkout ? WSColor.accent : WSColor.surface2)
@@ -202,7 +197,7 @@ struct PlanView: View {
             Text("/\(pair.total)")
                 .foregroundStyle(Color.white.opacity(0.3))
         }
-        .font(WSFont.display(60))
+        .wsType(.displayXL)
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 4)
     }
@@ -253,24 +248,24 @@ struct PlanView: View {
         }()
         return HStack(spacing: 10) {
             Text(weekday(workout.date))
-                .font(WSFont.mono(11, weight: .bold))
+                .wsType(.metric, weight: .bold)
                 .foregroundStyle(isToday ? WSColor.accent : WSColor.text45)
                 .frame(width: 34, alignment: .leading)
             Text(title)
-                .font(WSFont.ui(15, weight: completed ? .bold : .heavy))
+                .wsType(.body, weight: completed ? .bold : .heavy)
                 .strikethrough(completed)
                 .foregroundStyle(WSColor.text)
                 .lineLimit(1)
             if workout.blueprint.kind.isQuality, !converted {
                 Text("Q")
-                    .font(WSFont.ui(10, weight: .heavy))
+                    .wsType(.caption, weight: .heavy)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
                     .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 3, style: .continuous))
             }
             Spacer()
             Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text)
         }
         .padding(.vertical, 13)
@@ -296,8 +291,7 @@ struct WeekDetailView: View {
     var body: some View {
         WSScreen {
             Button("← PLAN") { dismiss() }
-                .font(WSFont.ui(13, weight: .heavy))
-                .tracking(1)
+                .wsType(.body, weight: .heavy, tracking: 1)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
@@ -305,12 +299,12 @@ struct WeekDetailView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 18)
             Text(title)
-                .font(WSFont.display(52))
+                .wsType(.displayL)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 4)
             Text(meta)
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -318,20 +312,20 @@ struct WeekDetailView: View {
                 ForEach(workouts) { workout in
                     HStack(alignment: .top, spacing: 14) {
                         Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
-                            .font(WSFont.mono(11, weight: .bold))
+                            .wsType(.metric, weight: .bold)
                             .foregroundStyle(Color.white.opacity(0.55))
                             .frame(width: 34, alignment: .leading)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(workout.blueprint.title.uppercased())
-                                .font(WSFont.ui(15, weight: .heavy))
+                                .wsType(.body, weight: .heavy)
                                 .foregroundStyle(WSColor.text)
                             Text(subline(workout))
-                                .font(WSFont.mono(11, weight: .medium))
+                                .wsType(.metric, weight: .medium)
                                 .foregroundStyle(WSColor.text40)
                         }
                         Spacer()
                         Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
-                            .font(WSFont.mono(12))
+                            .wsType(.metric)
                     }
                     .padding(.vertical, 14)
                     .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
@@ -342,7 +336,7 @@ struct WeekDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 WSEyebrow(text: "PROGRESSION RULE")
                 Text(rule)
-                    .font(WSFont.ui(12, weight: .medium))
+                    .wsType(.label, weight: .medium)
                     .foregroundStyle(Color.white.opacity(0.6))
                     .lineSpacing(4)
             }
@@ -409,7 +403,7 @@ struct WorkoutDetailSheet: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(workout.blueprint.title.uppercased())
-                        .font(WSFont.display(32))
+                        .wsType(.displayS)
                         .foregroundStyle(WSColor.text)
                     Spacer()
                     Button {
@@ -419,7 +413,7 @@ struct WorkoutDetailSheet: View {
                         // it is on the label: outside the Button it grows the layout but
                         // leaves the button's own hit and accessibility frame tiny.
                         Text("✕")
-                            .font(WSFont.ui(13, weight: .heavy))
+                            .wsType(.body, weight: .heavy)
                             .foregroundStyle(WSColor.text40)
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
@@ -431,17 +425,17 @@ struct WorkoutDetailSheet: View {
                     .accessibilityIdentifier("workout_sheet_close")
                 }
                 Text(meta)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text50)
                     .padding(.top, 6)
                 VStack(spacing: 0) {
                     ForEach(workout.blueprint.steps) { step in
                         HStack {
                             Text(step.name)
-                                .font(WSFont.ui(14, weight: .bold))
+                                .wsType(.body, weight: .bold)
                             Spacer()
                             Text(stepLabel(step))
-                                .font(WSFont.mono(11))
+                                .wsType(.metric)
                                 .foregroundStyle(WSColor.text50)
                         }
                         .padding(.vertical, 11)
@@ -450,7 +444,7 @@ struct WorkoutDetailSheet: View {
                 }
                 .padding(.top, 16)
                 if workout.status == .scheduled || workout.status == .convertedToEasy {
-                    WSPrimaryButton(title: "START", height: 56, fontSize: 20) {
+                    WSPrimaryButton(title: "START", height: 56, role: .control) {
                         onStart(workout.blueprint)
                         dismiss()
                     }
@@ -464,11 +458,11 @@ struct WorkoutDetailSheet: View {
                         store.skip(workout)
                         dismiss()
                     }
-                    .font(WSFont.ui(12, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.destructive)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 46)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 46)
                     .overlay(
                         RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                             .stroke(WSColor.destructive.opacity(0.6), lineWidth: 1.5)
@@ -483,8 +477,7 @@ struct WorkoutDetailSheet: View {
                 .padding(.top, 10)
                 if !routines.isEmpty {
                     Text("PREP AND RECOVERY")
-                        .font(WSFont.ui(12, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.label, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.text50)
                         .padding(.top, 22)
                         .accessibilityIdentifier("workout_prep_and_recovery")
@@ -494,15 +487,15 @@ struct WorkoutDetailSheet: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(routine.title.uppercased())
-                                            .font(WSFont.ui(14, weight: .bold))
+                                            .wsType(.body, weight: .bold)
                                             .foregroundStyle(WSColor.text)
                                         Text("\(routine.items.count) MOVEMENTS · \(routine.totalSeconds / 60) MIN")
-                                            .font(WSFont.mono(11))
+                                            .wsType(.metric)
                                             .foregroundStyle(WSColor.text50)
                                     }
                                     Spacer()
                                     Text("›")
-                                        .font(WSFont.ui(14, weight: .heavy))
+                                        .wsType(.body, weight: .heavy)
                                         .foregroundStyle(WSColor.text40)
                                 }
                                 .padding(.vertical, 11)
@@ -554,11 +547,11 @@ struct WorkoutDetailSheet: View {
 
     private func outline(_ title: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action)
-            .font(WSFont.ui(11, weight: .heavy))
-            .tracking(0.5)
+            .wsType(.label, weight: .heavy, tracking: 0.5)
             .foregroundStyle(WSColor.text)
             .frame(maxWidth: .infinity)
-            .frame(height: 46)
+            .padding(.vertical, 10)
+            .frame(minHeight: 46)
             .overlay(
                 RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                     .stroke(Color.white.opacity(0.25), lineWidth: 1.5)

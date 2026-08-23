@@ -23,25 +23,25 @@ struct TreadmillDistanceSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("TREADMILL\nDISTANCE")
-                .font(WSFont.display(34))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityAddTraits(.isHeader)
             Text("Enter the distance your treadmill reported. We'll replace the speed × time estimate before saving.")
-                .font(WSFont.ui(14, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 12)
             HStack {
                 Text("ESTIMATE")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.text45)
                 Spacer()
                 Text(WSFormat.distance(pending.estimateMeters, unit: store.unit))
-                    .font(WSFont.mono(13))
+                    .wsType(.metric)
             }
             .padding(.top, 20)
             HStack {
                 Text("ACTUAL")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 Spacer()
                 WSStepperControl(
                     valueText: String(format: "%.2f %@", actualDisplay, WSFormat.unitLabel(store.unit)),
@@ -59,7 +59,7 @@ struct TreadmillDistanceSheet: View {
             Button("USE ESTIMATE") {
                 store.confirmTreadmillDistance(Units.display(fromMeters: pending.estimateMeters, unit: store.unit))
             }
-            .font(WSFont.ui(12, weight: .heavy))
+            .wsType(.label, weight: .heavy)
             .foregroundStyle(WSColor.text50)
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.top, 8)

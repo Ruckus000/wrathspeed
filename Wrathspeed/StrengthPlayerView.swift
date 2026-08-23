@@ -76,12 +76,11 @@ struct StrengthPlayerView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("\(session.title.uppercased()) · \(session.durationMinutes) MIN")
-                .font(WSFont.ui(12, weight: .bold))
-                .tracking(2)
+                .wsType(.label, weight: .bold, tracking: 2)
                 .foregroundStyle(WSColor.text50)
             Spacer()
             Button("FINISH") { finishSession() }
-                .font(WSFont.ui(11, weight: .heavy))
+                .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.accent)
                 .frame(minHeight: 44)
                 .accessibilityLabel("Finish strength session")
@@ -91,7 +90,7 @@ struct StrengthPlayerView: View {
                     dismiss()
                 } catch {}
             }
-            .font(WSFont.ui(12, weight: .heavy))
+            .wsType(.label, weight: .heavy)
             .foregroundStyle(WSColor.text40)
             .frame(minWidth: 44, minHeight: 44)
             .accessibilityLabel("Close")
@@ -104,7 +103,7 @@ struct StrengthPlayerView: View {
         Group {
             HStack {
                 Button("← PREVIOUS") { goPrevious() }
-                    .font(WSFont.ui(11, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(canGoPrevious ? WSColor.text50 : WSColor.text35)
                     .disabled(!canGoPrevious)
                     .frame(minHeight: 44)
@@ -112,7 +111,7 @@ struct StrengthPlayerView: View {
                     .accessibilityHint(canGoPrevious ? "" : "At the first exercise")
                 Spacer()
                 Button("NEXT →") { goNext() }
-                    .font(WSFont.ui(11, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(canGoNext ? WSColor.text50 : WSColor.text35)
                     .disabled(!canGoNext)
                     .frame(minHeight: 44)
@@ -122,12 +121,12 @@ struct StrengthPlayerView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text("EXERCISE \(index + 1) / \(session.sets.count) · SET \(setIndex + 1)/\(current.sets)")
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.accent)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
             Text(displayedExerciseName(for: current).uppercased())
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 4)
@@ -140,7 +139,7 @@ struct StrengthPlayerView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 10)
             Button("ABOUT THIS EXERCISE") { showAbout = true }
-                .font(WSFont.ui(11, weight: .heavy))
+                .wsType(.label, weight: .heavy)
                 .foregroundStyle(WSColor.text45)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
@@ -148,7 +147,7 @@ struct StrengthPlayerView: View {
             if !substitutionOptions(for: current).isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("SUBSTITUTION")
-                        .font(WSFont.ui(12, weight: .heavy))
+                        .wsType(.label, weight: .heavy)
                     Picker("Substitution", selection: substitutionBinding) {
                         Text("Original").tag(Optional<String>.none)
                         ForEach(substitutionOptions(for: current)) { exercise in
@@ -163,7 +162,7 @@ struct StrengthPlayerView: View {
             }
             HStack {
                 Text("REPS")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                 Spacer()
                 WSStepperControl(
                     valueText: "\(reps)",
@@ -175,9 +174,9 @@ struct StrengthPlayerView: View {
             .padding(.top, 12)
             HStack {
                 Text("LOAD")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                 Spacer()
-                HStack(spacing: 8) {
+                WSChipRow {
                     WSChip(title: "KG", selected: loadUnit == "kg") {
                         applyLoadUnit("kg")
                     }
@@ -199,7 +198,7 @@ struct StrengthPlayerView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             TextField("Optional note", text: $note)
-                .font(WSFont.ui(14))
+                .wsType(.body)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -209,7 +208,7 @@ struct StrengthPlayerView: View {
                 .onChange(of: note) { _, _ in persistProgressIfNeeded(force: true) }
             HStack {
                 Text("REST")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                 Spacer()
                 WSStepperControl(
                     valueText: "\(remaining)s",
@@ -220,29 +219,29 @@ struct StrengthPlayerView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 8)
             Text("\(remaining)")
-                .font(WSFont.display(100))
+                .wsType(.hero)
                 .foregroundStyle(WSColor.accent)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 12)
                 .accessibilityLabel("Rest timer \(remaining) seconds")
             Text("REST SECONDS")
-                .font(WSFont.ui(12, weight: .bold))
+                .wsType(.label, weight: .bold)
                 .foregroundStyle(WSColor.text50)
                 .frame(maxWidth: .infinity)
             Spacer()
             HStack(spacing: 10) {
-                WSPrimaryButton(title: running ? "PAUSE REST" : "START REST", height: 58, fontSize: 18) {
+                WSPrimaryButton(title: running ? "PAUSE REST" : "START REST", height: 58, role: .control) {
                     running.toggle()
                     if running { speech.speak(.stepStarted(displayedExerciseName(for: current))) }
                     persistProgressIfNeeded(force: true)
                 }
                 Button("SKIP SET") { logCurrent(skipped: true); advanceSet() }
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.destructive)
                     .frame(width: 110, height: 58)
             }
             .padding(.horizontal, WSSpace.gutter)
-            WSPrimaryButton(title: "COMPLETE SET", height: 54, fontSize: 18) {
+            WSPrimaryButton(title: "COMPLETE SET", height: 54, role: .control) {
                 logCurrent(skipped: false)
                 advanceSet()
             }
@@ -258,14 +257,14 @@ struct StrengthPlayerView: View {
             VStack(alignment: .leading, spacing: 8) {
                 WSEyebrow(text: "SESSION COMPLETE")
                 Text("STRONGER.")
-                    .font(WSFont.display(64))
+                    .wsType(.displayXL)
                     .foregroundStyle(WSColor.text)
                 Text("\(logs.filter(\.completed).count) SETS LOGGED")
-                    .font(WSFont.ui(13, weight: .semibold))
+                    .wsType(.body, weight: .semibold)
                     .foregroundStyle(Color.white.opacity(0.6))
                 HStack {
                     Text("DIFFICULTY")
-                        .font(WSFont.ui(12, weight: .heavy))
+                        .wsType(.label, weight: .heavy)
                     Spacer()
                     WSStepperControl(
                         valueText: "RPE \(difficultyRPE)",
@@ -276,13 +275,13 @@ struct StrengthPlayerView: View {
                 .padding(.top, 8)
                 if healthSync.state == .failed {
                     Text(healthSync.failureMessage ?? "Health save failed")
-                        .font(WSFont.mono(12))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.destructive)
                 }
             }
             .padding(.horizontal, WSSpace.gutter)
             Spacer()
-            WSPrimaryButton(title: healthSync.state == .synced ? "SAVED TO HEALTH ✓" : "SAVE TO HEALTH", height: 58, fontSize: 20) {
+            WSPrimaryButton(title: healthSync.state == .synced ? "SAVED TO HEALTH ✓" : "SAVE TO HEALTH", height: 58, role: .control) {
                 Task { await saveToHealth() }
             }
             .disabled(healthSync.state == .synced)

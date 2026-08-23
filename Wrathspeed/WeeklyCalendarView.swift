@@ -21,7 +21,7 @@ struct WeeklyCalendarView: View {
         WSScreen {
             HStack {
                 Button("← PLAN") { dismiss() }
-                    .font(WSFont.ui(13, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                     .foregroundStyle(WSColor.text50)
                     .accessibilityLabel("Back to plan")
                 Spacer()
@@ -30,7 +30,7 @@ struct WeeklyCalendarView: View {
             .padding(.top, 8)
 
             Text("WEEKLY\nCALENDAR")
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -84,7 +84,7 @@ struct WeeklyCalendarView: View {
                 // the layout but leaves the button's own bounds, and so its hit and
                 // accessibility frame, the size of the glyph run.
                 Text("PREV WEEK")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
@@ -95,7 +95,7 @@ struct WeeklyCalendarView: View {
             Spacer()
 
             Text(weekLabel)
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .accessibilityLabel("Week \(weekLabel)")
 
@@ -105,7 +105,7 @@ struct WeeklyCalendarView: View {
                 weekOffset = min(allowedOffsets.upperBound, weekOffset + 1)
             } label: {
                 Text("NEXT WEEK")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
@@ -123,7 +123,7 @@ struct WeeklyCalendarView: View {
                 ForEach(dayStrip, id: \.date) { day in
                     VStack(spacing: 4) {
                         Text(day.label)
-                            .font(WSFont.mono(10))
+                            .wsType(.metricS)
                             .foregroundStyle(day.isToday ? WSColor.accent : WSColor.text40)
                         Circle()
                             .fill(day.hasWorkout ? WSColor.accent : WSColor.surface2)
@@ -164,15 +164,15 @@ struct WeeklyCalendarView: View {
     private func weekWorkoutRow(_ workout: ScheduledWorkout) -> some View {
         HStack(spacing: 10) {
             Text(String(WSFormat.weekdayDate(workout.date).prefix(3)))
-                .font(WSFont.mono(11, weight: .bold))
+                .wsType(.metric, weight: .bold)
                 .foregroundStyle(WSColor.text45)
                 .frame(width: 34, alignment: .leading)
             Text(workout.blueprint.title.uppercased())
-                .font(WSFont.ui(15, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text)
             Spacer()
             Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: store.unit))
-                .font(WSFont.mono(12))
+                .wsType(.metric)
         }
         .padding(.vertical, 13)
         .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
@@ -191,10 +191,10 @@ struct MissedWorkSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("MISSED WORK")
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
             Text("\(situation.missedWorkouts.count) session(s) need a decision.")
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.top, 8)
 
@@ -209,13 +209,13 @@ struct MissedWorkSheet: View {
 
             if let preview {
                 Text(preview.description)
-                    .font(WSFont.ui(12, weight: .medium))
+                    .wsType(.label, weight: .medium)
                     .foregroundStyle(WSColor.text70)
                     .padding(.top, 12)
             }
             if let errorMessage {
                 Text(errorMessage)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 8)
             }

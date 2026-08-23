@@ -21,6 +21,8 @@ struct WSLockup: View {
         self.wordmark = wordmark
     }
 
+    @ScaledMetric(relativeTo: .largeTitle) private var markScale: CGFloat = 1
+
     var body: some View {
         content
             .accessibilityElement(children: .ignore)
@@ -34,17 +36,17 @@ struct WSLockup: View {
         case .horizontal:
             HStack(spacing: 26) {
                 mark(92)
-                word(52, tracking: -0.5)
+                word(.displayXL, tracking: -0.5)
             }
         case .stacked:
             VStack(spacing: 18) {
                 mark(110)
-                word(44, tracking: -0.5)
+                word(.displayL, tracking: -0.5)
             }
         case .caged:
             HStack(spacing: 14) {
                 mark(38)
-                word(24, tracking: 0.5)
+                word(.displayXS, tracking: 0.5)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 18)
@@ -52,17 +54,21 @@ struct WSLockup: View {
         }
     }
 
-    // The wordmark spells the name, so the mark beside it is decorative.
+    // The wordmark spells the name, so the mark beside it is decorative. The mark tracks the
+    // type size so the lockup keeps its drawn proportions instead of the word outgrowing it.
     private func mark(_ size: CGFloat) -> some View {
-        WSMark(size: size, style: style, label: nil)
+        WSMark(size: size * min(markScale, 1.8), style: style, label: nil)
     }
 
-    private func word(_ size: CGFloat, tracking: CGFloat) -> some View {
+    // No .fixedSize(): it forced the lockup to its ideal width, so the horizontal arrangement
+    // measured 363pt against the 342pt a phone actually offers inside its gutters and clipped
+    // rather than fitting. Letting it size to the space it is given is what keeps it on screen.
+    private func word(_ role: WSTypeRole, tracking: CGFloat) -> some View {
         Text("WRATHSPEED")
-            .font(WSFont.display(size))
-            .tracking(tracking)
+            .wsType(role, tracking: tracking)
             .foregroundStyle(wordmark)
-            .fixedSize()
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
     }
 }
 

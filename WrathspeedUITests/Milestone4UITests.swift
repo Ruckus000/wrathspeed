@@ -38,7 +38,7 @@ final class Milestone4UITests: XCTestCase {
 
     func testDynamicTypeKeepsPlanActionsReachable() throws {
         let app = XCUIApplication()
-        UITestOnboardingHelper.configureFreshLaunch(app, contentSizeCategory: "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge", seedCompletedOnboarding: true)
+        UITestOnboardingHelper.configureFreshLaunch(app, contentSizeCategory: "UICTContentSizeCategoryAccessibilityXXXL", seedCompletedOnboarding: true)
         app.launch()
         UITestOnboardingHelper.completeOnboarding(app)
 

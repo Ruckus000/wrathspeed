@@ -12,20 +12,21 @@ struct WrathspeedWidgets: WidgetBundle {
 struct WorkoutLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
+            // A Live Activity has a fixed height and cannot reflow, so its subtree uses the
+            // widget type profile, where every role is capped rather than uncapped.
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(context.state.title.uppercased())
-                            .font(WSFont.ui(13, weight: .heavy))
-                            .tracking(0.5)
+                            .wsType(.body, weight: .heavy, tracking: 0.5)
                             .foregroundStyle(.white)
                         Text(context.state.stepName)
-                            .font(WSFont.ui(11, weight: .medium))
+                            .wsType(.label, weight: .medium)
                             .foregroundStyle(Color.white.opacity(0.5))
                     }
                     Spacer()
                     Text(timeString(context.state.elapsed))
-                        .font(WSFont.mono(15, weight: .bold))
+                        .wsType(.metric, weight: .bold)
                         .foregroundStyle(WSColor.accent)
                 }
                 HStack(spacing: 14) {
@@ -34,7 +35,7 @@ struct WorkoutLiveActivity: Widget {
                     Text(context.state.isPaused ? "PAUSED" : "LIVE")
                         .foregroundStyle(WSColor.accent)
                 }
-                .font(WSFont.mono(10))
+                .wsType(.metricS)
                 .foregroundStyle(Color.white.opacity(0.55))
                 .padding(.top, 10)
                 .overlay(alignment: .top) {
@@ -42,17 +43,18 @@ struct WorkoutLiveActivity: Widget {
                 }
             }
             .padding(14)
+            .wsTypeProfile(.widget)
             .activityBackgroundTint(WSColor.liveActivity)
             .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Text(context.state.stepName)
-                        .font(WSFont.ui(12, weight: .bold))
+                        .wsType(.label, weight: .bold)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(timeString(context.state.elapsed))
-                        .font(WSFont.mono(13, weight: .bold))
+                        .wsType(.metric, weight: .bold)
                         .foregroundStyle(WSColor.accent)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -62,19 +64,19 @@ struct WorkoutLiveActivity: Widget {
                         Text(context.state.isPaused ? "PAUSED" : "LIVE")
                             .foregroundStyle(WSColor.accent)
                     }
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                 }
             } compactLeading: {
                 Text("▲")
-                    .font(WSFont.ui(12, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.accent)
             } compactTrailing: {
                 Text(timeString(context.state.elapsed))
-                    .font(WSFont.mono(12, weight: .bold))
+                    .wsType(.metric, weight: .bold)
                     .foregroundStyle(.white)
             } minimal: {
                 Text("▲")
-                    .font(WSFont.ui(11, weight: .heavy))
+                    .wsType(.label, weight: .heavy)
                     .foregroundStyle(WSColor.accent)
             }
         }

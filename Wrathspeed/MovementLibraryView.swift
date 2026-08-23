@@ -24,8 +24,7 @@ struct MovementLibraryView: View {
                 dismiss()
             } label: {
                 Text("← SETTINGS")
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .contentShape(Rectangle())
@@ -35,7 +34,7 @@ struct MovementLibraryView: View {
             .accessibilityLabel("Back to settings")
 
             Text("MOVEMENT\nLIBRARY")
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
@@ -44,8 +43,7 @@ struct MovementLibraryView: View {
 
             ForEach(sections, id: \.title) { section in
                 Text(section.title.uppercased())
-                    .font(WSFont.mono(10))
-                    .tracking(1.5)
+                    .wsType(.metricS, tracking: 1.5)
                     .foregroundStyle(WSColor.text40)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 22)
@@ -69,11 +67,11 @@ struct MovementLibraryView: View {
     private func row(_ entry: MovementLibraryEntry) -> some View {
         HStack {
             Text(entry.name.uppercased())
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text)
             Spacer()
             Text("›")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text40)
         }
         .padding(.vertical, 11)
@@ -130,8 +128,7 @@ struct MovementDetailView: View {
                 dismiss()
             } label: {
                 Text("← LIBRARY")
-                    .font(WSFont.ui(13, weight: .heavy))
-                    .tracking(1)
+                    .wsType(.body, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text50)
                     .frame(minHeight: 44, alignment: .leading)
                     .contentShape(Rectangle())
@@ -141,7 +138,7 @@ struct MovementDetailView: View {
             .accessibilityLabel("Back to movement library")
 
             Text(entry.name.uppercased())
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
@@ -151,7 +148,7 @@ struct MovementDetailView: View {
                 .accessibilityAddTraits(.isHeader)
 
             Text(entry.meta.uppercased())
-                .font(WSFont.mono(12, weight: .medium))
+                .wsType(.metric, weight: .medium)
                 .foregroundStyle(WSColor.text45)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 10)
@@ -165,7 +162,7 @@ struct MovementDetailView: View {
             .padding(.top, 20)
 
             Text(entry.cue)
-                .font(WSFont.ui(15, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text70)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 20)

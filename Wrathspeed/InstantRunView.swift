@@ -29,7 +29,7 @@ struct InstantRunView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("INSTANT RUN")
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .accessibilityAddTraits(.isHeader)
             builderSection
@@ -38,7 +38,7 @@ struct InstantRunView: View {
             }
             if let buildError {
                 Text(buildError)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 8)
                     .accessibilityLabel(buildError)
@@ -46,7 +46,7 @@ struct InstantRunView: View {
             }
             WSOutlineButton(title: "PREVIEW WORKOUT") { rebuildPreview() }
                 .padding(.top, 16)
-            WSPrimaryButton(title: "CONTINUE →", height: 54, fontSize: 19) {
+            WSPrimaryButton(title: "CONTINUE →", height: 54, role: .control) {
                 guard let preview else { rebuildPreview(); return }
                 store.presentPreflight(blueprint: preview, source: .instant)
                 dismiss()
@@ -66,12 +66,11 @@ struct InstantRunView: View {
     @ViewBuilder
     private var builderSection: some View {
         Text("WORKOUT")
-            .font(WSFont.mono(10))
-            .tracking(1.5)
+            .wsType(.metricS, tracking: 1.5)
             .foregroundStyle(WSColor.accent)
             .padding(.top, 16)
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            WSChipRow {
                 ForEach(kinds, id: \.self) { item in
                     WSChip(title: item.instantLabel, selected: kind == item) {
                         kind = item
@@ -82,8 +81,7 @@ struct InstantRunView: View {
             }
         }
         Text("LOCATION")
-            .font(WSFont.mono(10))
-            .tracking(1.5)
+            .wsType(.metricS, tracking: 1.5)
             .foregroundStyle(WSColor.accent)
             .padding(.top, 16)
         HStack(spacing: 8) {
@@ -116,8 +114,7 @@ struct InstantRunView: View {
     private var distanceOrDurationControls: some View {
         Group {
             Text("TARGET")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.top, 16)
             HStack(spacing: 8) {
@@ -136,8 +133,7 @@ struct InstantRunView: View {
     private var raceDistanceControls: some View {
         Group {
             Text("TARGET")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
                 .padding(.top, 16)
             displayDistanceStepper(label: "DISTANCE", value: $distanceDisplay, range: 1...42)
@@ -158,7 +154,7 @@ struct InstantRunView: View {
             displayDistanceStepper(label: "WORK", value: $intervalWorkDisplay, range: 0.1...2)
             displayDistanceStepper(label: "RECOVERY", value: $intervalRecoveryDisplay, range: 0.1...2)
             Toggle("Include warm up / cool down", isOn: $intervalIncludeExtras)
-                .font(WSFont.ui(13, weight: .medium))
+                .wsType(.body, weight: .medium)
                 .tint(WSColor.accent)
                 .padding(.top, 12)
                 .onChange(of: intervalIncludeExtras) { _, _ in rebuildPreview() }
@@ -184,7 +180,7 @@ struct InstantRunView: View {
     ) -> some View {
         HStack {
             Text(label)
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             Spacer()
             WSStepperControl(
                 valueText: String(format: "%.1f %@", value.wrappedValue, WSFormat.unitLabel(store.unit)),
@@ -198,7 +194,7 @@ struct InstantRunView: View {
     private var durationStepper: some View {
         HStack {
             Text("DURATION")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             Spacer()
             WSStepperControl(
                 valueText: "\(Int(durationMinutes)) MIN",
@@ -212,7 +208,7 @@ struct InstantRunView: View {
     private func minuteStepper(label: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         HStack {
             Text(label)
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             Spacer()
             WSStepperControl(
                 valueText: minuteLabel(value.wrappedValue),
@@ -234,7 +230,7 @@ struct InstantRunView: View {
     private func repsStepper(label: String, value: Binding<Int>) -> some View {
         HStack {
             Text(label)
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             Spacer()
             WSStepperControl(
                 valueText: "\(value.wrappedValue)",
@@ -248,28 +244,27 @@ struct InstantRunView: View {
     private func previewSection(_ blueprint: WorkoutBlueprint) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("PREVIEW")
-                .font(WSFont.mono(10))
-                .tracking(1.5)
+                .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 18)
             Text(blueprint.title.uppercased())
-                .font(WSFont.ui(16, weight: .heavy))
+                .wsType(.control, weight: .heavy)
             Text(blueprint.location.title.uppercased())
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text50)
             ForEach(blueprint.steps.prefix(4)) { step in
                 HStack {
                     Text(step.name)
                     Spacer()
                     Text(stepLabel(step))
-                        .font(WSFont.mono(11))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.text50)
                 }
-                .font(WSFont.ui(13, weight: .bold))
+                .wsType(.body, weight: .bold)
             }
             if blueprint.steps.count > 4 {
                 Text("+\(blueprint.steps.count - 4) MORE STEPS")
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
         }

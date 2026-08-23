@@ -6,8 +6,7 @@ struct WSEyebrow: View {
 
     var body: some View {
         Text(text)
-            .font(WSFont.ui(12, weight: .heavy))
-            .tracking(3)
+            .wsType(.label, tracking: 3)
             .foregroundStyle(color)
     }
 }
@@ -15,19 +14,26 @@ struct WSEyebrow: View {
 struct WSPrimaryButton: View {
     var title: String
     var height: CGFloat = 62
-    var fontSize: CGFloat = 22
+    var role: WSTypeRole = .displayXS
     var fill: Color = WSColor.accent
     var textColor: Color = .white
     var action: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.display(fontSize))
-                .tracking(1)
+                .wsType(role)
                 .foregroundStyle(textColor)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 14)
                 .frame(maxWidth: .infinity)
-                .frame(height: height)
+                // minHeight, not height: a fixed height truncated the label to "REBUILD FUT…"
+                // once the type grew. Apple's Larger Text criteria do not permit truncating a
+                // primary action, and prefer wrapping to two lines over shrinking the text.
+                .frame(minHeight: height * min(scale, 1.4))
                 .background(fill, in: RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -41,14 +47,18 @@ struct WSOutlineButton: View {
     var color: Color = WSColor.accent
     var action: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.ui(14, weight: .heavy))
-                .tracking(1.5)
+                .wsType(.body, weight: .heavy, tracking: 1.5)
                 .foregroundStyle(color)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
-                .frame(height: height)
+                .frame(minHeight: height * min(scale, 1.4))
                 .overlay(
                     RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
                         .stroke(color, lineWidth: 1.5)
@@ -67,11 +77,12 @@ struct WSChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.ui(13, weight: .heavy))
-                .tracking(0.4)
+                .wsType(.body, weight: .heavy)
                 .foregroundStyle(WSColor.text)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
+                .frame(minHeight: 44)
                 .background(
                     Capsule(style: .continuous)
                         .fill(selected ? WSColor.accentTint : Color.clear)
@@ -87,6 +98,79 @@ struct WSChip: View {
     }
 }
 
+/// Lays subviews out in rows, starting a new row when the next one will not fit.
+///
+/// Chip groups used to be fixed `HStack`s, so three chips split the screen width between them
+/// and each got less room than its own longest word -- which is what turned "STRENGTH" into
+/// "STR/ENG/TH" at large text sizes. A flow breaks *between* chips instead of inside a word,
+/// and needs no size threshold: at small sizes chips pack several to a row, at large sizes each
+/// simply takes a row of its own.
+struct WSFlowLayout: Layout {
+    var spacing: CGFloat = 8
+    var rowSpacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(within: proposal.width ?? .infinity, subviews: subviews)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +) + rowSpacing * CGFloat(max(0, rows.count - 1))
+        return CGSize(width: proposal.width ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in rows(within: bounds.width, subviews: subviews) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2),
+                    proposal: ProposedViewSize(size)
+                )
+                x += size.width + spacing
+            }
+            y += row.height + rowSpacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func rows(within maxWidth: CGFloat, subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            if !current.indices.isEmpty, needed > maxWidth {
+                rows.append(current)
+                current = Row()
+            }
+            current.width = current.indices.isEmpty ? size.width : current.width + spacing + size.width
+            current.height = max(current.height, size.height)
+            current.indices.append(index)
+        }
+        if !current.indices.isEmpty { rows.append(current) }
+        return rows
+    }
+}
+
+/// A group of chips that wraps instead of squeezing. Use this anywhere chips appear -- a bare
+/// `HStack` will squeeze them at large text sizes.
+struct WSChipRow<Content: View>: View {
+    var spacing: CGFloat = 8
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        WSFlowLayout(spacing: spacing, rowSpacing: spacing) {
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 struct WSSelectRow<Accessory: View>: View {
     var title: String
     var selected: Bool
@@ -97,9 +181,9 @@ struct WSSelectRow<Accessory: View>: View {
         Button(action: action) {
             HStack {
                 Text(title)
-                    .font(WSFont.ui(15, weight: .bold))
+                    .wsType(.body)
                     .foregroundStyle(WSColor.text)
-                Spacer()
+                Spacer(minLength: 12)
                 accessory()
             }
             .padding(.horizontal, 16)
@@ -129,13 +213,15 @@ struct WSStepperControl: View {
     var decrement: () -> Void
     var increment: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
+
     var body: some View {
         HStack(spacing: 18) {
             circleButton("−", outlined: true, label: "Decrease", action: decrement)
             Text(valueText)
-                .font(WSFont.display(30))
+                .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
-                .frame(minWidth: 28)
+                .frame(minWidth: 28 * scale)
                 .multilineTextAlignment(.center)
             circleButton("+", outlined: false, label: "Increase", action: increment)
         }
@@ -144,9 +230,9 @@ struct WSStepperControl: View {
     private func circleButton(_ title: String, outlined: Bool, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(WSFont.ui(18, weight: .heavy))
+                .wsType(.control)
                 .foregroundStyle(outlined ? WSColor.text : WSColor.accent)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minWidth: 44 * scale, minHeight: 44 * scale)
                 .overlay(
                     Circle().stroke(outlined ? Color.white.opacity(0.3) : WSColor.accent, lineWidth: 1.5)
                 )
@@ -162,22 +248,35 @@ struct WSHairlineRow: View {
     var valueColor: Color = WSColor.text
     var showDivider: Bool = true
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            // Label and value sit side by side until the text is large enough that sharing a
+            // line would squeeze either of them narrower than its own longest word -- which is
+            // what produces mid-word breaks like "STR/ENG/TH". Apple's rule for this is to wrap
+            // side-by-side elements vertically rather than let them collide.
+            layout {
                 Text(label)
-                    .font(WSFont.ui(13, weight: .bold))
+                    .wsType(.body)
                     .foregroundStyle(Color.white.opacity(0.60))
-                Spacer()
+                if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: 12) }
                 Text(value)
-                    .font(WSFont.mono(13, weight: .bold))
+                    .wsType(.metric, weight: .bold)
                     .foregroundStyle(valueColor)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 12)
             if showDivider {
                 Rectangle().fill(WSColor.hairline).frame(height: 1)
             }
         }
+    }
+
+    private var layout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 0))
     }
 }
 
@@ -203,8 +302,7 @@ struct WSToast: View {
 
     var body: some View {
         Text(text)
-            .font(WSFont.ui(12, weight: .heavy))
-            .tracking(0.5)
+            .wsType(.body, weight: .heavy)
             .foregroundStyle(.black)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 16)
@@ -225,25 +323,23 @@ struct WSAlert: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 Text("SOMETHING WENT WRONG")
-                    .font(WSFont.display(26))
-                    .tracking(0.5)
+                    .wsType(.displayXS)
                     .foregroundStyle(WSColor.text)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 22)
                     .padding(.top, 24)
                 Text(message)
-                    .font(WSFont.ui(13, weight: .medium))
+                    .wsType(.body, weight: .medium)
                     .foregroundStyle(WSColor.text70)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 22)
                     .padding(.top, 10)
                 Button(action: onOK) {
                     Text("OK")
-                        .font(WSFont.ui(14, weight: .heavy))
-                        .tracking(1.5)
+                        .wsType(.body, weight: .heavy)
                         .foregroundStyle(WSColor.accent)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                        .frame(minHeight: 52)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 20)
@@ -280,13 +376,21 @@ struct WSTabBar: View {
                     selection = tab
                 } label: {
                     Text(tab.label)
-                        .font(WSFont.ui(11, weight: .heavy))
-                        .tracking(1.5)
+                        .wsType(.chromeTab)
+                        .lineLimit(1)
                         .foregroundStyle(selection == tab ? WSColor.accent : WSColor.text35)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .frame(minHeight: 44)
                 }
                 .buttonStyle(.plain)
+                // The bar deliberately does not grow with Dynamic Type: Apple exempts tab bars
+                // from the Larger Text criteria precisely because a bar that scaled would take
+                // roughly a quarter of the screen, and it is on screen at all times. Long-press
+                // surfaces the label at full size through the system's large content viewer,
+                // and VoiceOver reads it regardless.
+                .accessibilityShowsLargeContentViewer {
+                    Text(tab.label)
+                }
             }
         }
         .padding(.bottom, 22)

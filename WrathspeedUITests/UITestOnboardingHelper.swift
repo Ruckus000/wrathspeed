@@ -84,12 +84,46 @@ enum UITestOnboardingHelper {
             seedCompletedOnboarding: seedCompletedOnboarding,
             skipCountdown: skipCountdown
         )
+        // As a launch *argument*, not a launch environment variable. The environment form is
+        // silently inert -- measured on iPhone 16e / iOS 26.0, the headline rendered identically
+        // with and without it.
+        //
+        // The name is validated because an unrecognised one is *also* silently inert, and this
+        // suite shipped one for months: "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
+        // is not a real category, so the test asserting Dynamic Type reachability was really
+        // asserting it at the default size. Measured: the invalid name leaves the headline at
+        // 13.3pt, the valid one takes it to 78.7pt. Failing loudly is the only way this stays
+        // honest, since both spellings look equally plausible.
         if let contentSizeCategory {
-            app.launchEnvironment["UIPreferredContentSizeCategoryName"] = contentSizeCategory
-        } else {
-            app.launchEnvironment.removeValue(forKey: "UIPreferredContentSizeCategoryName")
+            precondition(
+                Self.contentSizeCategoryNames.contains(contentSizeCategory),
+                """
+                Unknown content size category "\(contentSizeCategory)". iOS ignores names it does \
+                not recognise, so the test would pass at the default size. Valid names: \
+                \(Self.contentSizeCategoryNames.sorted().joined(separator: ", "))
+                """
+            )
+            app.launchArguments += ["-UIPreferredContentSizeCategoryName", contentSizeCategory]
         }
+        app.launchEnvironment.removeValue(forKey: "UIPreferredContentSizeCategoryName")
     }
+
+    /// The names iOS actually recognises. Note the accessibility sizes abbreviate -- XL, not
+    /// ExtraLarge -- which is exactly the trap this list exists to close.
+    static let contentSizeCategoryNames: Set<String> = [
+        "UICTContentSizeCategoryXS",
+        "UICTContentSizeCategoryS",
+        "UICTContentSizeCategoryM",
+        "UICTContentSizeCategoryL",
+        "UICTContentSizeCategoryXL",
+        "UICTContentSizeCategoryXXL",
+        "UICTContentSizeCategoryXXXL",
+        "UICTContentSizeCategoryAccessibilityM",
+        "UICTContentSizeCategoryAccessibilityL",
+        "UICTContentSizeCategoryAccessibilityXL",
+        "UICTContentSizeCategoryAccessibilityXXL",
+        "UICTContentSizeCategoryAccessibilityXXXL",
+    ]
 
     static func configurePreservingStoreLaunch(_ app: XCUIApplication) {
         app.launchArguments = [uiTestingLaunchArgument] + englishLocaleArguments

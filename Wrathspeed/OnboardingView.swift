@@ -33,8 +33,7 @@ struct OnboardingView: View {
             HStack {
                 if step > 0 {
                     Button("← BACK") { step -= 1 }
-                        .font(WSFont.ui(13, weight: .heavy))
-                        .tracking(1)
+                        .wsType(.body, weight: .heavy, tracking: 1)
                         .foregroundStyle(WSColor.text50)
                         .accessibilityLabel("Back")
                 }
@@ -47,7 +46,7 @@ struct OnboardingView: View {
             WSEyebrow(text: eyebrow)
                 .padding(.top, 26)
             Text(headline)
-                .font(WSFont.display(42))
+                .wsType(.displayM)
                 .foregroundStyle(WSColor.text)
                 .lineSpacing(-4)
                 .padding(.top, 8)
@@ -69,7 +68,7 @@ struct OnboardingView: View {
 
             if let validationMessage {
                 Text(validationMessage)
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.accent)
                     .padding(.top, 12)
                     .accessibilityLabel(validationMessage)
@@ -90,11 +89,11 @@ struct OnboardingView: View {
                 .padding(.bottom, 20)
             WSEyebrow(text: "STAND BY")
             Text("BUILDING\nYOUR PLAN")
-                .font(WSFont.display(56))
+                .wsType(.displayXL)
                 .foregroundStyle(WSColor.text)
                 .padding(.top, 10)
             Text(buildSummary)
-                .font(WSFont.mono(12))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text45)
                 .padding(.top, 16)
             WSProgressBar(progress: buildProgress)
@@ -124,7 +123,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 18) {
             if inputs.goalMode == .race {
                 Text("RACE DISTANCE")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 VStack(spacing: 8) {
                     ForEach([GoalKind.fiveK, .tenK, .halfMarathon, .marathon], id: \.self) { kind in
                         WSSelectRow(title: kind.displayName, selected: inputs.goalKind == kind) {
@@ -147,7 +146,7 @@ struct OnboardingView: View {
                 .accessibilityLabel("Race date")
             } else if inputs.goalMode == .distance {
                 Text("DISTANCE GOAL")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 VStack(spacing: 8) {
                     ForEach([GoalKind.fiveK, .tenK, .halfMarathon, .marathon], id: \.self) { kind in
                         WSSelectRow(title: kind.displayName, selected: inputs.goalKind == kind) {
@@ -182,7 +181,7 @@ struct OnboardingView: View {
                 inputs.unit = .miles
             } accessory: { EmptyView() }
             Text("DISTANCE LABELS AND INPUTS FOLLOW THIS UNIT. WE STORE METERS INTERNALLY.")
-                .font(WSFont.mono(11))
+                .wsType(.metric)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 8)
         }
@@ -209,7 +208,7 @@ struct OnboardingView: View {
             )
             Toggle(isOn: $inputs.includesRecentPerformance) {
                 Text("ADD RECENT RACE OR PB")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
             }
             .tint(WSColor.accent)
             if inputs.includesRecentPerformance {
@@ -227,7 +226,7 @@ struct OnboardingView: View {
                 )
                 HStack {
                     Text("TIME")
-                        .font(WSFont.ui(14, weight: .heavy))
+                        .wsType(.body, weight: .heavy)
                     Spacer()
                     WSStepperControl(
                         valueText: timeLabel,
@@ -237,7 +236,7 @@ struct OnboardingView: View {
                 }
             } else {
                 Text("WITHOUT A RECENT RESULT, VDOT COMES FROM ABILITY — LABELED AS AN ESTIMATE IN PREVIEW.")
-                    .font(WSFont.mono(11))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text40)
             }
         }
@@ -246,7 +245,7 @@ struct OnboardingView: View {
     private var scheduleStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("AVAILABLE RUN DAYS")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
                 ForEach(Weekday.allCases, id: \.self) { day in
                     WSChip(title: day.chipLabel, selected: inputs.availableDays.contains(day)) {
@@ -255,7 +254,7 @@ struct OnboardingView: View {
                 }
             }
             Text("LONG RUN DAY")
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
                 .padding(.top, 8)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
                 ForEach(inputs.availableDays.sorted(), id: \.self) { day in
@@ -271,7 +270,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 18) {
             Toggle(isOn: $inputs.strengthEnabled) {
                 Text("INCLUDE STRENGTH")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
             }
             .tint(WSColor.accent)
             if inputs.strengthEnabled {
@@ -291,7 +290,7 @@ struct OnboardingView: View {
             }
             Toggle(isOn: $inputs.mobility.enabled) {
                 Text("INCLUDE MOBILITY")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
             }
             .tint(WSColor.accent)
             if inputs.mobility.enabled {
@@ -309,33 +308,33 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 14) {
             if let draft {
                 Text("FIRST WEEK")
-                    .font(WSFont.ui(14, weight: .heavy))
+                    .wsType(.body, weight: .heavy)
                 ForEach(firstWeekWorkouts(draft)) { workout in
                     HStack {
                         Text(WSFormat.weekdayDate(workout.date))
-                            .font(WSFont.mono(11))
+                            .wsType(.metric)
                             .foregroundStyle(WSColor.text45)
                             .frame(width: 92, alignment: .leading)
                         Text(workout.blueprint.title.uppercased())
-                            .font(WSFont.ui(13, weight: .heavy))
+                            .wsType(.body, weight: .heavy)
                         Spacer()
                         Text(WSFormat.distance(workout.blueprint.plannedDistanceMeters, unit: inputs.unit, fraction: 0))
-                            .font(WSFont.mono(11))
+                            .wsType(.metric)
                             .foregroundStyle(WSColor.text45)
                     }
                 }
                 Text("STARTING WEEKLY \(WSFormat.distance(weeklyMileage(draft), unit: inputs.unit)) · \(draft.plan.goal.weekCount) WEEKS")
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
                     .padding(.top, 6)
                 if let easy = draft.zones.secondsPerKilometer(for: .easy) {
                     Text("EASY PACE \(WSFormat.pace(easy, unit: inputs.unit)) · VDOT \(WSFormat.vdot(draft.plan.profile.vdot)) (\(vdotLabel(draft)))")
-                        .font(WSFont.mono(12))
+                        .wsType(.metric)
                         .foregroundStyle(WSColor.text45)
                 }
             } else {
                 Text("BUILD A DRAFT TO PREVIEW YOUR FIRST WEEK.")
-                    .font(WSFont.mono(12))
+                    .wsType(.metric)
                     .foregroundStyle(WSColor.text45)
             }
         }
@@ -344,7 +343,7 @@ struct OnboardingView: View {
     private func stepperRow(_ title: String, text: String, down: @escaping () -> Void, up: @escaping () -> Void) -> some View {
         HStack {
             Text(title)
-                .font(WSFont.ui(14, weight: .heavy))
+                .wsType(.body, weight: .heavy)
             Spacer()
             WSStepperControl(valueText: text, decrement: down, increment: up)
         }
