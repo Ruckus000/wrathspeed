@@ -459,6 +459,11 @@ private struct WSBottomBarInsetKey: EnvironmentKey {
 extension EnvironmentValues {
     /// How much room the floating tab bar needs at the bottom of a scroll view so its last row
     /// is not trapped underneath. Zero on screens with no bar over them.
+    ///
+    /// Note this propagates into sheets and covers presented from inside the tab content —
+    /// PlanView's workout sheets, TodayView's players — where the bar is not actually visible.
+    /// None of them uses WSScreen today; one that did would get clearance for a bar that isn't
+    /// there, and should set this back to 0.
     var wsBottomBarInset: CGFloat {
         get { self[WSBottomBarInsetKey.self] }
         set { self[WSBottomBarInsetKey.self] = newValue }
