@@ -76,45 +76,66 @@ struct WeeklyCalendarView: View {
     }
 
     private var weekNavigation: some View {
-        HStack {
-            Button {
-                weekOffset = max(allowedOffsets.lowerBound, weekOffset - 1)
-            } label: {
-                // The frame has to sit on the label: applied outside the Button it grows
-                // the layout but leaves the button's own bounds, and so its hit and
-                // accessibility frame, the size of the glyph run.
-                Text("PREV WEEK")
-                    .wsType(.label, weight: .heavy)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+        // Three slots, so ViewThatFits directly rather than WSRow, which takes two. Stacked, the
+        // week label goes above and the two buttons stay paired beneath it -- splitting PREV and
+        // NEXT onto separate lines would read as two unrelated controls.
+        ViewThatFits(in: .horizontal) {
+            HStack {
+                previousWeekButton
+                Spacer(minLength: 12)
+                weekLabelText
+                Spacer(minLength: 12)
+                nextWeekButton
             }
-            .disabled(weekOffset <= allowedOffsets.lowerBound)
-            .accessibilityIdentifier("weekly_calendar_prev_week")
-            .accessibilityLabel("Previous week")
-
-            Spacer()
-
-            Text(weekLabel)
-                .wsType(.metric)
-                .foregroundStyle(WSColor.text45)
-                .accessibilityLabel("Week \(weekLabel)")
-
-            Spacer()
-
-            Button {
-                weekOffset = min(allowedOffsets.upperBound, weekOffset + 1)
-            } label: {
-                Text("NEXT WEEK")
-                    .wsType(.label, weight: .heavy)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
+            VStack(spacing: 10) {
+                weekLabelText
+                HStack {
+                    previousWeekButton
+                    Spacer(minLength: 12)
+                    nextWeekButton
+                }
             }
-            .disabled(weekOffset >= allowedOffsets.upperBound)
-            .accessibilityIdentifier("weekly_calendar_next_week")
-            .accessibilityLabel("Next week")
         }
         .foregroundStyle(WSColor.accent)
         .frame(minHeight: 44)
+    }
+
+    private var previousWeekButton: some View {
+        Button {
+            weekOffset = max(allowedOffsets.lowerBound, weekOffset - 1)
+        } label: {
+            // The frame has to sit on the label: applied outside the Button it grows
+            // the layout but leaves the button's own bounds, and so its hit and
+            // accessibility frame, the size of the glyph run.
+            Text("PREV WEEK")
+                .wsType(.label, weight: .heavy)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .disabled(weekOffset <= allowedOffsets.lowerBound)
+        .accessibilityIdentifier("weekly_calendar_prev_week")
+        .accessibilityLabel("Previous week")
+    }
+
+    private var weekLabelText: some View {
+        Text(weekLabel)
+            .wsType(.metric)
+            .foregroundStyle(WSColor.text45)
+            .accessibilityLabel("Week \(weekLabel)")
+    }
+
+    private var nextWeekButton: some View {
+        Button {
+            weekOffset = min(allowedOffsets.upperBound, weekOffset + 1)
+        } label: {
+            Text("NEXT WEEK")
+                .wsType(.label, weight: .heavy)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .disabled(weekOffset >= allowedOffsets.upperBound)
+        .accessibilityIdentifier("weekly_calendar_next_week")
+        .accessibilityLabel("Next week")
     }
 
     private var weekStrip: some View {
