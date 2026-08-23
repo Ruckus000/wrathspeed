@@ -26,7 +26,10 @@ struct RootView: View {
             if let toast = store.toastMessage {
                 WSToast(text: toast)
                     .padding(.horizontal, 24)
-                    .padding(.bottom, 110)
+                    // Derived rather than hand-tuned: the toast has to clear the same bar the
+                    // scroll views clear, so it reads the one metric instead of carrying a
+                    // second number that would quietly stop matching if the bar changed.
+                    .padding(.bottom, WSTabBar.footprint + 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
