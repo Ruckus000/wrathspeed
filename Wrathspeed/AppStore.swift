@@ -129,6 +129,7 @@ final class AppStore {
     }
 
     var session: WorkoutSessionController { workoutCoordinator.session }
+    var isWatchAppAvailable: Bool { workoutCoordinator.isWatchAppAvailable }
 
     var todaysRuns: [ScheduledWorkout] {
         guard let plan = displayPlan else { return [] }

@@ -68,7 +68,7 @@ struct WorkoutPreflightView: View {
                 treadmillSpeedSection
             }
             readinessSection
-            preflightRow("WATCH", WCSessionBridge.isWatchAppInstalled ? "AVAILABLE" : "NOT INSTALLED")
+            preflightRow("WATCH", store.isWatchAppAvailable ? "AVAILABLE" : "NOT INSTALLED")
             structureSection
             Spacer(minLength: 20)
             WSPrimaryButton(title: "START WORKOUT") {

@@ -5,13 +5,20 @@ import WrathspeedCore
 @MainActor
 @Observable
 final class WCSessionBridge: NSObject, WCSessionDelegate {
-    static var isWatchAppInstalled: Bool {
-        #if os(iOS)
-        WCSession.isSupported() && WCSession.default.isWatchAppInstalled
-        #else
-        true
-        #endif
-    }
+    /// Whether a paired Watch has the app installed.
+    ///
+    /// Stored, not read through to `WCSession` on demand. `activate()` is asynchronous and
+    /// `isWatchAppInstalled` is meaningless until it completes, so a synchronous read during
+    /// launch answers `false` for a Watch that is sitting right there -- which is how preflight
+    /// came to report NOT INSTALLED on one launch and AVAILABLE on the next, for the same
+    /// install. WatchConnectivity says when the answer changes, and
+    /// `sessionWatchStateDidChange` exists for exactly that, so record it from the delegate
+    /// and let observers follow.
+    #if os(iOS)
+    private(set) var isWatchAppInstalled = false
+    #else
+    let isWatchAppInstalled = true
+    #endif
 
     var upcoming: UpcomingWorkoutsPayload?
     var pendingStartRequest: WatchStartRequest?
@@ -59,14 +66,29 @@ final class WCSessionBridge: NSObject, WCSessionDelegate {
     }
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        Task { @MainActor in self.publishPlanContextIfPossible() }
+        Task { @MainActor in
+            self.refreshWatchAppInstalled()
+            self.publishPlanContextIfPossible()
+        }
     }
 
     #if os(iOS)
+    /// Pairing, unpairing and installing the Watch app all arrive here.
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in self.refreshWatchAppInstalled() }
+    }
+
+    private func refreshWatchAppInstalled() {
+        guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
+        isWatchAppInstalled = WCSession.default.isWatchAppInstalled
+    }
+
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
     }
+    #else
+    private func refreshWatchAppInstalled() {}
     #endif
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {

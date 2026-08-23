@@ -2,9 +2,14 @@ name: Wrathspeed
 options:
   bundleIdPrefix: com.wrathspeed
   createIntermediateGroups: true
+  # iOS 26 is forced: the phone-side primary `HKWorkoutSession(healthStore:configuration:)` is
+  # API_AVAILABLE(ios(26.0)). watchOS is not. Every API the Watch app uses -- the session
+  # itself, `startMirroringToCompanionDevice`, `sendToRemoteWorkoutSession` and the remote-data
+  # delegate callbacks -- is watchOS 10.0 or older, so 10.0 is the honest floor and it is where
+  # mirroring landed. It covers Series 4 and later with no feature difference from watchOS 26.
   deploymentTarget:
     iOS: "26.0"
-    watchOS: "26.0"
+    watchOS: "10.0"
   xcodeVersion: "26.0"
   generateEmptyDirectories: true
 packages:

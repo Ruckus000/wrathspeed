@@ -5,7 +5,7 @@ let package = Package(
     name: "WrathspeedCore",
     platforms: [
         .iOS(.v18),
-        .watchOS(.v11),
+        .watchOS(.v10),
         .macOS(.v15),
     ],
     products: [
