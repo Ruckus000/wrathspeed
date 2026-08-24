@@ -27,18 +27,18 @@ final class WSTabBarTests: XCTestCase {
     // number should be a deliberate act that updates this test.
     func testMetricsAreTheOnesTheLayoutWasBuiltAround() {
         XCTAssertEqual(WSTabBar.height, 56)
-        XCTAssertEqual(WSTabBar.bottomClearance, 20)
-        XCTAssertEqual(WSTabBar.topEdgeFromScreenBottom, 76)
+        XCTAssertEqual(WSTabBar.bottomClearance, 14)
+        XCTAssertEqual(WSTabBar.topEdgeFromScreenBottom, 70)
     }
 
     /// The bar measures its clearance from the screen edge, so how far it reaches into the
     /// content area is a function of the device. A constant here would be wrong on one of the
     /// two phone shapes the app supports.
     func testContentInsetGivesBackWhateverTheSafeAreaAlreadyCovers() {
-        // Home indicator: 34pt of the bar's 76pt reach is already outside the content area.
-        XCTAssertEqual(WSTabBar.contentInset(safeAreaBottom: 34), 42)
+        // Home indicator: 34pt of the bar's 70pt reach is already outside the content area.
+        XCTAssertEqual(WSTabBar.contentInset(safeAreaBottom: 34), 36)
         // Home button: none of it is, so the content has to clear the whole thing.
-        XCTAssertEqual(WSTabBar.contentInset(safeAreaBottom: 0), 76)
+        XCTAssertEqual(WSTabBar.contentInset(safeAreaBottom: 0), 70)
     }
 
     /// A safe area deeper than the bar's reach must not produce negative padding, which would

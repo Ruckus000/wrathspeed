@@ -380,10 +380,10 @@ struct WSTabBar: View {
     /// so it read as a widget parked mid-screen rather than as the bar. A floating bar is meant
     /// to sit beside the home indicator, which is what iOS 26's own does.
     ///
-    /// Not smaller than 20: the home indicator occupies roughly the bottom 13pt, and a capsule
-    /// whose edge lands on it reads as a rendering fault rather than as a margin. This leaves a
-    /// few points of black between the two.
-    static let bottomClearance: CGFloat = 20
+    /// The home indicator occupies roughly the bottom 13pt, so this is about as low as the
+    /// capsule goes: one point clear of it. Anything smaller and the two touch, which reads as
+    /// a rendering fault rather than as a margin.
+    static let bottomClearance: CGFloat = 14
 
     /// How far the bar reaches above the bottom safe area, which is what a scroll view laid out
     /// inside that safe area has to clear.
