@@ -113,10 +113,10 @@ final class WSLayoutMatrixTests: XCTestCase {
         }
     }
 
-    /// Ties the bar's rendered geometry to the footprint it advertises. `MainTabView` publishes
-    /// `WSTabBar.footprint` as the bottom inset and `WSScreen` clears exactly that much, so if
-    /// the rendered height ever drifts from the constant, every scroll view's clearance is
-    /// silently wrong by the difference.
+    /// Ties the bar's rendered geometry to the reach it advertises. `MainTabView` derives every
+    /// scroll view's bottom inset from `WSTabBar.topEdgeFromScreenBottom`, so if the rendered
+    /// height ever drifts from that constant, every screen's clearance is silently wrong by the
+    /// difference.
     ///
     /// Note this measures the *bar*, not the individual buttons — a tab whose content is smaller
     /// than its cell would still pass here, so the real per-tab hit region is asserted in
@@ -127,8 +127,8 @@ final class WSLayoutMatrixTests: XCTestCase {
         for width in widths {
             for size in textSizes {
                 let bar = measure(WSTabBar(selection: binding), width: width, size: size)
-                XCTAssertEqual(bar.height, WSTabBar.footprint, accuracy: 0.5,
-                               "bar renders \(bar.height)pt but advertises \(WSTabBar.footprint)pt at \(width)pt / \(size)")
+                XCTAssertEqual(bar.height, WSTabBar.topEdgeFromScreenBottom, accuracy: 0.5,
+                               "bar renders \(bar.height)pt but advertises \(WSTabBar.topEdgeFromScreenBottom)pt at \(width)pt / \(size)")
                 XCTAssertGreaterThanOrEqual(bar.width / CGFloat(AppTab.allCases.count), 44,
                                             "tabs are narrower than 44pt at \(width)pt / \(size)")
             }

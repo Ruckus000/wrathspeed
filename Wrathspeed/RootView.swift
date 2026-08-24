@@ -7,15 +7,26 @@ struct RootView: View {
     @State private var pendingStart: PreflightRequest?
 
     var body: some View {
+        // One reader at the root, because two things below need the same number: the tab bar
+        // has to know how much safe area to drop through, and the toast has to land above where
+        // that leaves it. Measured rather than declared -- a phone with a home indicator reports
+        // 34pt here, one with a home button reports none, and both are supported.
+        GeometryReader { proxy in
+            content(safeAreaBottom: proxy.safeAreaInsets.bottom)
+        }
+        .background(WSColor.bg.ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private func content(safeAreaBottom: CGFloat) -> some View {
         @Bindable var store = store
         Group {
             if store.hasOnboarded {
-                MainTabView()
+                MainTabView(safeAreaBottom: safeAreaBottom)
             } else {
                 OnboardingView()
             }
         }
-        .background(WSColor.bg.ignoresSafeArea())
         .onAppear { store.attach(context: modelContext) }
         .overlay {
             if let message = store.errorMessage {
@@ -26,10 +37,19 @@ struct RootView: View {
             if let toast = store.toastMessage {
                 WSToast(text: toast)
                     .padding(.horizontal, 24)
-                    // Derived rather than hand-tuned: the toast has to clear the same bar the
-                    // scroll views clear, so it reads the one metric instead of carrying a
-                    // second number that would quietly stop matching if the bar changed.
-                    .padding(.bottom, WSTabBar.footprint + 24)
+                    // Derived from the bar's own metric rather than hand-tuned, so it cannot
+                    // quietly stop matching if the bar moves. Laid out inside the safe area,
+                    // like the scroll views, so it wants the same inset they do.
+                    .padding(.bottom, WSTabBar.contentInset(safeAreaBottom: safeAreaBottom) + 16)
+                    // The toast has an opaque background and nothing to tap, so without this it
+                    // silently eats every touch that lands on it for as long as it is up. That
+                    // was already true before the bar moved; the banner simply happened to sit
+                    // over empty space. Lowering it put it across Today's "NOT FEELING 100%?"
+                    // row, and the tap right after an adjustment went into the banner instead.
+                    // Verified both ways on iPhone Air: removing this line fails
+                    // Milestone4UITests.testWeeklyCalendarAndManagePlanFlows at the same line
+                    // CI failed on.
+                    .allowsHitTesting(false)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -82,6 +102,9 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
+    /// How deep the bottom safe area is, measured at the root. The bar drops through it.
+    var safeAreaBottom: CGFloat
+
     @Environment(AppStore.self) private var store
 
     var body: some View {
@@ -100,8 +123,13 @@ struct MainTabView: View {
         // and beside it, and screens that end in a Spacer get the height back outright.
         .overlay(alignment: .bottom) {
             WSTabBar(selection: $store.selectedTab)
+                // An offset, not `.ignoresSafeArea`. An overlay is laid out against its host's
+                // frame, and the host is already inset by the safe area, so there is nothing for
+                // ignoresSafeArea to expand into -- tried it, the bar did not move. Offsetting
+                // moves the drawn bar without touching layout, and overlays are not clipped.
+                .offset(y: safeAreaBottom)
         }
-        .environment(\.wsBottomBarInset, WSTabBar.footprint)
+        .environment(\.wsBottomBarInset, WSTabBar.contentInset(safeAreaBottom: safeAreaBottom))
         .background(WSColor.bg.ignoresSafeArea())
     }
 }
