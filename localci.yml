@@ -21,11 +21,25 @@ gate:
 # drifting device list; this machine's does not drift, and when Xcode eventually
 # retires this device the error says so plainly and is a one-line fix.
 #
-# iPhone Air specifically, because that is what CI actually picks: its script
-# takes max(candidates) over (version, name, udid), which sorts by iOS version
-# and then ALPHABETICALLY by name, and "iPhone Air" beats every "iPhone <number>".
-# Matching it keeps local and CI comparable. Nothing here depends on the device --
-# the suite passes on iPhone 17 too, as long as the simulator is clean.
+# The suite runs on its OWN simulator, created on demand, and that is the
+# important part of this file.
+#
+# `-destination "platform=iOS Simulator,name=iPhone Air"` looked fine and was
+# not: this machine has FOUR devices named "iPhone Air", on iOS 26.0, 26.1, 26.2
+# and 26.5. xcodebuild resolves the name to one of them and `xcrun simctl erase
+# "iPhone Air"` resolves it independently -- so the erase could wipe a device
+# something else was using. It nearly did: another session was mid-test on the
+# iOS 26.0 one while this ran.
+#
+# CI never has this problem. Its runner image has exactly one of each device and
+# nobody else is on the box. A developer machine has neither guarantee, and a
+# tool that runs unattended after every push must not reach for a shared device.
+#
+# The device type matches what CI's picker resolves to -- it takes
+# max(candidates) over (version, name, udid), sorting by iOS version and then
+# ALPHABETICALLY by name, and "iPhone Air" beats every "iPhone <number>". Nothing
+# here actually depends on the device: the suite passes on iPhone 17 too, as long
+# as the simulator is clean.
 #
 # The result bundle goes to $LOCALCI_RUN_DIR, not build/. xcodebuild refuses to
 # overwrite an existing -resultBundlePath, and unlike a CI runner this machine
@@ -43,6 +57,32 @@ suite:
   # read of this was wrong, and the wrong version is the plausible one.
   #
   # Erasing restores the one guarantee hosted CI was quietly providing.
-  - xcrun simctl shutdown "iPhone Air" || true
-  - xcrun simctl erase "iPhone Air"
-  - xcodebuild test -project Wrathspeed.xcodeproj -scheme Wrathspeed -configuration Debug -destination "platform=iOS Simulator,name=iPhone Air" -resultBundlePath "$LOCALCI_RUN_DIR/TestResults.xcresult"
+  - |
+    set -e
+    # A device this repo's CI owns, so erasing it can never touch a simulator a
+    # human or another session is using. Created once, reused after that.
+    NAME=localci-wrathspeed
+    UDID=$(xcrun simctl list devices -j | python3 -c '
+    import json,sys
+    for rt, ds in json.load(sys.stdin)["devices"].items():
+        for d in ds:
+            if d["name"] == "localci-wrathspeed":
+                print(d["udid"]); raise SystemExit
+    ')
+    if [ -z "$UDID" ]; then
+      RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
+    import json,sys
+    rs = [r for r in json.load(sys.stdin)["runtimes"]
+          if r["isAvailable"] and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntimeiOS")
+          or (r["isAvailable"] and ".iOS-" in r["identifier"])]
+    print(max(rs, key=lambda r: [int(n) for n in r["version"].split(".")])["identifier"])
+    ')
+      UDID=$(xcrun simctl create "$NAME" "iPhone Air" "$RUNTIME")
+      echo "created $NAME ($UDID) on $RUNTIME"
+    fi
+    echo "using $NAME $UDID"
+    xcrun simctl shutdown "$UDID" 2>/dev/null || true
+    xcrun simctl erase "$UDID"
+    xcodebuild test -project Wrathspeed.xcodeproj -scheme Wrathspeed -configuration Debug \
+      -destination "platform=iOS Simulator,id=$UDID" \
+      -resultBundlePath "$LOCALCI_RUN_DIR/TestResults.xcresult"
