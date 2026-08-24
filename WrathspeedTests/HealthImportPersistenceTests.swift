@@ -5,6 +5,20 @@ import WrathspeedCore
 
 @MainActor
 final class HealthImportPersistenceTests: XCTestCase {
+    /// Noon yesterday.
+    ///
+    /// These fixtures date the plan workout and the imported workout independently, and the
+    /// importer only returns workouts at or after `importWindowStart()`, which is
+    /// `startOfDay(planStart)`. Anchoring both to `Date()` therefore holds only while "an hour
+    /// ago" is still the same local day: run between midnight and about 01:20 and the imported
+    /// workout falls before the window, nothing merges, and the assertions fail on the
+    /// pre-import values. That is not hypothetical -- it turned CI red at 00:13 with no code
+    /// change in the run. A fixed point inside one past day makes the fixtures independent of
+    /// what time the suite happens to run.
+    private static let fixtureNoon = Calendar.current
+        .date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date()))!
+        .addingTimeInterval(12 * 3_600)
+
     private func makeStore(importer: MockHealthImportService) throws -> (AppStore, ModelContext) {
         let container = try ModelContainer(
             for: Schema([
@@ -35,7 +49,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         let pair = try makeStore(importer: importer)
         let workout = ScheduledWorkout(
             blueprint: WorkoutBlueprint(
-                date: Date(),
+                date: Self.fixtureNoon,
                 kind: .easy,
                 title: "Easy",
                 steps: [],
@@ -68,7 +82,7 @@ final class HealthImportPersistenceTests: XCTestCase {
     func testImportPersistFailureRestoresStateAndDoesNotAdvanceAnchor() async throws {
         let mock = MockHealthImportService()
         let uuid = UUID()
-        let startedAt = Date().addingTimeInterval(-3_600)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-3_600)
         mock.workouts = [importedWorkout(uuid: uuid, startedAt: startedAt)]
         let (store, context) = try onboardedStore(importer: mock)
         let previousResults = store.results
@@ -89,7 +103,7 @@ final class HealthImportPersistenceTests: XCTestCase {
     func testImportRetryAfterFailureImportsOnce() async throws {
         let mock = MockHealthImportService()
         let uuid = UUID()
-        let startedAt = Date().addingTimeInterval(-1_800)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-1_800)
         mock.workouts = [importedWorkout(uuid: uuid, startedAt: startedAt)]
         let (store, context) = try onboardedStore(importer: mock)
 
@@ -111,7 +125,7 @@ final class HealthImportPersistenceTests: XCTestCase {
     func testImportPostMutationPersistFailureRestoresStateAndRetryImportsOnce() async throws {
         let mock = MockHealthImportService()
         let uuid = UUID()
-        let startedAt = Date().addingTimeInterval(-2_400)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-2_400)
         mock.workouts = [importedWorkout(uuid: uuid, startedAt: startedAt)]
         let (store, context) = try onboardedStore(importer: mock)
         let previousResults = store.results
@@ -160,7 +174,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         let pair = try makeStore(importer: importer)
         let workout = ScheduledWorkout(
             blueprint: WorkoutBlueprint(
-                date: Date(),
+                date: Self.fixtureNoon,
                 kind: .easy,
                 title: "Easy",
                 location: .treadmill,
@@ -226,7 +240,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         let mock = MockHealthImportService()
         let (store, context) = try treadmillPlanStore(importer: mock)
         let workoutID = try XCTUnwrap(store.plan?.workouts.first?.id)
-        let startedAt = Date().addingTimeInterval(-3_600)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-3_600)
         let uuid = UUID()
         try store.record(confirmedTreadmillResult(workoutID: workoutID, startedAt: startedAt, healthKitUUID: uuid))
 
@@ -282,7 +296,7 @@ final class HealthImportPersistenceTests: XCTestCase {
     func testAutomaticImportPreservesConfirmedInstantTreadmillDistanceWithoutPlanCopy() async throws {
         let mock = MockHealthImportService()
         let (store, context) = try onboardedStore(importer: mock)
-        let startedAt = Date().addingTimeInterval(-2_700)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-2_700)
         let uuid = UUID()
         let workoutID = UUID()
         try store.record(
@@ -321,7 +335,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         let mock = MockHealthImportService()
         let (store, context) = try treadmillPlanStore(importer: mock)
         let workoutID = try XCTUnwrap(store.plan?.workouts.first?.id)
-        let startedAt = Date().addingTimeInterval(-4_800)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-4_800)
         let uuid = UUID()
         try store.record(confirmedTreadmillResult(workoutID: workoutID, startedAt: startedAt, healthKitUUID: uuid))
         let previousResults = store.results
@@ -361,7 +375,7 @@ final class HealthImportPersistenceTests: XCTestCase {
         let mock = MockHealthImportService()
         let (store, context) = try treadmillPlanStore(importer: mock)
         let workoutID = try XCTUnwrap(store.plan?.workouts.first?.id)
-        let startedAt = Date().addingTimeInterval(-3_300)
+        let startedAt = Self.fixtureNoon.addingTimeInterval(-3_300)
         let uuid = UUID()
         var confirmed = confirmedTreadmillResult(workoutID: workoutID, startedAt: startedAt, healthKitUUID: uuid)
         confirmed.healthKitUUID = nil
