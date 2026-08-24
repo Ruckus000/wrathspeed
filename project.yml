@@ -17,6 +17,11 @@ packages:
     path: WrathspeedCore
 settings:
   base:
+    # On every target, not just the app. The Watch app and the widget extension are signed
+    # separately, so without a team here a device build stops at "Signing for
+    # 'WrathspeedWatch' requires a development team" -- and setting it by hand in Xcode does
+    # not stick, because the next `xcodegen generate` overwrites the project.
+    DEVELOPMENT_TEAM: XJ3KNK4F29
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     SWIFT_VERSION: "6.0"
