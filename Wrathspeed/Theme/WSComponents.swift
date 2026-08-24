@@ -371,10 +371,34 @@ struct WSTabBar: View {
     /// The capsule itself. Each tab fills its full height, so this is also each tap target's
     /// height.
     static let height: CGFloat = 56
-    /// How far it floats above the safe area.
-    static let gap: CGFloat = 8
-    /// What a scroll view underneath has to clear.
-    static var footprint: CGFloat { height + gap }
+
+    /// How far the capsule's bottom edge sits above the *physical* bottom of the screen —
+    /// not above the safe area.
+    ///
+    /// Floating above the whole 34pt home-indicator inset is what left the bar stranded: its
+    /// bottom edge landed 42pt up, with a band of scrolling content still visible underneath,
+    /// so it read as a widget parked mid-screen rather than as the bar. A floating bar is meant
+    /// to sit beside the home indicator, which is what iOS 26's own does.
+    ///
+    /// Not smaller than 20: the home indicator occupies roughly the bottom 13pt, and a capsule
+    /// whose edge lands on it reads as a rendering fault rather than as a margin. This leaves a
+    /// few points of black between the two.
+    static let bottomClearance: CGFloat = 20
+
+    /// How far the bar reaches above the bottom safe area, which is what a scroll view laid out
+    /// inside that safe area has to clear.
+    ///
+    /// This has to be measured rather than declared, because it depends on the device: a phone
+    /// with a home indicator hands back 34pt of the bar's height, and one with a home button
+    /// hands back none. The app still supports both — `TARGETED_DEVICE_FAMILY` is iPhone, and
+    /// the SE runs iOS 26 — so a single constant would be wrong on one of them.
+    static func contentInset(safeAreaBottom: CGFloat) -> CGFloat {
+        max(0, bottomClearance + height - safeAreaBottom)
+    }
+
+    /// Where the bar's top edge sits above the physical bottom. For anything that, like the bar,
+    /// positions itself from the screen edge rather than from the safe area.
+    static var topEdgeFromScreenBottom: CGFloat { bottomClearance + height }
 
     @Namespace private var activeTab
 
@@ -404,7 +428,9 @@ struct WSTabBar: View {
         .background(WSColor.bgAlert, in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(WSColor.hairlineStrong, lineWidth: 1))
         .padding(.horizontal, 16)
-        .padding(.bottom, Self.gap)
+        // The bar's own bottom margin. `MainTabView` then offsets the whole thing down through
+        // the safe area, so this ends up measured from the screen edge on every device.
+        .padding(.bottom, Self.bottomClearance)
     }
 
     @ViewBuilder
