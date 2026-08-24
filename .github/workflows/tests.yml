@@ -37,8 +37,16 @@ jobs:
           # toolchain mismatch, so check the version rather than let it get that far.
           newest="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
           sudo xcode-select -s "$newest"
-          xcodebuild -version
-          major="$(xcodebuild -version | head -1 | sed -E 's/^Xcode ([0-9]+).*/\1/')"
+          # Captured once rather than piped. `xcodebuild -version | head -1` closes
+          # the pipe after the first of the two lines it writes, and xcodebuild does
+          # not handle the resulting SIGPIPE -- it throws NSFileHandleOperationException
+          # ("Broken pipe") and aborts with exit 134. That is a race, so it failed
+          # rarely and looked like an infrastructure blip; the version gate itself was
+          # never the thing rejecting the build. Run 32755165483 is an example: exit
+          # 134 eleven seconds in, on Xcode 26.6, which passes this check.
+          version_output="$(xcodebuild -version)"
+          echo "$version_output"
+          major="$(printf '%s\n' "$version_output" | sed -nE '1s/^Xcode ([0-9]+).*/\1/p')"
           if [ "$major" -lt 26 ]; then
             echo "::error::Xcode $major is older than the project's iOS 26 deployment target"
             exit 1
