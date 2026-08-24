@@ -1,0 +1,48 @@
+# Local CI for wrathspeed. See ~/Documents/Coding/localci.
+#
+# This repo used to be pushed ~24 times a day to find out whether it passed,
+# because there was no way to run these tests locally without remembering the
+# full xcodebuild invocation. That is what this file is for.
+
+# Blocks `git push`. 106 tests across 18 suites, and it covers the planner,
+# stepper and cue policy -- the things that actually break. Runs in ~5s.
+gate:
+  # Seconds, and it catches the one thing the test suites cannot: the committed
+  # app icons are rendered from Design/WSMarkGeometry.swift, so editing the mark
+  # without re-running the renderer ships an icon that no longer matches the app.
+  - Tools/brand/render-icons.sh --check
+  - swift test --package-path WrathspeedCore
+
+# Runs detached after the push, reporting to GitHub as a commit status when it
+# finishes. Minutes rather than seconds, which is exactly why it must not block.
+#
+# The destination is pinned by name rather than resolved at runtime. The CI
+# workflow resolved it with a Python script because GitHub's runner images ship a
+# drifting device list; this machine's does not drift, and when Xcode eventually
+# retires this device the error says so plainly and is a one-line fix.
+#
+# iPhone Air specifically, because that is what CI actually picks: its script
+# takes max(candidates) over (version, name, udid), which sorts by iOS version
+# and then ALPHABETICALLY by name, and "iPhone Air" beats every "iPhone <number>".
+# Matching it keeps local and CI comparable. Nothing here depends on the device --
+# the suite passes on iPhone 17 too, as long as the simulator is clean.
+#
+# The result bundle goes to $LOCALCI_RUN_DIR, not build/. xcodebuild refuses to
+# overwrite an existing -resultBundlePath, and unlike a CI runner this machine
+# accumulates -- the second run here failed in 0.3s on exactly that. Per-run
+# means the .xcresult lands beside the logs of the run that produced it.
+suite:
+  # The difference between this machine and a CI runner, in one line.
+  #
+  # CI boots a simulator that has never been used. This one accumulates: after a
+  # couple of runs the app is installed, onboarding is complete and a plan is
+  # seeded, and six UI tests fail on state they did not create --
+  # "No non-quality workout found in the first weeks of the plan" and friends.
+  # It looks like a device-size problem and is not one: erase the simulator and
+  # the same tests pass on iPhone 17 as well. Worth stating because the first
+  # read of this was wrong, and the wrong version is the plausible one.
+  #
+  # Erasing restores the one guarantee hosted CI was quietly providing.
+  - xcrun simctl shutdown "iPhone Air" || true
+  - xcrun simctl erase "iPhone Air"
+  - xcodebuild test -project Wrathspeed.xcodeproj -scheme Wrathspeed -configuration Debug -destination "platform=iOS Simulator,name=iPhone Air" -resultBundlePath "$LOCALCI_RUN_DIR/TestResults.xcresult"
