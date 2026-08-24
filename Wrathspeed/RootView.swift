@@ -41,6 +41,15 @@ struct RootView: View {
                     // quietly stop matching if the bar moves. Laid out inside the safe area,
                     // like the scroll views, so it wants the same inset they do.
                     .padding(.bottom, WSTabBar.contentInset(safeAreaBottom: safeAreaBottom) + 16)
+                    // The toast has an opaque background and nothing to tap, so without this it
+                    // silently eats every touch that lands on it for as long as it is up. That
+                    // was already true before the bar moved; the banner simply happened to sit
+                    // over empty space. Lowering it put it across Today's "NOT FEELING 100%?"
+                    // row, and the tap right after an adjustment went into the banner instead.
+                    // Verified both ways on iPhone Air: removing this line fails
+                    // Milestone4UITests.testWeeklyCalendarAndManagePlanFlows at the same line
+                    // CI failed on.
+                    .allowsHitTesting(false)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
