@@ -1,0 +1,134 @@
+# Local CI for wrathspeed. See ~/Documents/Coding/localci.
+#
+# This repo used to be pushed ~24 times a day to find out whether it passed,
+# because there was no way to run these tests locally without remembering the
+# full xcodebuild invocation. That is what this file is for.
+
+# Blocks `git push`. 106 tests across 18 suites, and it covers the planner,
+# stepper and cue policy -- the things that actually break. Runs in ~5s.
+gate:
+  # Seconds, and it catches the one thing the test suites cannot: the committed
+  # app icons are rendered from Design/WSMarkGeometry.swift, so editing the mark
+  # without re-running the renderer ships an icon that no longer matches the app.
+  - Tools/brand/render-icons.sh --check
+  - swift test --package-path WrathspeedCore
+
+# Runs detached after the push, reporting to GitHub as a commit status when it
+# finishes. Minutes rather than seconds, which is exactly why it must not block.
+#
+# The destination is pinned by name rather than resolved at runtime. The CI
+# workflow resolved it with a Python script because GitHub's runner images ship a
+# drifting device list; this machine's does not drift, and when Xcode eventually
+# retires this device the error says so plainly and is a one-line fix.
+#
+# The suite runs on its OWN simulator, created on demand, and that is the
+# important part of this file.
+#
+# `-destination "platform=iOS Simulator,name=iPhone Air"` looked fine and was
+# not: this machine has FOUR devices named "iPhone Air", on iOS 26.0, 26.1, 26.2
+# and 26.5. xcodebuild resolves the name to one of them and `xcrun simctl erase
+# "iPhone Air"` resolves it independently -- so the erase could wipe a device
+# something else was using. It nearly did: another session was mid-test on the
+# iOS 26.0 one while this ran.
+#
+# CI never has this problem. Its runner image has exactly one of each device and
+# nobody else is on the box. A developer machine has neither guarantee, and a
+# tool that runs unattended after every push must not reach for a shared device.
+#
+# The device type is iPhone 17e, chosen here rather than inherited. CI's picker
+# still takes max(candidates) over (version, name, udid), which sorts by iOS
+# version and then ALPHABETICALLY by name -- so "iPhone Air" beats every
+# "iPhone <number>" because 'A' sorts above '1'. That is an accident of sorting,
+# not a decision, and it happens to select the one device that hides the problem
+# below. Local CI does not inherit the accident.
+#
+# (An earlier draft of this comment said the workflow now carries an explicit
+# shortest-screen-first list. It does not -- that change was never committed.
+# tests.yml is unchanged and still picks by max().)
+#
+# Short screen on purpose, because the screen is not a neutral choice. Measured on
+# TodayView's "NOT FEELING 100%?" row, with XCUITest reporting isHittable:
+#
+#   iPhone Air   420x912   row y792-806, tab bar starts y814   hittable
+#   iPhone 17e   390x844                                       (CI's pick)
+#   iPhone 17    402x874   row y786-800, tab bar starts y776   NOT hittable
+#   iPhone SE 3  375x667   row y746 on a 667pt screen          NOT hittable
+#
+# The floating tab bar is 56pt tall and sits 8pt off the safe area, so wherever
+# the content overflows, the last rows start underneath it. Air has the room and
+# never shows it, so every run this repo has ever made was on the one device where
+# that could not surface. Full suite verified green on an erased iPhone 17e:
+# 204 unit tests, 21 UI tests, 0 failures.
+#
+# What this is NOT: Milestone4UITests.testWeeklyCalendarAndManagePlanFlows failing
+# at "END ADJUSTMENT" was read as an iPhone 17 layout bug. It is not one. That test
+# was run 18 times on iPhone 17 -- isolated, as a class, and in a full suite -- and
+# passed every time. The one red run happened while two other Xcode test sessions
+# were live on this machine, which is the documented way to get unrelated suites to
+# fail here. The frames above are real and worth fixing around; that failure was
+# not evidence of them.
+#
+# The result bundle goes to $LOCALCI_RUN_DIR, not build/. xcodebuild refuses to
+# overwrite an existing -resultBundlePath, and unlike a CI runner this machine
+# accumulates -- the second run here failed in 0.3s on exactly that. Per-run
+# means the .xcresult lands beside the logs of the run that produced it.
+suite:
+  # The difference between this machine and a CI runner, in one line.
+  #
+  # CI boots a simulator that has never been used. This one accumulates: after a
+  # couple of runs the app is installed, onboarding is complete and a plan is
+  # seeded, and six UI tests fail on state they did not create --
+  # "No non-quality workout found in the first weeks of the plan" and friends.
+  # It looks like a device-size problem and is not one: erase the simulator and
+  # the same tests pass on iPhone 17 as well. Worth stating because the first
+  # read of this was wrong, and the wrong version is the plausible one.
+  #
+  # Erasing restores the one guarantee hosted CI was quietly providing.
+  - |
+    set -e
+    # A device this repo's CI owns, so erasing it can never touch a simulator a
+    # human or another session is using. Created once, reused after that.
+    NAME=localci-wrathspeed
+    # Matched on device TYPE as well as name, so changing the type above actually
+    # takes effect. Reusing by name alone meant the line below could say iPhone 17e
+    # while every run still went to the iPhone Air created months earlier, with
+    # nothing on screen to say so.
+    TYPE=com.apple.CoreSimulator.SimDeviceType.iPhone-17e
+    UDID=$(xcrun simctl list devices -j | TYPE="$TYPE" python3 -c '
+    import json,os,sys
+    want = os.environ["TYPE"]
+    for rt, ds in json.load(sys.stdin)["devices"].items():
+        for d in ds:
+            if d["name"] == "localci-wrathspeed" and d.get("deviceTypeIdentifier") == want:
+                print(d["udid"]); raise SystemExit
+    ')
+    if [ -z "$UDID" ]; then
+      # Any same-named device of the wrong type is this script's own leftover, so
+      # deleting it is safe -- it is erased at the top of every run regardless.
+      xcrun simctl list devices -j | python3 -c '
+    import json,sys
+    for rt, ds in json.load(sys.stdin)["devices"].items():
+        for d in ds:
+            if d["name"] == "localci-wrathspeed":
+                print(d["udid"])
+    ' | while read -r stale; do
+        echo "deleting stale $NAME ($stale) of the wrong device type"
+        xcrun simctl shutdown "$stale" 2>/dev/null || true
+        xcrun simctl delete "$stale"
+      done
+      RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
+    import json,sys
+    rs = [r for r in json.load(sys.stdin)["runtimes"]
+          if r["isAvailable"] and r["identifier"].startswith("com.apple.CoreSimulator.SimRuntimeiOS")
+          or (r["isAvailable"] and ".iOS-" in r["identifier"])]
+    print(max(rs, key=lambda r: [int(n) for n in r["version"].split(".")])["identifier"])
+    ')
+      UDID=$(xcrun simctl create "$NAME" "iPhone 17e" "$RUNTIME")
+      echo "created $NAME ($UDID) on $RUNTIME"
+    fi
+    echo "using $NAME $UDID"
+    xcrun simctl shutdown "$UDID" 2>/dev/null || true
+    xcrun simctl erase "$UDID"
+    xcodebuild test -project Wrathspeed.xcodeproj -scheme Wrathspeed -configuration Debug \
+      -destination "platform=iOS Simulator,id=$UDID" \
+      -resultBundlePath "$LOCALCI_RUN_DIR/TestResults.xcresult"
