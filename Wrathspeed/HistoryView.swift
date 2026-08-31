@@ -349,14 +349,25 @@ struct HistoryView: View {
     }
 
     private var lastWeekRecap: (eyebrow: String, headline: String)? {
-        guard let summary = store.rollingFourWeekSummaries().dropLast().last ?? store.currentWeekSummary() else {
+        // Lead with the week that has actually finished. In week 1 there is no previous week
+        // to recap, so this falls back to the week in progress and labels it honestly rather
+        // than calling an unfinished week "LAST WEEK".
+        let previous = store.rollingFourWeekSummaries().dropLast().last
+        guard let summary = previous ?? store.currentWeekSummary() else {
             return nil
         }
-        let loadLine = WSFormat.weeklyLoadLine(summary, unit: store.unit)
-        return (
-            "WEEKLY LOAD",
-            "\(loadLine) PLANNED"
-        )
+        let week = store.currentWeekIndex()
+        let eyebrow = previous != nil && week.current > 1
+            ? "LAST WEEK — WEEK \(week.current - 1)"
+            : "THIS WEEK — WEEK \(week.current)"
+        var headline = "\(summary.confirmedAdherenceCount)/\(summary.plannedRunCount) SESSIONS. "
+            + "\(WSFormat.distance(summary.actualMeters, unit: store.unit))."
+        // "NO EXCUSES" is praise, so it has to be earned -- printing it over a half-finished
+        // week would read as mockery. Only a fully adhered week gets the line.
+        if summary.plannedRunCount > 0, summary.confirmedAdherenceCount >= summary.plannedRunCount {
+            headline += " NO EXCUSES."
+        }
+        return (eyebrow, headline)
     }
 }
 

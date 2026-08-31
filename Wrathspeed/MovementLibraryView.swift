@@ -4,12 +4,16 @@ import WrathspeedCore
 /// One row of the library. Strength exercises and mobility movements carry the same fields
 /// under different names, so they are normalised here rather than building the row and its
 /// destination twice.
-struct MovementLibraryEntry: Identifiable {
+struct MovementLibraryEntry: Identifiable, MovementInstructions {
     let id: String
     let name: String
     let symbolName: String
     let cue: String
     let meta: String
+    var howToDoIt: [String]?
+    var shouldFeel: String?
+    var commonMistake: String?
+    var easier: String?
 }
 
 /// Browsable index of every movement the app knows, so a demo clip is reachable even
@@ -93,7 +97,11 @@ struct MovementLibraryView: View {
                 name: $0.name,
                 symbolName: $0.symbolName,
                 cue: $0.cue,
-                meta: "\($0.defaultReps) reps"
+                meta: "\($0.defaultReps) reps",
+                howToDoIt: $0.howToDoIt,
+                shouldFeel: $0.shouldFeel,
+                commonMistake: $0.commonMistake,
+                easier: $0.easier
             )
         }
         if !strength.isEmpty {
@@ -107,7 +115,11 @@ struct MovementLibraryView: View {
                     name: $0.name,
                     symbolName: $0.symbolName,
                     cue: $0.cue,
-                    meta: "\($0.durationSeconds)s · \($0.bodyArea)"
+                    meta: "\($0.durationSeconds)s · \($0.bodyArea)",
+                    howToDoIt: $0.howToDoIt,
+                    shouldFeel: $0.shouldFeel,
+                    commonMistake: $0.commonMistake,
+                    easier: $0.easier
                 )
             }
             if !entries.isEmpty {
@@ -161,11 +173,19 @@ struct MovementDetailView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 20)
 
-            Text(entry.cue)
-                .wsType(.body, weight: .medium)
-                .foregroundStyle(WSColor.text70)
+            // The cue gets card chrome here, matching the instruction block beneath it, so
+            // the screen reads as a stack of answers rather than a caption and then a card.
+            WSLabeledCard(label: "CUE", text: entry.cue)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 20)
+
+            // Renders nothing until this movement has copy, so the screen is correct while
+            // the catalog is still being filled in.
+            WSInstructionCard(entry)
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 14)
+
+            Spacer(minLength: 34)
         }
         .toolbar(.hidden, for: .navigationBar)
     }

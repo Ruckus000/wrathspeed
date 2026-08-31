@@ -40,6 +40,15 @@ public struct Movement: Codable, Equatable, Sendable, Identifiable {
     public var durationSeconds: Int
     public var symbolName: String
     public var cue: String
+    // Beginner instructions, all optional: the catalog is being filled a movement at a time,
+    // and every surface hides the block rather than rendering an empty one. This is the only
+    // home for the copy -- `MobilityMovement` is a routine step and points here by id.
+    /// Numbered steps, rendered one per numbered bullet.
+    public var howToDoIt: [String]?
+    public var shouldFeel: String?
+    public var commonMistake: String?
+    /// The regression to offer when the movement as written is too hard.
+    public var easier: String?
 
     public init(
         id: String,
@@ -49,7 +58,11 @@ public struct Movement: Codable, Equatable, Sendable, Identifiable {
         bodyArea: String,
         durationSeconds: Int,
         symbolName: String,
-        cue: String
+        cue: String,
+        howToDoIt: [String]? = nil,
+        shouldFeel: String? = nil,
+        commonMistake: String? = nil,
+        easier: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -59,6 +72,10 @@ public struct Movement: Codable, Equatable, Sendable, Identifiable {
         self.durationSeconds = durationSeconds
         self.symbolName = symbolName
         self.cue = cue
+        self.howToDoIt = howToDoIt
+        self.shouldFeel = shouldFeel
+        self.commonMistake = commonMistake
+        self.easier = easier
     }
 }
 

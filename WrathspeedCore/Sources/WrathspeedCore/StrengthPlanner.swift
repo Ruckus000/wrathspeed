@@ -83,6 +83,49 @@ public struct StrengthExercise: Codable, Equatable, Sendable, Identifiable {
     public var symbolName: String
     public var defaultReps: Int
     public var cue: String
+    /// Seconds to hold, for isometrics and carries. `nil` means the movement is counted in
+    /// reps -- which is most of them, and why this is the optional rather than `defaultReps`.
+    /// Without it nothing distinguished a plank from a squat: `plank` carried `defaultReps: 8`,
+    /// a number that means nothing for a movement you do not rep out.
+    public var holdSeconds: Int?
+    // Beginner instructions, all optional and all defaulted: the catalog is being filled in
+    // a movement at a time, and every surface hides the block rather than showing an empty
+    // one. Defaults also keep the synthesised memberwise init source-compatible with the
+    // call sites that predate these fields.
+    /// Numbered steps. Rendered one per line against a numbered bullet.
+    public var howToDoIt: [String]?
+    public var shouldFeel: String?
+    public var commonMistake: String?
+    /// The regression to offer when the movement as written is too hard.
+    public var easier: String?
+
+    public init(
+        id: String,
+        name: String,
+        focus: [StrengthFocus],
+        equipment: [StrengthEquipment],
+        symbolName: String,
+        defaultReps: Int,
+        cue: String,
+        holdSeconds: Int? = nil,
+        howToDoIt: [String]? = nil,
+        shouldFeel: String? = nil,
+        commonMistake: String? = nil,
+        easier: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.focus = focus
+        self.equipment = equipment
+        self.symbolName = symbolName
+        self.defaultReps = defaultReps
+        self.cue = cue
+        self.holdSeconds = holdSeconds
+        self.howToDoIt = howToDoIt
+        self.shouldFeel = shouldFeel
+        self.commonMistake = commonMistake
+        self.easier = easier
+    }
 }
 
 public struct StrengthSet: Codable, Equatable, Sendable {

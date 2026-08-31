@@ -45,7 +45,7 @@ final class PreflightLiveStartUITests: XCTestCase {
         XCTAssertTrue(treadmill.waitForExistence(timeout: 3))
         treadmill.tap()
 
-        let continueButton = app.buttons["CONTINUE →"]
+        let continueButton = app.buttons["PREFLIGHT →"]
         XCTAssertTrue(continueButton.waitForExistence(timeout: 5))
         continueButton.tap()
 

@@ -12,6 +12,10 @@ struct WorkoutPreflightView: View {
     @State private var draftLocation: RunLocation
     @State private var manualTreadmillSpeedDisplay: Double
     @State private var didStart = false
+    @State private var showLocationPermission = false
+    /// Ask at most once per preflight. Without this, dismissing the sheet and having the
+    /// view re-render would put it straight back up.
+    @State private var didOfferLocationPermission = false
 
     init(blueprint: WorkoutBlueprint, source: WorkoutSource, onStart: @escaping (PreflightRequest) -> Void) {
         self.blueprint = blueprint
@@ -95,7 +99,33 @@ struct WorkoutPreflightView: View {
                     unit: store.unit
                 )
             }
+            offerLocationPermissionIfNeeded()
         }
+        // Changing the run to outdoors here is the same moment as arriving on an outdoor
+        // run, so it gets the same offer.
+        .onChange(of: draftLocation) { _, _ in offerLocationPermissionIfNeeded() }
+        .fullScreenCover(isPresented: $showLocationPermission) {
+            LocationPermissionView(
+                onSwitchToTreadmill: { draftLocation = .treadmill },
+                onDismiss: { showLocationPermission = false }
+            )
+        }
+    }
+
+    /// Preflight is where readiness is settled, and it already reads the authorization status
+    /// for its GPS row -- so it is also where an undecided permission gets asked about, while
+    /// the person has chosen to run outside but has not started yet.
+    private func offerLocationPermissionIfNeeded() {
+        // A UI test drives an erased simulator, where the status is always undetermined, so
+        // left unguarded this covers preflight and eats the START WORKOUT tap of every
+        // outdoor-run test. The test whose subject *is* the primer opts back in.
+        guard !UITestingSupport.isUITesting || UITestingSupport.shouldPresentLocationPrimer else { return }
+        guard !didOfferLocationPermission,
+              draftLocation == .outdoor,
+              CLLocationManager().authorizationStatus == .notDetermined
+        else { return }
+        didOfferLocationPermission = true
+        showLocationPermission = true
     }
 
     private var locationSection: some View {
@@ -159,7 +189,7 @@ struct WorkoutPreflightView: View {
 
     private var structureSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("STRUCTURE")
+            Text("HOW THIS RUN WORKS")
                 .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 16)

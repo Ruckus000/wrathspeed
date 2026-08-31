@@ -59,14 +59,14 @@ struct CelebrationView: View {
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .frame(minHeight: 44)
+                            .frame(minHeight: 46)
                             .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                         Button("NOT NOW") { store.declineVDOTSuggestion() }
                             .wsType(.body, weight: .heavy, tracking: 1)
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .frame(minHeight: 44)
+                            .frame(minHeight: 46)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
                                     .stroke(Color.white.opacity(0.3), lineWidth: 1.5)

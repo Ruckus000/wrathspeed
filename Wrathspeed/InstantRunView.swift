@@ -46,7 +46,7 @@ struct InstantRunView: View {
             }
             WSOutlineButton(title: "PREVIEW WORKOUT") { rebuildPreview() }
                 .padding(.top, 16)
-            WSPrimaryButton(title: "CONTINUE →", height: 54, role: .control) {
+            WSPrimaryButton(title: "PREFLIGHT →", height: 54, role: .control) {
                 guard let preview else { rebuildPreview(); return }
                 store.presentPreflight(blueprint: preview, source: .instant)
                 dismiss()

@@ -10,6 +10,7 @@ enum UITestingSupport {
     static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
     static let seedCompletedOnboardingLaunchArgument = "-uiTestingSeedCompletedOnboarding"
     static let skipCountdownLaunchArgument = "-uiTestingSkipCountdown"
+    static let presentLocationPrimerLaunchArgument = "-uiTestingPresentLocationPrimer"
 
     /// True when UI tests pass `-uiTestingResetStore` in Debug builds only.
     static var shouldResetStore: Bool {
@@ -76,6 +77,20 @@ enum UITestingSupport {
     static var shouldSkipCountdown: Bool {
         #if DEBUG
         ProcessInfo.processInfo.arguments.contains(skipCountdownLaunchArgument)
+        #else
+        false
+        #endif
+    }
+
+    /// Lets the location primer appear under UI test, for the one test whose subject it is.
+    ///
+    /// Opt-in rather than opt-out because the primer covers preflight the moment an outdoor
+    /// run reaches it, and a simulator is always `.notDetermined` after an erase -- so left
+    /// on, it swallows the START WORKOUT tap of every outdoor run test. That is the same
+    /// failure mode `isUITesting` was introduced for.
+    static var shouldPresentLocationPrimer: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(presentLocationPrimerLaunchArgument)
         #else
         false
         #endif

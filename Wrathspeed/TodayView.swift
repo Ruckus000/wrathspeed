@@ -115,14 +115,14 @@ struct TodayView: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .frame(minHeight: 42)
+                    .frame(minHeight: 46)
                     .background(WSColor.accent, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
                 Button("NOT NOW") { store.declineVDOTSuggestion() }
                     .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .frame(minHeight: 42)
+                    .frame(minHeight: 46)
                     .overlay(
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .stroke(Color.white.opacity(0.28), lineWidth: 1.5)

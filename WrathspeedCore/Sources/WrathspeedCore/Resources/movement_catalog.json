@@ -8,7 +8,14 @@
       "bodyArea": "shoulders",
       "durationSeconds": 30,
       "symbolName": "figure.arms.open",
-      "cue": "Small circles first, then wider. Half forward, half back."
+      "cue": "Small circles first, then wider. Half forward, half back.",
+      "howToDoIt": [
+        "Stand tall with your arms out to the sides at shoulder height.",
+        "Draw small circles, letting them grow as the shoulders loosen.",
+        "Spend half the time circling forward and half circling back."
+      ],
+      "shouldFeel": "The shoulders warming and moving more freely as the circles grow.",
+      "commonMistake": "Starting at full size, or shrugging the shoulders up toward the ears."
     },
     {
       "id": "cat-cow",
@@ -18,7 +25,14 @@
       "bodyArea": "spine",
       "durationSeconds": 40,
       "symbolName": "figure.flexibility",
-      "cue": "On all fours. Round the spine, then arch. Move with your breath."
+      "cue": "On all fours. Round the spine, then arch. Move with your breath.",
+      "howToDoIt": [
+        "Start on hands and knees, hands under shoulders and knees under hips.",
+        "Exhale and round your spine, tucking the tailbone and letting the head drop.",
+        "Inhale and reverse it -- chest forward, tailbone up. Keep moving with the breath."
+      ],
+      "shouldFeel": "The spine moving segment by segment, not just hinging at the low back.",
+      "commonMistake": "Rushing it, or moving only the low back while the upper back stays flat."
     },
     {
       "id": "standing-pelvic-tilt",
@@ -28,7 +42,14 @@
       "bodyArea": "lowerBack",
       "durationSeconds": 30,
       "symbolName": "figure.stand",
-      "cue": "Tuck the tailbone under, then release. Small range, ribs quiet."
+      "cue": "Tuck the tailbone under, then release. Small range, ribs quiet.",
+      "howToDoIt": [
+        "Stand with your feet hip-width apart and your knees soft.",
+        "Tuck your tailbone under, flattening the low back slightly.",
+        "Release back to neutral. Keep the movement small and the ribs still."
+      ],
+      "shouldFeel": "A small, controlled movement low in the back and around the hips.",
+      "commonMistake": "Making it big, or moving the ribs and shoulders instead of the pelvis."
     },
     {
       "id": "hip-circles",
@@ -38,7 +59,14 @@
       "bodyArea": "hips",
       "durationSeconds": 40,
       "symbolName": "figure.socialdance",
-      "cue": "Hands on hips, draw big slow circles. Both directions."
+      "cue": "Hands on hips, draw big slow circles. Both directions.",
+      "howToDoIt": [
+        "Stand with your feet a little wider than your hips and your hands on your hips.",
+        "Draw a slow circle with the hips, keeping the feet planted and the head fairly still.",
+        "Do half the time in each direction."
+      ],
+      "shouldFeel": "The hips travelling through their full range, loosening as the circles continue.",
+      "commonMistake": "Rushing, or swinging the whole upper body instead of moving at the hips."
     },
     {
       "id": "ankle-circles",
@@ -48,7 +76,15 @@
       "bodyArea": "ankles",
       "durationSeconds": 30,
       "symbolName": "figure.stairs",
-      "cue": "Lift one foot, circle the ankle slowly. Both directions, both sides."
+      "cue": "Lift one foot, circle the ankle slowly. Both directions, both sides.",
+      "howToDoIt": [
+        "Stand on one leg, holding a wall if you need to, and lift the other foot off the floor.",
+        "Circle the ankle slowly through as much range as it has.",
+        "Change direction halfway, then swap feet."
+      ],
+      "shouldFeel": "The ankle moving freely. Nothing should pinch at the front of the joint.",
+      "commonMistake": "Going fast and small. The point is range, and only slow circles find it.",
+      "easier": "Sit down and rest the ankle across the opposite knee, so balance is not part of it."
     },
     {
       "id": "leg-swings-front",
@@ -58,7 +94,14 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 40,
       "symbolName": "figure.walk",
-      "cue": "Hold a wall. Swing the leg front to back, relaxed, growing range."
+      "cue": "Hold a wall. Swing the leg front to back, relaxed, growing range.",
+      "howToDoIt": [
+        "Stand side-on to a wall and rest a hand on it.",
+        "Swing the outside leg forward and back, keeping it relaxed and your torso tall.",
+        "Let the range grow over the first few swings rather than forcing it, then switch sides."
+      ],
+      "shouldFeel": "The hamstring and the front of the hip loosening as the swing gets longer.",
+      "commonMistake": "Forcing the height early, or arching the low back to swing the leg higher."
     },
     {
       "id": "leg-swings-side",
@@ -68,7 +111,14 @@
       "bodyArea": "adductors",
       "durationSeconds": 40,
       "symbolName": "figure.walk",
-      "cue": "Face the wall. Swing the leg across the body and out. Hips square."
+      "cue": "Face the wall. Swing the leg across the body and out. Hips square.",
+      "howToDoIt": [
+        "Face the wall with both hands resting on it.",
+        "Swing one leg across the front of your body, then out to the side.",
+        "Keep both hips facing the wall throughout, then switch legs."
+      ],
+      "shouldFeel": "The inner thigh on the way across, and the outside of the hip on the way out.",
+      "commonMistake": "Letting the hips rotate to get more range, which takes the work out of the leg you are swinging."
     },
     {
       "id": "groiners",
@@ -78,7 +128,15 @@
       "bodyArea": "hips",
       "durationSeconds": 40,
       "symbolName": "figure.flexibility",
-      "cue": "From a push-up position, step a foot outside the hand. Alternate."
+      "cue": "From a push-up position, step a foot outside the hand. Alternate.",
+      "howToDoIt": [
+        "Start in a push-up position on your hands, body in a straight line.",
+        "Step one foot forward and plant it flat on the floor outside the hand on that side.",
+        "Return it to the plank position and alternate sides."
+      ],
+      "shouldFeel": "A deep stretch through the front hip and groin of the stepping leg.",
+      "commonMistake": "Driving the knee under your chest instead of planting the foot outside the hand. That is a mountain climber, which is a different exercise.",
+      "easier": "Step the foot as far forward as it goes and help it the rest of the way with your hand, or lower the back knee to the floor."
     },
     {
       "id": "worlds-greatest-stretch",
@@ -88,7 +146,15 @@
       "bodyArea": "hips",
       "durationSeconds": 60,
       "symbolName": "figure.flexibility",
-      "cue": "Lunge, forearm to the floor inside the foot, then rotate the top arm up."
+      "cue": "Lunge, forearm to the floor inside the foot, then rotate the top arm up.",
+      "howToDoIt": [
+        "Step into a deep lunge and place both hands on the floor.",
+        "Drop the inside forearm toward the floor beside your front foot.",
+        "Rotate the other arm up toward the ceiling, following your hand with your eyes. Return, then switch sides."
+      ],
+      "shouldFeel": "The front hip and groin, and a rotation through the upper back.",
+      "commonMistake": "Rushing the rotation before the forearm has settled, so the twist comes from the low back rather than the upper back.",
+      "easier": "Keep both hands on the floor and skip the rotation, or rest the back knee down."
     },
     {
       "id": "inchworm",
@@ -98,7 +164,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 40,
       "symbolName": "figure.flexibility",
-      "cue": "Hinge, walk the hands out to a plank, walk the feet in. Keep legs long."
+      "cue": "Hinge, walk the hands out to a plank, walk the feet in. Keep legs long.",
+      "howToDoIt": [
+        "Stand tall, hinge at the hips and put your hands on the floor, bending the knees as little as you can.",
+        "Walk your hands out until you are in a plank.",
+        "Walk your feet toward your hands with the legs as long as you can manage, then stand up."
+      ],
+      "shouldFeel": "The hamstrings on the way in, and a brace through the middle at the plank.",
+      "commonMistake": "Letting the hips sag at the plank, or bending the knees so much on the walk in that the hamstrings do nothing.",
+      "easier": "Bend the knees as much as you need to on the way down and on the way in."
     },
     {
       "id": "arm-drill",
@@ -108,7 +182,15 @@
       "bodyArea": "shoulders",
       "durationSeconds": 30,
       "symbolName": "figure.run",
-      "cue": "Tall kneeling. Drive elbows back, hands cheek to pocket, relaxed hands."
+      "cue": "Tall kneeling. Drive elbows back, hands cheek to pocket, relaxed hands.",
+      "howToDoIt": [
+        "Kneel tall on both knees with your hips underneath you and your legs still.",
+        "Drive one elbow back while the other hand comes forward, keeping both elbows bent.",
+        "Let each hand travel from cheek to pocket, hands relaxed, then build the speed up."
+      ],
+      "shouldFeel": "The shoulders working while the torso stays quiet. The legs do nothing at all.",
+      "commonMistake": "A small pumping motion in front of the torso. The amplitude is the drill -- hand to cheek, hand to pocket.",
+      "easier": "Slow it right down and find the full range first. Speed comes after."
     },
     {
       "id": "wall-drill",
@@ -118,7 +200,15 @@
       "bodyArea": "hips",
       "durationSeconds": 40,
       "symbolName": "figure.run",
-      "cue": "Lean into the wall from the ankles. Drive one knee up, punch the foot down."
+      "cue": "Lean into the wall from the ankles. Drive one knee up, punch the foot down.",
+      "howToDoIt": [
+        "Lean into a wall with straight arms and your body in one line from head to heels, leaning from the ankles.",
+        "Drive one knee up to hip height.",
+        "Punch that foot back down to the floor underneath your hip, then switch legs."
+      ],
+      "shouldFeel": "The lean held by the whole body, and a sharp contact each time the foot strikes.",
+      "commonMistake": "Bending at the hips so the body folds, which loses the forward lean the drill exists to teach.",
+      "easier": "Hold the lean without moving your legs, then add one knee drive at a time."
     },
     {
       "id": "claw-series",
@@ -128,7 +218,15 @@
       "durationSeconds": 40,
       "bodyArea": "hamstrings",
       "symbolName": "figure.run",
-      "cue": "Reach the foot forward, then paw it back under the hip. Quick ground contact."
+      "cue": "Reach the foot forward, then paw it back under the hip. Quick ground contact.",
+      "howToDoIt": [
+        "Travel forward at an easy jog.",
+        "Reach one foot forward out in front of you.",
+        "Sweep it actively backward before it lands, so it strikes the ground under your hip rather than in front of it."
+      ],
+      "shouldFeel": "The hamstring and glute pulling the foot back just before it lands.",
+      "commonMistake": "Letting the foot land where you reached it. The backward sweep before contact is the whole drill.",
+      "easier": "Do it walking first, exaggerating the backward sweep."
     },
     {
       "id": "butt-kicks",
@@ -138,7 +236,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 30,
       "symbolName": "figure.run",
-      "cue": "Heels to glutes, knees pointing down, quick light cadence."
+      "cue": "Heels to glutes, knees pointing down, quick light cadence.",
+      "howToDoIt": [
+        "Jog on the spot or travel slowly forward.",
+        "Flick each heel up to your glute, keeping the knee pointing down at the floor.",
+        "Keep the contacts quick and light rather than reaching for height."
+      ],
+      "shouldFeel": "The hamstrings snapping each heel up, at a fast and light rhythm.",
+      "commonMistake": "Letting the knees swing forward, which turns it into a high-knee run, or landing heavily.",
+      "easier": "Slow the cadence and take a smaller heel lift."
     },
     {
       "id": "single-leg-butt-kick",
@@ -148,7 +254,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 30,
       "symbolName": "figure.run",
-      "cue": "One leg cycles, the other stays quiet. Stay tall through the hips."
+      "cue": "One leg cycles, the other stays quiet. Stay tall through the hips.",
+      "howToDoIt": [
+        "Jog easily forward.",
+        "Flick one heel to the glute repeatedly while the other leg keeps a normal running rhythm.",
+        "Stay tall through the hips, then switch to the other side."
+      ],
+      "shouldFeel": "One hamstring doing repeated quick work while the rest of the stride carries on as normal.",
+      "commonMistake": "Alternating both legs. That is the standard butt kick and a different drill -- here only one leg cycles.",
+      "easier": "Do it on the spot before adding forward travel."
     },
     {
       "id": "fast-skipping",
@@ -158,7 +272,15 @@
       "bodyArea": "calves",
       "durationSeconds": 30,
       "symbolName": "figure.run",
-      "cue": "Skip for height off a stiff ankle. Opposite arm drives with the knee."
+      "cue": "Skip for height off a stiff ankle. Opposite arm drives with the knee.",
+      "howToDoIt": [
+        "Skip forward, taking two contacts on one foot before switching.",
+        "Get the height from a stiff, springy ankle rather than a deep knee bend.",
+        "Drive the opposite arm with the lead knee."
+      ],
+      "shouldFeel": "Springy calves and ankles, with the time on the ground feeling short.",
+      "commonMistake": "Turning it into an A-skip with a big knee lift and a soft, deep bend. The bounce comes from the ankle.",
+      "easier": "Skip on the spot with a smaller bounce until the rhythm is there."
     },
     {
       "id": "carioca",
@@ -168,7 +290,15 @@
       "bodyArea": "hips",
       "durationSeconds": 40,
       "symbolName": "figure.socialdance",
-      "cue": "Travel sideways, trail leg crossing front then behind. Let the hips rotate."
+      "cue": "Travel sideways, trail leg crossing front then behind. Let the hips rotate.",
+      "howToDoIt": [
+        "Travel sideways with your arms out to the sides for balance.",
+        "Cross the trail leg in front of the lead leg, step, then cross it behind.",
+        "Let the hips rotate freely with each crossing, and cover the same distance back the other way."
+      ],
+      "shouldFeel": "The hips rotating, and the whole thing smoothing out once the rhythm arrives.",
+      "commonMistake": "Only crossing in front and shuffling back. Both crossings -- in front and behind -- are the drill.",
+      "easier": "Walk it slowly until the crossing pattern is automatic."
     },
     {
       "id": "lateral-bound",
@@ -178,7 +308,15 @@
       "bodyArea": "glutes",
       "durationSeconds": 30,
       "symbolName": "figure.jumprope",
-      "cue": "Push off one leg, land soft on the other, hold a beat before rebounding."
+      "cue": "Push off one leg, land soft on the other, hold a beat before rebounding.",
+      "howToDoIt": [
+        "Stand on one leg, then push sideways off it.",
+        "Land on the other leg and absorb the landing softly.",
+        "Hold that landing for a beat before pushing back the other way."
+      ],
+      "shouldFeel": "The glute of the landing leg controlling you, then producing the next push.",
+      "commonMistake": "Rebounding immediately. The pause is what trains the landing, and the landing is the point.",
+      "easier": "Shorten the distance and step rather than bound."
     },
     {
       "id": "diagonal-bound",
@@ -188,7 +326,15 @@
       "bodyArea": "glutes",
       "durationSeconds": 30,
       "symbolName": "figure.jumprope",
-      "cue": "Long diagonal bounds, alternating legs. Cover ground, land quietly."
+      "cue": "Long diagonal bounds, alternating legs. Cover ground, land quietly.",
+      "howToDoIt": [
+        "Push off one leg and travel forward and across, at a diagonal.",
+        "Land on the opposite leg, absorbing quietly.",
+        "Push straight off into the next bound, alternating legs and driving the opposite arm."
+      ],
+      "shouldFeel": "A long moment of flight, with the glute absorbing each landing.",
+      "commonMistake": "Bounding straight out sideways. That is a lateral bound; this one travels forward and across.",
+      "easier": "Shorten the bounds, then add distance as the landings get quiet."
     },
     {
       "id": "split-jump",
@@ -198,7 +344,15 @@
       "bodyArea": "quadriceps",
       "durationSeconds": 30,
       "symbolName": "figure.jumprope",
-      "cue": "Lunge, jump, switch legs in the air, absorb the landing."
+      "cue": "Lunge, jump, switch legs in the air, absorb the landing.",
+      "howToDoIt": [
+        "Drop into a lunge with both knees bent.",
+        "Jump up and switch your legs in the air.",
+        "Land in a lunge on the other side, absorbing softly through both legs."
+      ],
+      "shouldFeel": "Thighs and glutes on take-off, with both legs sharing the landing.",
+      "commonMistake": "Landing stiff-legged and loud, or letting the front knee collapse inward as you land.",
+      "easier": "Step through from one lunge to the other instead of jumping, or reduce the depth."
     },
     {
       "id": "knee-tuck-jump",
@@ -208,7 +362,15 @@
       "bodyArea": "quadriceps",
       "durationSeconds": 30,
       "symbolName": "figure.jumprope",
-      "cue": "Jump and pull both knees to the chest. Land soft, reset, repeat."
+      "cue": "Jump and pull both knees to the chest. Land soft, reset, repeat.",
+      "howToDoIt": [
+        "Stand tall with your feet hip-width apart.",
+        "Jump and pull both knees toward your chest.",
+        "Land softly through the whole foot, stand up, and reset before the next one."
+      ],
+      "shouldFeel": "An explosive jump followed by a quiet, controlled landing.",
+      "commonMistake": "Rushing straight into the next jump. Each rep starts from a settled stand.",
+      "easier": "Jump without the tuck, or tuck the knees to a lower height."
     },
     {
       "id": "hurdle-hops",
@@ -218,7 +380,15 @@
       "bodyArea": "calves",
       "durationSeconds": 30,
       "symbolName": "figure.jumprope",
-      "cue": "Hop over low obstacles off both feet. Stiff ankles, minimal ground time."
+      "cue": "Hop over low obstacles off both feet. Stiff ankles, minimal ground time.",
+      "howToDoIt": [
+        "Set out a row of low obstacles, at least three of them.",
+        "Hop over them with both feet together, one after another without stopping.",
+        "Keep the ankles stiff and the ground contact between hurdles as short as you can."
+      ],
+      "shouldFeel": "Springy ankles, and very little time spent on the floor.",
+      "commonMistake": "One hop over one hurdle with a reset in between, or jumping down from a box. It is a continuous row.",
+      "easier": "Lower the obstacles, or use lines on the ground instead of hurdles."
     },
     {
       "id": "calf-stretch-wall",
@@ -228,7 +398,15 @@
       "bodyArea": "calves",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Back leg straight, heel down, hips forward. Hold and breathe."
+      "cue": "Back leg straight, heel down, hips forward. Hold and breathe.",
+      "howToDoIt": [
+        "Stand facing a wall with your hands on it and one foot well back.",
+        "Keep the back leg straight and press the back heel down into the floor.",
+        "Ease your hips forward until you feel the stretch, and hold. Then switch sides."
+      ],
+      "shouldFeel": "The thick upper part of the back calf.",
+      "commonMistake": "Letting the back heel lift, which removes the stretch entirely.",
+      "easier": "Bring the back foot closer to the wall."
     },
     {
       "id": "soleus-achilles",
@@ -238,7 +416,15 @@
       "bodyArea": "calves",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Same as the calf stretch but bend the back knee. Lower and deeper."
+      "cue": "Same as the calf stretch but bend the back knee. Lower and deeper.",
+      "howToDoIt": [
+        "Set up as for the wall calf stretch, with the back foot a little closer in.",
+        "Keep the heel pressed down and bend the back knee.",
+        "Sink down rather than forward, and hold. Then switch sides."
+      ],
+      "shouldFeel": "Lower than the straight-leg version -- down near the achilles and the base of the calf.",
+      "commonMistake": "Bending the knee but letting the heel come up, which loses the stretch.",
+      "easier": "Bend the knee less, and bring the foot in closer."
     },
     {
       "id": "runners-stretch",
@@ -248,7 +434,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Deep lunge, hands framing the front foot, sink the back hip down."
+      "cue": "Deep lunge, hands framing the front foot, sink the back hip down.",
+      "howToDoIt": [
+        "Step into a deep lunge and place both hands on the floor either side of your front foot.",
+        "Let the back hip sink toward the floor.",
+        "Hold, breathing, then switch sides."
+      ],
+      "shouldFeel": "The front of the back hip, and a stretch deep in the front groin.",
+      "commonMistake": "Leaving the back hip high, which turns it into a hamstring stretch instead.",
+      "easier": "Rest the back knee on the floor, and put your hands on a block or a low step."
     },
     {
       "id": "seated-hamstring",
@@ -258,7 +452,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Hinge from the hips, not the spine. Chest toward the thigh."
+      "cue": "Hinge from the hips, not the spine. Chest toward the thigh.",
+      "howToDoIt": [
+        "Sit with one leg straight out in front and the other bent or tucked in.",
+        "Hinge forward from the hips with a long spine.",
+        "Take your chest toward the thigh, stop where it bites, and hold. Then switch sides."
+      ],
+      "shouldFeel": "Along the back of the straight leg's thigh.",
+      "commonMistake": "Rounding the back to reach the foot. The reach comes from the hips, and rounding takes the stretch off the hamstring.",
+      "easier": "Sit on a cushion, and let the straight leg bend slightly."
     },
     {
       "id": "kneeling-hip-flexor",
@@ -268,7 +470,15 @@
       "bodyArea": "hipFlexors",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Half kneeling, tuck the tailbone, then ease the hips forward."
+      "cue": "Half kneeling, tuck the tailbone, then ease the hips forward.",
+      "howToDoIt": [
+        "Kneel on one knee with the other foot flat on the floor in front of you.",
+        "Tuck your tailbone under first -- this is what makes the stretch work.",
+        "Then ease your hips forward a small way and hold. Switch sides."
+      ],
+      "shouldFeel": "Across the front of the hip on the kneeling side.",
+      "commonMistake": "Pushing the hips forward without the tuck, which arches the low back and stretches that instead.",
+      "easier": "Put a folded towel under the knee and shift forward a shorter distance."
     },
     {
       "id": "quad-stretch",
@@ -278,7 +488,15 @@
       "bodyArea": "quadriceps",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Heel to glute, knees together, stand tall. Don't arch the low back."
+      "cue": "Heel to glute, knees together, stand tall. Don't arch the low back.",
+      "howToDoIt": [
+        "Stand tall, holding a wall if you need to.",
+        "Take one heel to your glute and hold the ankle.",
+        "Keep the knees together and the tailbone tucked, then hold. Switch sides."
+      ],
+      "shouldFeel": "The front of the thigh, and a little across the front of the hip.",
+      "commonMistake": "Letting the knee drift out to the side, or the low back arch. Both take the stretch off the quad.",
+      "easier": "Loop a strap or a towel around the ankle, or do it lying on your side."
     },
     {
       "id": "it-band-glute",
@@ -288,7 +506,15 @@
       "bodyArea": "itBand",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Cross the top leg over, hug the knee across the body."
+      "cue": "Cross the top leg over, hug the knee across the body.",
+      "howToDoIt": [
+        "Sit or lie with one leg crossed over the other.",
+        "Draw the top knee across your body toward the opposite shoulder.",
+        "Hold where it bites, breathing, then switch sides."
+      ],
+      "shouldFeel": "The outside of the hip and the glute of the crossed leg.",
+      "commonMistake": "Pulling hard enough to twist the shoulders round, which moves the stretch into the low back.",
+      "easier": "Pull it a shorter distance across, and keep the bottom leg bent."
     },
     {
       "id": "lying-glute",
@@ -298,7 +524,15 @@
       "bodyArea": "glutes",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Ankle over the opposite knee, pull the bottom thigh toward you."
+      "cue": "Ankle over the opposite knee, pull the bottom thigh toward you.",
+      "howToDoIt": [
+        "Lie on your back with both knees bent.",
+        "Cross one ankle over the opposite knee to make a figure four.",
+        "Reach through and pull the bottom thigh toward your chest. Hold, then switch sides."
+      ],
+      "shouldFeel": "Deep in the glute of the crossed leg.",
+      "commonMistake": "Pulling on the crossed knee rather than the bottom thigh, which twists that knee instead of stretching the glute.",
+      "easier": "Do it seated in a chair, leaning gently forward instead of pulling."
     },
     {
       "id": "lying-crossover",
@@ -308,7 +542,15 @@
       "bodyArea": "lowerBack",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "On your back, drop one knee across the body. Shoulders stay down."
+      "cue": "On your back, drop one knee across the body. Shoulders stay down.",
+      "howToDoIt": [
+        "Lie on your back with your arms out to the sides.",
+        "Bring one knee up and let it fall across your body toward the floor.",
+        "Keep both shoulders on the floor and turn your head the other way. Switch sides."
+      ],
+      "shouldFeel": "A rotation through the low back and the outside of the hip.",
+      "commonMistake": "Letting the opposite shoulder lift to get the knee lower. The shoulder staying down is what creates the twist.",
+      "easier": "Put a cushion under the falling knee so it has less distance to travel."
     },
     {
       "id": "side-lying-groin",
@@ -318,7 +560,15 @@
       "bodyArea": "adductors",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Open the top leg and let it settle. Relax rather than force it."
+      "cue": "Open the top leg and let it settle. Relax rather than force it.",
+      "howToDoIt": [
+        "Lie on your side with the bottom leg bent for support.",
+        "Let the top leg open away from the bottom one.",
+        "Let gravity do the work and breathe. Then switch sides."
+      ],
+      "shouldFeel": "The inner thigh of the top leg, easing as you relax into it.",
+      "commonMistake": "Pushing the leg down with your hand. This one opens by relaxing, not by forcing.",
+      "easier": "Bend the top knee, which shortens the leg and softens the stretch."
     },
     {
       "id": "hug-knees-to-chest",
@@ -328,7 +578,14 @@
       "bodyArea": "lowerBack",
       "durationSeconds": 40,
       "symbolName": "figure.flexibility",
-      "cue": "Hug both knees in, rock gently side to side."
+      "cue": "Hug both knees in, rock gently side to side.",
+      "howToDoIt": [
+        "Lie on your back and draw both knees toward your chest.",
+        "Wrap your arms around them and hold.",
+        "Rock gently from side to side."
+      ],
+      "shouldFeel": "The low back opening across its whole width.",
+      "commonMistake": "Pulling hard enough to lift your head and neck off the floor."
     },
     {
       "id": "childs-pose",
@@ -338,7 +595,15 @@
       "bodyArea": "lowerBack",
       "durationSeconds": 45,
       "symbolName": "figure.flexibility",
-      "cue": "Hips to heels, arms long, let the ribs drop and breathe."
+      "cue": "Hips to heels, arms long, let the ribs drop and breathe.",
+      "howToDoIt": [
+        "Kneel and sit your hips back toward your heels.",
+        "Reach your arms long in front and let your chest sink toward the floor.",
+        "Breathe into your back and let the ribs settle."
+      ],
+      "shouldFeel": "The low back and the shoulders lengthening as you breathe.",
+      "commonMistake": "Holding tension in the shoulders instead of letting the chest sink.",
+      "easier": "Widen the knees, or put a cushion between your hips and your heels."
     },
     {
       "id": "calves-smr",
@@ -348,7 +613,15 @@
       "bodyArea": "calves",
       "durationSeconds": 60,
       "symbolName": "figure.rolling",
-      "cue": "Roll slowly, pause on tender spots for a few breaths."
+      "cue": "Roll slowly, pause on tender spots for a few breaths.",
+      "howToDoIt": [
+        "Sit with the roller under one calf and your hands on the floor behind you.",
+        "Roll slowly from the ankle to just below the knee.",
+        "When you find a tender spot, stop there and breathe until it eases. Then switch legs."
+      ],
+      "shouldFeel": "Firm pressure -- uncomfortable, but not sharp.",
+      "commonMistake": "Rolling fast. Speed feels productive and does very little; the pauses are what work.",
+      "easier": "Keep the other foot on the floor to carry some of your weight."
     },
     {
       "id": "hamstring-smr",
@@ -358,7 +631,15 @@
       "bodyArea": "hamstrings",
       "durationSeconds": 60,
       "symbolName": "figure.rolling",
-      "cue": "Roll hip to knee. Slow. Stop where it bites and breathe."
+      "cue": "Roll hip to knee. Slow. Stop where it bites and breathe.",
+      "howToDoIt": [
+        "Sit with the roller under one hamstring and your hands behind you for support.",
+        "Roll slowly between the hip and a point just above the knee.",
+        "Pause on tender spots and breathe until they ease. Then switch legs."
+      ],
+      "shouldFeel": "Firm pressure through the back of the thigh.",
+      "commonMistake": "Rolling right over the back of the knee. Stay between the hip and just above it.",
+      "easier": "Put the other foot on the floor to take some weight off the roller."
     },
     {
       "id": "it-band-smr",
@@ -368,7 +649,15 @@
       "bodyArea": "itBand",
       "durationSeconds": 60,
       "symbolName": "figure.rolling",
-      "cue": "Side-lying on the roller, hip to just above the knee. Never on the knee."
+      "cue": "Side-lying on the roller, hip to just above the knee. Never on the knee.",
+      "howToDoIt": [
+        "Lie on your side with the roller under the outside of your thigh.",
+        "Support yourself on your forearm, with your top foot on the floor.",
+        "Roll slowly between the hip and a point just above the knee, then switch sides."
+      ],
+      "shouldFeel": "Sharp at first, easing as you stay with it. Back off if it feels like it is in the joint.",
+      "commonMistake": "Rolling onto the knee itself. Stop above it -- there is nothing to release at the joint and plenty to irritate.",
+      "easier": "Take more weight through the top foot and your forearm, so less of you is on the roller."
     },
     {
       "id": "piriformis-smr",
@@ -378,7 +667,15 @@
       "bodyArea": "glutes",
       "durationSeconds": 60,
       "symbolName": "figure.rolling",
-      "cue": "Sit on the roller, ankle over the opposite knee, hunt for the sore spot."
+      "cue": "Sit on the roller, ankle over the opposite knee, hunt for the sore spot.",
+      "howToDoIt": [
+        "Sit on the roller and cross one ankle over the opposite knee.",
+        "Lean into the crossed side so your weight settles onto that glute.",
+        "Move slowly to find the sore spot, then stay on it and breathe. Switch sides."
+      ],
+      "shouldFeel": "Deep in the glute, often quite sharp once you find the spot.",
+      "commonMistake": "Moving constantly. This one is about finding a single spot and staying on it.",
+      "easier": "Keep more weight on your hands and your supporting foot."
     }
   ]
 }
