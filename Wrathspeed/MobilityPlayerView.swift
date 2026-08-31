@@ -40,12 +40,22 @@ struct MobilityPlayerView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 16)
             if let movement = session.movements[safe: index] {
-                Image(systemName: movement.symbolName)
-                    .font(.system(size: 56))
-                    .foregroundStyle(WSColor.accent)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 24)
-                    .accessibilityHidden(true)
+                // These three routines are linked straight off Today, so this is the
+                // mobility screen people actually reach -- and until now it drew a bare
+                // SF Symbol while the equivalent screen behind Plan showed a demo clip.
+                // `mediaExerciseID` had been on the model since the media work landed and
+                // was never populated or read; the catalog now carries it.
+                //
+                // Movements the clip library does not depict keep the symbol rather than
+                // borrowing a near-enough clip: MovementMediaView falls back on its own
+                // when the id is absent, and a nil id resolves the same way.
+                MovementMediaView(
+                    movementID: movement.mediaExerciseID ?? "",
+                    symbolName: movement.symbolName,
+                    height: 180
+                )
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 20)
                 VStack(alignment: .leading, spacing: 8) {
                     Text(movement.name.uppercased())
                         .wsType(.control, weight: .heavy)

@@ -7,9 +7,9 @@
       "title": "Pre-Run Primer",
       "durationMinutes": 6,
       "movements": [
-        {"id": "leg_swings", "name": "Leg Swings", "durationSeconds": 30, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Hold support. Swing with control.", "symbolName": "figure.flexibility"},
-        {"id": "ankle_circles", "name": "Ankle Circles", "durationSeconds": 30, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Slow circles both directions.", "symbolName": "figure.walk"},
-        {"id": "hip_openers", "name": "Hip Openers", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Open hips without forcing range.", "symbolName": "figure.cooldown"}
+        {"id": "leg_swings", "name": "Leg Swings", "durationSeconds": 30, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Hold support. Swing with control.", "mediaExerciseID": "leg-swings-front", "symbolName": "figure.flexibility"},
+        {"id": "ankle_circles", "name": "Ankle Circles", "durationSeconds": 30, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Slow circles both directions.", "mediaExerciseID": "ankle-circles", "symbolName": "figure.walk"},
+        {"id": "hip_openers", "name": "Hip Openers", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Open hips without forcing range.", "mediaExerciseID": "hip-circles", "symbolName": "figure.cooldown"}
       ]
     },
     {
@@ -18,9 +18,9 @@
       "title": "Post-Run Reset",
       "durationMinutes": 8,
       "movements": [
-        {"id": "calf_stretch", "name": "Calf Stretch", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Gentle stretch. Stop if sharp pain.", "symbolName": "figure.flexibility"},
-        {"id": "quad_stretch", "name": "Quad Stretch", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Stand tall. Keep knees together.", "symbolName": "figure.cooldown"},
-        {"id": "hamstring_fold", "name": "Hamstring Fold", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Hinge from hips. No bouncing.", "symbolName": "figure.mind.and.body"}
+        {"id": "calf_stretch", "name": "Calf Stretch", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Gentle stretch. Stop if sharp pain.", "mediaExerciseID": "calf-stretch-wall", "symbolName": "figure.flexibility"},
+        {"id": "quad_stretch", "name": "Quad Stretch", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Stand tall. Keep knees together.", "mediaExerciseID": "quad-stretch", "symbolName": "figure.cooldown"},
+        {"id": "hamstring_fold", "name": "Hamstring Fold", "durationSeconds": 45, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Hinge from hips. No bouncing.", "mediaExerciseID": "standing-hamstring-fold", "symbolName": "figure.mind.and.body"}
       ]
     },
     {
@@ -29,8 +29,8 @@
       "title": "Recovery Flow",
       "durationMinutes": 15,
       "movements": [
-        {"id": "worlds_greatest", "name": "World's Greatest", "durationSeconds": 60, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Move slowly through each position.", "symbolName": "figure.yoga"},
-        {"id": "pigeon", "name": "Pigeon Prep", "durationSeconds": 60, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Support with blocks if needed.", "symbolName": "figure.flexibility"},
+        {"id": "worlds_greatest", "name": "World's Greatest", "durationSeconds": 60, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Move slowly through each position.", "mediaExerciseID": "worlds-greatest-stretch", "symbolName": "figure.yoga"},
+        {"id": "pigeon", "name": "Pigeon Prep", "durationSeconds": 60, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Support with blocks if needed.", "mediaExerciseID": "double-pigeon", "symbolName": "figure.flexibility"},
         {"id": "thoracic_rotation", "name": "Thoracic Rotation", "reps": 8, "side": "each", "transitionSeconds": 0, "restSeconds": 0, "cue": "Rotate through upper back only.", "symbolName": "figure.cooldown"}
       ]
     }

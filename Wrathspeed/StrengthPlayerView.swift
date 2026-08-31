@@ -67,7 +67,8 @@ struct StrengthPlayerView: View {
                 ExerciseAboutView(
                     exerciseName: displayedExerciseName(for: current),
                     cue: displayedCue(for: current),
-                    symbolName: "figure.strengthtraining.traditional"
+                    symbolName: displayedSymbolName(for: current),
+                    movementID: displayedExerciseID(for: current)
                 )
             }
         }
