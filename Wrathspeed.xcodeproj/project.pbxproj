@@ -118,6 +118,7 @@
 		C5C3B436CDF986130BAD38C3 /* WorkoutResultMatchActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16BA6A73DFA699CCFD7A5F29 /* WorkoutResultMatchActionTests.swift */; };
 		C6F5EA8D16FF6B78EC7338B5 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */; };
 		C7375DFC4457263B637CAA8B /* WSMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = A502EFF502270D0F27E3BEF1 /* WSMark.swift */; };
+		C7E2A5AD9D836CC21574F975 /* WorkoutCountdownOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB877C0D27F1483A0A4E1A3C /* WorkoutCountdownOverlay.swift */; };
 		C8EC45819625F10E3B59BC9F /* WSMarkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45783DB7053C7A126781F384 /* WSMarkTests.swift */; };
 		CA2C6BFB50A108A54512C6D4 /* WatchLaunchTimeoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D93BDD6445638B874648A88 /* WatchLaunchTimeoutTests.swift */; };
 		CB02F6B21431D73A1AF4C36A /* WSType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B1375B7BAC88A0B6B297C3 /* WSType.swift */; };
@@ -291,6 +292,7 @@
 		B7BF97D90EBF2D7DDF615DE4 /* HealthPermissionPrimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthPermissionPrimerView.swift; sourceTree = "<group>"; };
 		B91D30196391D4579E7FD233 /* GuidedSessionPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedSessionPersistenceTests.swift; sourceTree = "<group>"; };
 		BB3A2C907ECC3558370C169D /* WSTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSTypeTests.swift; sourceTree = "<group>"; };
+		BB877C0D27F1483A0A4E1A3C /* WorkoutCountdownOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCountdownOverlay.swift; sourceTree = "<group>"; };
 		BD7DD725680061E437C6B105 /* HealthImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportService.swift; sourceTree = "<group>"; };
 		C0940BB8E279F8E390DE6BC8 /* WatchWorkoutStartupCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchWorkoutStartupCoordinator.swift; sourceTree = "<group>"; };
 		C15C3868B4CD63B285917AFB /* WSComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSComponents.swift; sourceTree = "<group>"; };
@@ -499,6 +501,7 @@
 				5B3442BE6DF9F90A9C582286 /* TreadmillDistanceSheet.swift */,
 				B109C99D068CDA5571F02ECC /* UITestingSupport.swift */,
 				623774FFF1E871E49DE1774E /* WeeklyCalendarView.swift */,
+				BB877C0D27F1483A0A4E1A3C /* WorkoutCountdownOverlay.swift */,
 				94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */,
 				EF6DBA5EC9F40023975C40C5 /* WorkoutReminderScheduler.swift */,
 				72A3CC4C76B10B674A37BC18 /* Wrathspeed.entitlements */,
@@ -933,6 +936,7 @@
 				0963693DD96740FD23A5D825 /* WatchWorkoutStartupCoordinator.swift in Sources */,
 				54C2D20468188657C73AE520 /* WeeklyCalendarView.swift in Sources */,
 				13F239F140195D7F95446699 /* WorkoutActivityAttributes.swift in Sources */,
+				C7E2A5AD9D836CC21574F975 /* WorkoutCountdownOverlay.swift in Sources */,
 				CE1B5220BB24B4351D560354 /* WorkoutLiveActivityPresenter.swift in Sources */,
 				D3F25A0FFAE6C37D724AE434 /* WorkoutPreflightView.swift in Sources */,
 				A7A0A756ACFEB658F00F3F47 /* WorkoutReminderScheduler.swift in Sources */,

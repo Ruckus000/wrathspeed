@@ -38,6 +38,10 @@ final class WorkoutSessionController: NSObject {
     }
 
     private(set) var sessionState: ActiveSessionState = .preparing
+    /// Seconds left on the pre-start countdown, or `nil` when one is not running. The state
+    /// machine has always paused here; this is what lets the screen show 3-2-1 rather than a
+    /// blank three seconds. `nil` on every skip path, so a skipped countdown draws nothing.
+    private(set) var countdownRemaining: Int?
     var onFinished: ((WorkoutResult) -> Void)?
     var onFailure: ((Error) -> Void)?
     var onSnapshot: ((ActiveSessionSnapshot) -> Void)?
@@ -321,14 +325,24 @@ final class WorkoutSessionController: NSObject {
         #endif
         do {
             if shouldSleep {
-                try await Task.sleep(for: .seconds(3))
+                // One second at a time rather than a single three-second sleep, so the screen
+                // has something to count. Every skip path above leaves `countdownRemaining`
+                // nil and the loop unentered.
+                for tick in stride(from: 3, through: 1, by: -1) {
+                    countdownRemaining = tick
+                    try await Task.sleep(for: .seconds(1))
+                }
             }
+            countdownRemaining = nil
             guard mayContinueStartup(startupID) else {
                 try handleInactiveStartupAfterCountdown(startupID: startupID)
                 return
             }
             try await startPrimary(configuration: configuration, startupID: startupID)
         } catch {
+            // Cancellation lands here too, so the counter must clear on the way out or a
+            // cancelled start leaves a frozen number on screen.
+            countdownRemaining = nil
             try handleOwnedPostCountdownError(startupID: startupID, error: error)
         }
     }

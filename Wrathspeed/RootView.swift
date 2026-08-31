@@ -76,6 +76,18 @@ struct RootView: View {
         .fullScreenCover(isPresented: liveWorkoutPresented) {
             if let blueprint = store.session.blueprint {
                 LiveRunView(blueprint: blueprint)
+                    // The cover already presents during `.countdown`; until now that meant
+                    // three seconds of a live screen with nothing on it yet. The overlay
+                    // sits on top and goes away on its own when the counter clears, which
+                    // is immediately when Reduce Motion or a test has skipped it.
+                    .overlay {
+                        if let remaining = store.session.countdownRemaining {
+                            WorkoutCountdownOverlay(
+                                remaining: remaining,
+                                title: blueprint.title
+                            )
+                        }
+                    }
             }
         }
     }
