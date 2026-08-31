@@ -103,14 +103,73 @@ final class MovementInstructionTests: XCTestCase {
 
     // MARK: - Movement catalog
 
-    func testMovementCatalogCarriesTheSameOptionalFields() throws {
+    // MARK: - Coverage
+
+    /// Every movement the app can show must carry instructions, so "did I finish writing
+    /// them" is something the suite answers rather than something anyone asserts. `easier` is
+    /// excluded on purpose: some movements have no honest regression, and inventing one to
+    /// fill the slot would teach less than leaving it out.
+    private func assertInstructed(
+        id: String,
+        howToDoIt: [String]?,
+        shouldFeel: String?,
+        commonMistake: String?,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let steps = howToDoIt ?? []
+        XCTAssertGreaterThanOrEqual(
+            steps.count, 2,
+            "\(id) needs at least two steps; one step is a cue, not an instruction",
+            file: file, line: line
+        )
+        XCTAssertFalse(shouldFeel?.isEmpty ?? true, "\(id) has no shouldFeel", file: file, line: line)
+        XCTAssertFalse(commonMistake?.isEmpty ?? true, "\(id) has no commonMistake", file: file, line: line)
+    }
+
+    func testEveryStrengthExerciseIsInstructed() throws {
+        for exercise in try strengthCatalog().exercises {
+            assertInstructed(
+                id: exercise.id,
+                howToDoIt: exercise.howToDoIt,
+                shouldFeel: exercise.shouldFeel,
+                commonMistake: exercise.commonMistake
+            )
+        }
+    }
+
+    func testEveryCatalogMovementIsInstructed() throws {
         let catalog = try MovementCatalog.load()
         XCTAssertFalse(catalog.movements.isEmpty)
-        // Nothing is written here yet; the point is that the field exists and decodes as nil
-        // rather than failing the load.
         for movement in catalog.movements {
-            for step in movement.howToDoIt ?? [] {
-                XCTAssertFalse(step.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            assertInstructed(
+                id: movement.id,
+                howToDoIt: movement.howToDoIt,
+                shouldFeel: movement.shouldFeel,
+                commonMistake: movement.commonMistake
+            )
+        }
+    }
+
+    /// The blank-field guard from above, applied to the movement catalog too.
+    func testNoMovementInstructionFieldIsPresentButEmpty() throws {
+        for movement in try MovementCatalog.load().movements {
+            for (index, step) in (movement.howToDoIt ?? []).enumerated() {
+                XCTAssertFalse(
+                    step.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                    "\(movement.id) step \(index + 1) is blank"
+                )
+            }
+            for (name, value) in [
+                ("shouldFeel", movement.shouldFeel),
+                ("commonMistake", movement.commonMistake),
+                ("easier", movement.easier),
+            ] {
+                guard let value else { continue }
+                XCTAssertFalse(
+                    value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                    "\(movement.id).\(name) is present but blank"
+                )
             }
         }
     }

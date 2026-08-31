@@ -34,12 +34,18 @@ struct MobilityPlayerView: View {
             }
             .padding(.horizontal, WSSpace.gutter)
             .padding(.top, 12)
-            Text(session.title.uppercased())
-                .wsType(.displayM)
-                .foregroundStyle(WSColor.text)
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 16)
-            if let movement = session.movements[safe: index] {
+            // CLOSE above and the advance button below stay pinned; only the movement
+            // scrolls. The instruction card can run to a few hundred points, and in a plain
+            // VStack that overflow squeezed the header to nothing -- CLOSE still existed for
+            // an accessibility query but had no hit area left, so tapping it did nothing.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(session.title.uppercased())
+                        .wsType(.displayM)
+                        .foregroundStyle(WSColor.text)
+                        .padding(.horizontal, WSSpace.gutter)
+                        .padding(.top, 16)
+                    if let movement = session.movements[safe: index] {
                 // These three routines are linked straight off Today, so this is the
                 // mobility screen people actually reach -- and until now it drew a bare
                 // SF Symbol while the equivalent screen behind Plan showed a demo clip.
@@ -86,8 +92,12 @@ struct MobilityPlayerView: View {
                     .foregroundStyle(WSColor.text40)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 8)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 16)
             }
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
             WSPrimaryButton(title: index + 1 >= session.movements.count ? "FINISH" : "NEXT") {
                 advance()
             }
