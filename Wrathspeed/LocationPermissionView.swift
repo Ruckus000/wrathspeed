@@ -100,12 +100,20 @@ struct LocationPermissionView: View {
                 authorization.request()
             }
             .accessibilityIdentifier("location_primer_allow")
-            Button("DON'T ALLOW") { declinedPrimer = true }
-                .wsType(.body, weight: .heavy, tracking: 1.2)
-                .foregroundStyle(WSColor.text50)
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .padding(.top, 10)
-                .accessibilityIdentifier("location_primer_decline")
+            Button { declinedPrimer = true } label: {
+                // The frame belongs on the label. Applied outside the Button it leaves the
+                // button's bounds the size of the glyph run -- tappable by a test, which
+                // aims at the accessibility centre, but a thin strip to an actual finger.
+                // TodayView carries the same note; this repeated the mistake.
+                Text("DON'T ALLOW")
+                    .wsType(.body, weight: .heavy, tracking: 1.2)
+                    .foregroundStyle(WSColor.text50)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 10)
+            .accessibilityIdentifier("location_primer_decline")
         }
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 96)
@@ -149,13 +157,18 @@ struct LocationPermissionView: View {
             .padding(.top, 22)
             Spacer(minLength: 16)
             // iOS will not raise the prompt a second time, so the only route back is Settings.
-            Button("CHANGE MY MIND") {
+            Button {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
+            } label: {
+                Text("CHANGE MY MIND")
+                    .wsType(.body, weight: .heavy, tracking: 1.2)
+                    .foregroundStyle(WSColor.text50)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .contentShape(Rectangle())
             }
-            .wsType(.body, weight: .heavy, tracking: 1.2)
-            .foregroundStyle(WSColor.text50)
-            .frame(maxWidth: .infinity, minHeight: 52)
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("location_denied_change_mind")
             .accessibilityHint("Opens the Settings app")
         }
         .padding(.horizontal, WSSpace.gutter)
