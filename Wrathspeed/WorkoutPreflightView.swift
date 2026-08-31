@@ -159,7 +159,7 @@ struct WorkoutPreflightView: View {
 
     private var structureSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("STRUCTURE")
+            Text("HOW THIS RUN WORKS")
                 .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 16)

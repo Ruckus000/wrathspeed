@@ -287,6 +287,25 @@ struct OnboardingView: View {
                     down: { inputs.strength.sessionsPerWeek = max(1, inputs.strength.sessionsPerWeek - 1) },
                     up: { inputs.strength.sessionsPerWeek = min(4, inputs.strength.sessionsPerWeek + 1) }
                 )
+                // Session length was reachable only from Settings after onboarding finished,
+                // so the first plan was always built at the 30-minute default whether or not
+                // that suited the person. The allowed values mirror StrengthPreferences,
+                // which clamps anything outside [30, 45, 60] back to 30.
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("SESSION LENGTH")
+                        .wsType(.body, weight: .bold)
+                        .foregroundStyle(WSColor.text)
+                        .accessibilityHidden(true)
+                    WSChipRow(spacing: 8) {
+                        ForEach([30, 45, 60], id: \.self) { minutes in
+                            WSChip(title: "\(minutes) min", selected: inputs.strength.durationMinutes == minutes) {
+                                inputs.strength.durationMinutes = minutes
+                            }
+                        }
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Session length")
+                }
             }
             Toggle(isOn: $inputs.mobility.enabled) {
                 Text("INCLUDE MOBILITY")

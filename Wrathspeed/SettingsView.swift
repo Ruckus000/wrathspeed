@@ -54,6 +54,13 @@ struct SettingsView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    // The chips sat directly under the ON/OFF row with nothing naming them,
+                    // so what they controlled was only inferable from the chip titles.
+                    Text("CUE STYLE")
+                        .wsType(.body, weight: .bold)
+                        .foregroundStyle(WSColor.text)
+                        .padding(.top, 14)
+                        .accessibilityHidden(true)
                     WSChipRow(spacing: 8) {
                         ForEach(CueStyle.allCases, id: \.self) { style in
                             WSChip(title: style.title, selected: store.cueStyle == style) {
@@ -61,7 +68,10 @@ struct SettingsView: View {
                             }
                         }
                     }
-                    .padding(.top, 14)
+                    // Hidden above and restated here so VoiceOver reads the group's name once,
+                    // attached to the controls it actually names.
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Cue style")
                 }
                 section("UNITS") {
                     WSChipRow(spacing: 8) {
@@ -136,53 +146,59 @@ struct SettingsView: View {
                     }
                 }
                 section("STRENGTH") {
-                    chipGroup(StrengthAbility.allCases.map(\.title), selected: store.strengthPrefs.ability.title) { title in
-                        if let item = StrengthAbility.allCases.first(where: { $0.title == title }) {
-                            updateStrength { $0.ability = item }
-                        }
-                    }
-                    chipGroup(StrengthGoal.allCases.map(\.title), selected: store.strengthPrefs.goal.title) { title in
-                        if let item = StrengthGoal.allCases.first(where: { $0.title == title }) {
-                            updateStrength { $0.goal = item }
-                        }
-                    }
-                    .padding(.top, 10)
-                    WSChipRow(spacing: 8) {
-                        ForEach([30, 45, 60], id: \.self) { minutes in
-                            WSChip(title: "\(minutes) min", selected: store.strengthPrefs.durationMinutes == minutes) {
-                                updateStrength { $0.durationMinutes = minutes }
+                    namedChips("ABILITY") {
+                        chipGroup(StrengthAbility.allCases.map(\.title), selected: store.strengthPrefs.ability.title) { title in
+                            if let item = StrengthAbility.allCases.first(where: { $0.title == title }) {
+                                updateStrength { $0.ability = item }
                             }
                         }
                     }
-                    .padding(.top, 10)
-                    WSChipRow(spacing: 6) {
-                        ForEach(Weekday.allCases, id: \.self) { day in
-                            WSChip(title: day.chipLabel, selected: store.strengthPrefs.preferredDays.contains(day)) {
-                                updateStrength { prefs in
-                                    if prefs.preferredDays.contains(day) {
-                                        if prefs.preferredDays.count > 1 {
-                                            prefs.preferredDays.removeAll { $0 == day }
+                    namedChips("FOCUS") {
+                        chipGroup(StrengthGoal.allCases.map(\.title), selected: store.strengthPrefs.goal.title) { title in
+                            if let item = StrengthGoal.allCases.first(where: { $0.title == title }) {
+                                updateStrength { $0.goal = item }
+                            }
+                        }
+                    }
+                    namedChips("SESSION LENGTH") {
+                        WSChipRow(spacing: 8) {
+                            ForEach([30, 45, 60], id: \.self) { minutes in
+                                WSChip(title: "\(minutes) min", selected: store.strengthPrefs.durationMinutes == minutes) {
+                                    updateStrength { $0.durationMinutes = minutes }
+                                }
+                            }
+                        }
+                    }
+                    namedChips("TRAINING DAYS") {
+                        WSChipRow(spacing: 6) {
+                            ForEach(Weekday.allCases, id: \.self) { day in
+                                WSChip(title: day.chipLabel, selected: store.strengthPrefs.preferredDays.contains(day)) {
+                                    updateStrength { prefs in
+                                        if prefs.preferredDays.contains(day) {
+                                            if prefs.preferredDays.count > 1 {
+                                                prefs.preferredDays.removeAll { $0 == day }
+                                            }
+                                        } else {
+                                            prefs.preferredDays.append(day)
                                         }
-                                    } else {
-                                        prefs.preferredDays.append(day)
                                     }
                                 }
                             }
                         }
                     }
-                    .padding(.top, 10)
-                    chipGroup(StrengthEquipment.allCases.map(\.title), selected: "") { title in
-                        if let item = StrengthEquipment.allCases.first(where: { $0.title == title }) {
-                            updateStrength { prefs in
-                                if prefs.equipment.contains(item) {
-                                    if prefs.equipment.count > 1 { prefs.equipment.remove(item) }
-                                } else {
-                                    prefs.equipment.insert(item)
+                    namedChips("EQUIPMENT") {
+                        chipGroup(StrengthEquipment.allCases.map(\.title), selected: "") { title in
+                            if let item = StrengthEquipment.allCases.first(where: { $0.title == title }) {
+                                updateStrength { prefs in
+                                    if prefs.equipment.contains(item) {
+                                        if prefs.equipment.count > 1 { prefs.equipment.remove(item) }
+                                    } else {
+                                        prefs.equipment.insert(item)
+                                    }
                                 }
                             }
                         }
                     }
-                    .padding(.top, 10)
                 }
                 WSOutlineButton(title: "REBUILD WEEKS") {
                     store.regeneratePlan()
@@ -208,6 +224,23 @@ struct SettingsView: View {
         }
         .padding(.horizontal, WSSpace.gutter)
         .padding(.top, 22)
+    }
+
+    /// A chip row with a name above it. Five of these sat consecutively under the STRENGTH
+    /// header with nothing naming any of them, so which row set ability, focus, length, days
+    /// or equipment was only inferable from the chip titles -- and VoiceOver read the lot as
+    /// five undifferentiated groups. The label is hidden from VoiceOver and restated on the
+    /// row so the name is announced once, attached to the controls it names.
+    private func namedChips<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .wsType(.body, weight: .bold)
+                .foregroundStyle(WSColor.text)
+                .accessibilityHidden(true)
+            content()
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(title.capitalized)
     }
 
     private func chipGroup(_ titles: [String], selected: String, action: @escaping (String) -> Void) -> some View {

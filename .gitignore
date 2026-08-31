@@ -18,3 +18,6 @@
 .serena/
 CURSOR_*.md
 design_handoff_wrathspeed_ui/
+
+# Design project export pulled from claude.ai/design; reference only.
+design_incoming/
