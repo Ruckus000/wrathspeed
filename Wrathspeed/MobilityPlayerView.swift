@@ -67,6 +67,14 @@ struct MobilityPlayerView: View {
                 .padding(.top, 12)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Current movement \(movement.name). \(movement.cue)")
+                // A routine movement is a step that points at a catalog movement by id, and
+                // the catalog is where the instruction copy lives -- one home for the text
+                // rather than a copy per routine that references it.
+                if let described = catalogMovement(for: movement) {
+                    WSInstructionCard(described)
+                        .padding(.horizontal, WSSpace.gutter)
+                        .padding(.top, 14)
+                }
                 Text(timerLabel)
                     .wsType(.metricL, weight: .bold)
                     .foregroundStyle(WSColor.accent)
@@ -102,6 +110,11 @@ struct MobilityPlayerView: View {
                 WSAlert(message: message) { store.errorMessage = nil }
             }
         }
+    }
+
+    private func catalogMovement(for movement: MobilityMovement) -> Movement? {
+        guard let id = movement.mediaExerciseID else { return nil }
+        return store.movementCatalog.movement(id: id)
     }
 
     private var timerLabel: String {

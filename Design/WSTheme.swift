@@ -14,6 +14,9 @@ enum WSColor {
     static let accentTint = accent.opacity(0.12)
     static let celOverlay = Color.black.opacity(0.28)
     static let text = Color.white
+    /// Card body copy. Brighter than `text70` because the instruction card sets it against
+    /// `bgSheet` rather than `bg`, and 0.70 loses too much contrast on the lighter ground.
+    static let text85 = Color.white.opacity(0.85)
     static let text70 = Color.white.opacity(0.70)
     static let text50 = Color.white.opacity(0.50)
     static let text45 = Color.white.opacity(0.45)
@@ -28,6 +31,8 @@ enum WSRadius {
     static let control: CGFloat = 6
     static let sheet: CGFloat = 20
     static let alert: CGFloat = 14
+    /// Inset cards -- instruction block, cue block, the strength player's mode card.
+    static let card: CGFloat = 12
     static let pill: CGFloat = 999
     static let track: CGFloat = 4
 }
