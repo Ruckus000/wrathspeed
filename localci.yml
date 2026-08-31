@@ -36,37 +36,42 @@ gate:
 # tool that runs unattended after every push must not reach for a shared device.
 #
 # The device type is iPhone 17e, chosen here rather than inherited. CI's picker
-# still takes max(candidates) over (version, name, udid), which sorts by iOS
-# version and then ALPHABETICALLY by name -- so "iPhone Air" beats every
-# "iPhone <number>" because 'A' sorts above '1'. That is an accident of sorting,
-# not a decision, and it happens to select the one device that hides the problem
-# below. Local CI does not inherit the accident.
+# used to take max(candidates) over (version, name, udid), which sorts by iOS
+# version and then ALPHABETICALLY by name -- so "iPhone Air" beat every
+# "iPhone <number>" because 'A' sorts above '1'. That was an accident of sorting,
+# not a decision. tests.yml now carries an explicit shortest-screen-first list and
+# picks 17e too, so the two runners agree on purpose rather than by luck; this
+# comment no longer has to warn that they disagree.
 #
-# (An earlier draft of this comment said the workflow now carries an explicit
-# shortest-screen-first list. It does not -- that change was never committed.
-# tests.yml is unchanged and still picks by max().)
+# Short screen on purpose, because the screen is not a neutral choice: content that
+# overflows shows on a short screen and fits on a tall one. Nothing on TodayView is
+# currently trapped, on any screen this can run on -- the "NOT FEELING 100%?" row,
+# which an earlier version of this comment reported as unreachable on iPhone 17 and
+# SE 3, clears the bar everywhere, with XCUITest reporting isHittable:
 #
-# Short screen on purpose, because the screen is not a neutral choice. Measured on
-# TodayView's "NOT FEELING 100%?" row, with XCUITest reporting isHittable:
+#                        at rest          scrolled to end of content
+#                        default type     AccessibilityXXXL
+#   iPhone 17e 390x844   gap 107  yes     gap 283  yes
+#   iPhone 17  402x874   gap 122  yes     gap 283  yes
+#   iPhone Air 420x912   gap 154  yes     gap 283  yes
 #
-#   iPhone Air   420x912   row y792-806, tab bar starts y814   hittable
-#   iPhone 17e   390x844                                       (CI's pick)
-#   iPhone 17    402x874   row y786-800, tab bar starts y776   NOT hittable
-#   iPhone SE 3  375x667   row y746 on a 667pt screen          NOT hittable
+# Those older numbers predated the bar being lowered onto the home indicator. The
+# bar cleared the safe area as well as its own gap then, putting its top edge ~98pt
+# above the bottom on a home-indicator phone; `WSTabBar.topEdgeFromScreenBottom` is
+# a flat 70pt now, so the row that did not clear it does. Full suite verified green
+# on an erased iPhone 17e: 204 unit tests, 21 UI tests, 0 failures.
 #
-# The floating tab bar is 56pt tall and sits 8pt off the safe area, so wherever
-# the content overflows, the last rows start underneath it. Air has the room and
-# never shows it, so every run this repo has ever made was on the one device where
-# that could not surface. Full suite verified green on an erased iPhone 17e:
-# 204 unit tests, 21 UI tests, 0 failures.
+# iPhone SE 3 is the one home-button device the app supports, and it gets no safe
+# area -- so it clears the bar's whole 70pt reach where it used to clear a 64pt
+# footprint, 6pt worse rather than better. It is unmeasured above because no iOS 26
+# build of it exists to measure on, which is also why it is not the device here.
 #
 # What this is NOT: Milestone4UITests.testWeeklyCalendarAndManagePlanFlows failing
 # at "END ADJUSTMENT" was read as an iPhone 17 layout bug. It is not one. That test
 # was run 18 times on iPhone 17 -- isolated, as a class, and in a full suite -- and
 # passed every time. The one red run happened while two other Xcode test sessions
 # were live on this machine, which is the documented way to get unrelated suites to
-# fail here. The frames above are real and worth fixing around; that failure was
-# not evidence of them.
+# fail here.
 #
 # The result bundle goes to $LOCALCI_RUN_DIR, not build/. xcodebuild refuses to
 # overwrite an existing -resultBundlePath, and unlike a CI runner this machine

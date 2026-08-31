@@ -80,6 +80,57 @@ jobs:
           ).stdout
           devices = json.loads(raw)["devices"]
 
+          # Shortest screen first, and choosing at all is the point of this list.
+          #
+          # This used to be `max(candidates)` over (version, name, udid). That sorts by iOS
+          # version and then ALPHABETICALLY by device name -- and "iPhone Air" beats every
+          # "iPhone <number>", because 'A' sorts above '1'. So every run this workflow has
+          # ever made went to the largest screen in the image, and nothing chose that: the
+          # tuple did. `localci.yml` picks iPhone 17e deliberately for the same reason and
+          # says so; this keeps hosted CI from disagreeing with local CI by accident.
+          #
+          # Content that overflows shows on a short screen and fits on a tall one, so the
+          # screen is not a neutral choice even when nothing is currently wrong on it.
+          # Nothing is, as of this commit. The floating tab bar's top edge now sits a
+          # constant 70pt above the physical bottom (`WSTabBar.topEdgeFromScreenBottom`),
+          # and TodayView's "NOT FEELING 100%?" row -- the second to last thing on the
+          # screen, and the one an earlier draft of this comment reported as trapped --
+          # clears it everywhere, measured with XCUITest reporting isHittable:
+          #
+          #                        at rest          scrolled to end of content
+          #                        default type     AccessibilityXXXL
+          #   iPhone 17e 390x844   gap 107  yes     gap 283  yes
+          #   iPhone 17  402x874   gap 122  yes     gap 283  yes
+          #   iPhone Air 420x912   gap 154  yes     gap 283  yes
+          #
+          # The trapped-row numbers this comment used to carry were measured before the bar
+          # was lowered onto the home indicator (PR #19). Back then the bar cleared the safe
+          # area as well as its own gap, putting its top edge ~98pt above the bottom on a
+          # home-indicator phone; it is 70pt now, so the row that did not clear it does.
+          # Those numbers are gone rather than corrected, because they no longer describe
+          # this app. `FloatingTabBarUITests.testLastRowOfEachTabClearsTheBar` is what keeps
+          # them from coming back -- and it can only do that on a device where overflow is
+          # possible, which is what this list is for.
+          #
+          # Untested, and not a claim: a home-button phone gets no safe area, so it clears
+          # the bar's whole 70pt reach where it used to clear a 64pt footprint -- 6pt worse,
+          # not better. iPhone SE 3 is the only such device the app supports and the image
+          # offers no iOS 26 build of it, so it is off this list for the same reason it is
+          # unmeasured here.
+          #
+          # Names rather than screen sizes because simctl does not report a screen size.
+          # A name that leaves the image drops out of the list instead of breaking the run,
+          # and if the whole list misses, the fallback still runs but says so loudly rather
+          # than sliding back to the biggest device in silence.
+          PREFERRED = [
+              "iPhone 17e",       # 390x844
+              "iPhone 16e",       # 390x844
+              "iPhone 17",        # 402x874
+              "iPhone 17 Pro",    # 402x874
+              "iPhone 16 Pro",    # 402x874
+              "iPhone Air",       # 420x912
+          ]
+
           candidates = []
           for runtime, entries in devices.items():
               key = runtime.rsplit(".", 1)[-1]          # e.g. iOS-26-2
@@ -97,7 +148,24 @@ jobs:
               subprocess.run(["xcrun", "simctl", "list", "devices", "available"])
               raise SystemExit(1)
 
-          version, name, udid = max(candidates)
+          # Newest runtime first -- the deployment target is iOS 26 and the newest runtime is
+          # the one worth testing against -- then the shortest screen offered on it.
+          newest = max(version for version, _, _ in candidates)
+          on_newest = [c for c in candidates if c[0] == newest]
+          rank = {name: i for i, name in enumerate(PREFERRED)}
+          preferred = [c for c in on_newest if c[1] in rank]
+
+          if preferred:
+              version, name, udid = min(preferred, key=lambda c: (rank[c[1]], c[2]))
+          else:
+              version, name, udid = max(on_newest)
+              print(
+                  f"::warning::No device from the preferred list is available on iOS "
+                  f"{'.'.join(str(p) for p in newest)}; falling back to {name}, which may be "
+                  f"the largest screen in the image. Update PREFERRED in this workflow.",
+                  file=sys.stderr,
+              )
+
           pretty = ".".join(str(p) for p in version)
           print(f"udid={udid}")
           print(f"label={name} (iOS {pretty})")
