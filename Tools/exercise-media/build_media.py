@@ -43,6 +43,11 @@ RESOURCES = CORE / "Resources"
 # The strength catalog is owned by the app bundle; only the movement catalog and the
 # generated media live in the WrathspeedCore resources.
 STRENGTH_CATALOG = REPO / "Wrathspeed" / "strength_catalog.json"
+# The guided mobility routines linked from Today. This catalog addresses clips indirectly,
+# through `mediaExerciseID`, so its own ids are not media ids and the set comparison in
+# main() cannot see it. It needs the separate check below -- and went without one, which is
+# how all nine of its movements sat on a bare SF Symbol while --check reported full coverage.
+MOBILITY_CATALOG = REPO / "Wrathspeed" / "mobility_catalog.json"
 MEDIA_OUT = CORE / "Media"
 SOURCES_FILE = Path(__file__).resolve().parent / "media_sources.json"
 CACHE = REPO / ".media-cache"
@@ -88,23 +93,58 @@ def fit_to_canvas(im: Image.Image) -> Image.Image:
     return canvas
 
 
-def frames_from_gif(path: Path) -> list[Image.Image]:
+def frames_from_gif(
+    path: Path,
+    watermark: list[int] | None = None,
+    watermark_source_size: list[int] | None = None,
+) -> list[Image.Image]:
     """Resample a GIF to a constant FPS, preserving its real per-frame timing.
 
     These GIFs are not evenly timed: they hold ~1s at the top and bottom of the rep and
     run ~100ms per frame through the movement. Encoding one output frame per source frame
     would throw that away and play a whole squat in half a second. Accumulating against
     elapsed source time keeps the holds and avoids rounding drift over the clip.
+
+    `watermark` is an [x0, y0, x1, y1] rect in SOURCE pixels, painted white before the
+    frame is letterboxed. It has to happen here, on the composited frame: these GIFs store
+    partial sub-frames with disposal=1, so patching the raw sub-frame data would miss the
+    frames that do not redraw that corner. Seeking sequentially and copying makes Pillow
+    hand back a fully composited image, which is what gets painted.
+
+    Because that rect is absolute pixels, it is only correct at the size it was measured
+    against, which `watermark_source_size` records. A larger source would leave part of the
+    logo showing and a smaller one would paint over the figure -- and either way the build
+    would report success, with the damage visible only by opening the clip. So a mismatch
+    is a hard failure rather than a silent one.
     """
     im = Image.open(path)
+    if watermark and watermark_source_size and list(im.size) != list(watermark_source_size):
+        raise SystemExit(
+            f"ERROR: {path.name} is {im.size[0]}x{im.size[1]}, but its source declares a "
+            f"watermark rect measured on {watermark_source_size[0]}x{watermark_source_size[1]}. "
+            f"Re-measure 'watermark' in media_sources.json for this size, or the logo will "
+            f"be only partly painted out."
+        )
     frames: list[Image.Image] = []
     elapsed = 0.0
     for i in range(getattr(im, "n_frames", 1)):
         im.seek(i)
-        rendered = fit_to_canvas(im.copy())
+        composited = im.copy().convert("RGB")
+        if watermark:
+            composited.paste((255, 255, 255), tuple(watermark))
+        rendered = fit_to_canvas(composited)
         elapsed += (im.info.get("duration") or 100) / 1000.0
         n = max(1, round(elapsed * FPS) - len(frames))
         frames.extend([rendered] * n)
+    # A still source -- an isometric hold with no rep -- otherwise encodes to a couple of
+    # frames, and AVPlayerLooper restarting an 80ms clip forever is wasteful for something
+    # that never changes. Hold it for a second instead; it looks identical and loops rarely.
+    #
+    # `frames` first: a truncated GIF can report n_frames as 0, and dividing by that raised
+    # a bare ZeroDivisionError from inside here, naming neither the movement nor the file.
+    # Falling through empty instead lets `encode` fail with the context to act on.
+    if frames and len(frames) < FPS:
+        frames = frames * (FPS // len(frames) + 1)
     return frames
 
 
@@ -175,7 +215,15 @@ def encode(frames: list[Image.Image], dest: Path) -> None:
 
 
 def load_catalog_ids() -> dict[str, str]:
-    """Every movement id the app can show, mapped to which catalog it came from."""
+    """Every clip id the app can reach, mapped to what reaches it.
+
+    Three routes, not two. The strength and movement catalogs name clips by their own id,
+    so their ids ARE clip ids. The guided mobility catalog instead points at a clip through
+    `mediaExerciseID`, which lets it reach a clip that no other catalog names -- a standing
+    hamstring fold, say, which is not in the movement library but is in a recovery routine.
+    Those referenced ids belong here too, or the orphan check rejects their mapping as
+    unreachable and the build loop never builds them.
+    """
     ids: dict[str, str] = {}
     strength = json.loads(STRENGTH_CATALOG.read_text())
     for e in strength["exercises"]:
@@ -183,7 +231,39 @@ def load_catalog_ids() -> dict[str, str]:
     movements = json.loads((RESOURCES / "movement_catalog.json").read_text())
     for m in movements["movements"]:
         ids[m["id"]] = "movement"
+    mobility = json.loads(MOBILITY_CATALOG.read_text())
+    for routine in mobility["routines"]:
+        for m in routine["movements"]:
+            ref = m.get("mediaExerciseID")
+            if ref:
+                ids.setdefault(ref, "mobility")
     return ids
+
+
+def check_mobility_links(mappings: dict) -> tuple[list[str], list[str]]:
+    """Validate the guided mobility routines' indirect links to the clip library.
+
+    Returns (dangling, unlinked). A dangling `mediaExerciseID` names a clip that does not
+    exist and is an error -- the screen silently falls back to a symbol, which looks
+    identical to having meant no clip at all. An unlinked movement is only reported: some
+    are unlinked on purpose, because nothing in the library depicts them and a near-enough
+    clip would teach the wrong movement.
+    """
+    catalog = json.loads(MOBILITY_CATALOG.read_text())
+    dangling: list[str] = []
+    unlinked: list[str] = []
+    seen: set[str] = set()
+    for routine in catalog["routines"]:
+        for m in routine["movements"]:
+            if m["id"] in seen:
+                continue
+            seen.add(m["id"])
+            ref = m.get("mediaExerciseID")
+            if ref is None:
+                unlinked.append(f"{m['id']} ({m['name']})")
+            elif ref not in mappings:
+                dangling.append(f"{m['id']} -> {ref}")
+    return dangling, unlinked
 
 
 def main() -> int:
@@ -196,7 +276,14 @@ def main() -> int:
     sources, mappings = spec["sources"], spec["mappings"]
     catalog_ids = load_catalog_ids()
 
-    missing = sorted(set(catalog_ids) - set(mappings))
+    # Ids a catalog names directly. Clips reached only through mobility's `mediaExerciseID`
+    # are excluded because `check_mobility_links` reports those, alongside the movement that
+    # points at them -- counted here as well, one broken link surfaced as two separate
+    # faults under two headings, inviting a fix in two places.
+    named_by_catalog = {mid for mid, via in catalog_ids.items() if via != "mobility"}
+    missing = sorted(named_by_catalog - set(mappings))
+    # Orphans still compare against the full set: a mapping that only mobility reaches is
+    # legitimately reachable and must not be reported as unused.
     orphaned = sorted(set(mappings) - set(catalog_ids))
     if missing:
         log("ERROR: catalog movements with no entry in media_sources.json:")
@@ -206,15 +293,31 @@ def main() -> int:
         log("ERROR: media_sources.json entries with no matching catalog movement:")
         for m in orphaned:
             log(f"  - {m}")
-    if missing or orphaned:
+    dangling, unlinked = check_mobility_links(mappings)
+    if dangling:
+        log("ERROR: mobility_catalog.json mediaExerciseID values naming no known clip:")
+        for m in dangling:
+            log(f"  - {m}")
+    if missing or orphaned or dangling:
         return 1
-    log(f"✓ mappings cover all {len(catalog_ids)} catalog movements")
+    # Counted apart, because `catalog_ids` also holds clips only mobility reaches. Reporting
+    # the total as "catalog movements" gave a number that does not reconcile against the
+    # catalogs, which reads as the check having gone stale.
+    mobility_only = len(catalog_ids) - len(named_by_catalog)
+    covered = f"✓ mappings cover all {len(named_by_catalog)} catalog movements"
+    log(f"{covered} and {mobility_only} mobility-only clips" if mobility_only else covered)
+    if unlinked:
+        log(f"! {len(unlinked)} guided mobility movements show a symbol, not a clip:")
+        for m in unlinked:
+            log(f"  - {m}")
     if args.check:
         return 0
 
     wanted = set(args.only) if args.only else set(catalog_ids)
     manifest: dict[str, dict] = {}
-    counts = {"gifdb": 0, "photo": 0, "repdb": 0, "none": 0}
+    # Keyed off the declared sources rather than a fixed list, so adding a tier to
+    # media_sources.json does not KeyError its way out of the build.
+    counts = {name: 0 for name in list(sources) + ["none"]}
 
     with tempfile.TemporaryDirectory() as work:
         work = Path(work)
@@ -227,16 +330,27 @@ def main() -> int:
                 continue
             if mid not in wanted:
                 # not rebuilding, but keep its manifest row if the file is already there
-                if (MEDIA_OUT / f"{mid}.mp4").exists():
+                kept = MEDIA_OUT / f"{mid}.mp4"
+                if kept.exists():
                     counts[src] += 1
-                    manifest[mid] = build_row(mid, m, sources)
+                    # Size passed even though this clip is not being rebuilt. Omitting it
+                    # made `bytes` a property of how the build was invoked rather than of
+                    # the clip: one `--only` run stripped the field from every other row.
+                    manifest[mid] = build_row(mid, m, sources, size=kept.stat().st_size)
                 continue
 
             cfg = sources[src]
             dest = MEDIA_OUT / f"{mid}.mp4"
-            if src == "gifdb":
+            # Dispatch on the declared kind, not the source key. This read `src == "gifdb"`
+            # while gifdb was the only animated tier, which quietly meant a second GIF
+            # source would be routed to the image-pair branch and fetched as `<ref>/0.jpg`.
+            if cfg["kind"] == "animated-gif":
                 gif = fetch(f"{cfg['rawBase']}/{m['ref']}", work / f"{mid}.gif")
-                frames = frames_from_gif(gif)
+                frames = frames_from_gif(
+                    gif,
+                    watermark=cfg.get("watermark"),
+                    watermark_source_size=cfg.get("watermarkSourceSize"),
+                )
             elif cfg["kind"] == "image-single":
                 still = fetch(f"{cfg['rawBase']}/{m['ref']}", work / f"{mid}{Path(m['ref']).suffix}")
                 frames = frames_from_single(still)
@@ -257,10 +371,17 @@ def main() -> int:
 
     total_mb = sum(p.stat().st_size for p in MEDIA_OUT.glob("*.mp4")) / 1_048_576
     log("")
-    log(f"anatomical render : {counts['gifdb']}")
-    log(f"photo             : {counts['photo']}")
-    log(f"illustration      : {counts['repdb']}")
-    log(f"symbol fallback   : {counts['none']}")
+    # Tallied by declared style, not by source key. Keyed off source names, this reported
+    # "anatomical render: 32" on a build that produced 48 of them, because a second
+    # render-style tier existed by then and only gifdb was being counted.
+    by_style: dict[str, int] = {}
+    for name, n in counts.items():
+        if name == "none":
+            continue
+        by_style[sources[name]["style"]] = by_style.get(sources[name]["style"], 0) + n
+    for style, n in sorted(by_style.items(), key=lambda kv: -kv[1]):
+        log(f"{style:18}: {n}")
+    log(f"{'symbol fallback':18}: {counts['none']}")
     log(f"bundle size       : {total_mb:.1f} MB across {len(manifest)} clips")
     return 0
 

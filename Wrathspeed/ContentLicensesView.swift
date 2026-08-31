@@ -20,7 +20,7 @@ struct ContentLicensesView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
                 .accessibilityAddTraits(.isHeader)
-            Text("Wrathspeed bundles 58 third-party demonstration clips. They were sourced for a private build, not for public release: the anatomical renders below are not cleared for redistribution. See Content/LICENSE.md before shipping.")
+            Text("Wrathspeed bundles 60 third-party demonstration clips. They were sourced for a private build, not for public release: the anatomical renders below are not cleared for redistribution. See Content/LICENSE.md before shipping.")
                 .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
@@ -31,15 +31,11 @@ struct ContentLicensesView: View {
             )
             licenseBlock(
                 title: "MOBILITY CATALOG",
-                body: "Pre-run, post-run, and recovery routines use local text cues and SF Symbol illustrations."
+                body: "Pre-run, post-run, and recovery routines use local text cues. Eight of the nine movements show a bundled clip; Thoracic Rotation falls back to an SF Symbol."
             )
             licenseBlock(
                 title: "DEMONSTRATION CLIPS",
-                body: "30 anatomical renders from ExerciseGymGifsDB, which republishes ExerciseDB-derived artwork whose terms restrict redistribution. 27 photographic demos from free-exercise-db, published under the Unlicense."
-            )
-            licenseBlock(
-                title: "EXERCISE DATA BY REPDB (REPDB.CO)",
-                body: "The bird dog illustration comes from RepDB's free tier, which permits use inside applications with attribution. Its background is recoloured to white, which that licence allows."
+                body: "55 anatomical renders: 32 from ExerciseGymGifsDB and 23 from fitnessprogramer.com. Both republish ExerciseDB-derived artwork whose terms restrict redistribution. 5 photographic demos from free-exercise-db, published under the Unlicense."
             )
             licenseBlock(
                 title: "WGER MEDIA",
@@ -68,6 +64,9 @@ struct ExerciseAboutView: View {
     let exerciseName: String
     let cue: String
     let symbolName: String
+    /// Optional so the view still renders for an exercise with no clip; `MovementMediaView`
+    /// falls back to the symbol on an id it does not know, and "" is such an id.
+    var movementID: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -85,16 +84,15 @@ struct ExerciseAboutView: View {
                 .wsType(.displayS)
                 .foregroundStyle(WSColor.text)
                 .padding(.top, 8)
-            Image(systemName: symbolName)
-                .font(.system(size: 48))
-                .foregroundStyle(WSColor.accent)
+            // This sheet is the one place a lifter stops to ask what the movement actually
+            // is, so it gets the demo rather than the icon it used to show.
+            MovementMediaView(movementID: movementID, symbolName: symbolName, height: 200)
                 .padding(.top, 20)
-                .accessibilityHidden(true)
             Text(cue)
                 .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.top, 16)
-            Text("Local Wrathspeed guidance. No external media bundled.")
+            Text("Cues are local Wrathspeed guidance. See Content Licenses for the clips.")
                 .wsType(.metric)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 20)
