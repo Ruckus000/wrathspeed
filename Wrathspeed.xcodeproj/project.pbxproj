@@ -45,6 +45,7 @@
 		3BD6C5E243D861E1FFC3915A /* WSMarkLockup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E654BEA900BB3E34005E08 /* WSMarkLockup.swift */; };
 		3CC57FEA3020E17C575F5168 /* mobility_catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */; };
 		3D4030E840DDFA21419CB4FB /* WSMarkGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC7133422C55E1116C4D81 /* WSMarkGeometry.swift */; };
+		3EE58C39AD96925E88DBDF1B /* LocationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B7968294B6D22F66ACC8C8 /* LocationPermissionView.swift */; };
 		42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */; };
 		46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA496765F3551500A8BAB109 /* ManagePlanView.swift */; };
 		46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */; };
@@ -62,6 +63,7 @@
 		61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */; };
 		630F26760D8B32B93C467EF4 /* GuidedSessionResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE483AC96738DD39D33167F /* GuidedSessionResultStore.swift */; };
 		651ABEDB943D99523C191030 /* WSRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15C5722CE9CEB04F6455A31F /* WSRow.swift */; };
+		66FB7D8F41017F7A415C4D8C /* LocationPermissionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22E1B07BF1F51BC476BBC5ED /* LocationPermissionUITests.swift */; };
 		691401C0B8507A8CF70B2241 /* PersistedEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */; };
 		6CD29AA43611C1ABDBA4F8EA /* WSType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B1375B7BAC88A0B6B297C3 /* WSType.swift */; };
 		6D1E826E8B9EC666BE7D1D5C /* WorkoutReminderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2009D994ADC5DACCC9F7D1 /* WorkoutReminderTests.swift */; };
@@ -213,6 +215,7 @@
 		1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkAccessibilityUITests.swift; sourceTree = "<group>"; };
 		1D4F3DD7BCAA6DC7D7E5350D /* PlanChangeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanChangeStore.swift; sourceTree = "<group>"; };
 		204CDE73903492B877A70262 /* WrathspeedWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WrathspeedWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		22E1B07BF1F51BC476BBC5ED /* LocationPermissionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermissionUITests.swift; sourceTree = "<group>"; };
 		29E5D016423BA6095A79851E /* TapTargetUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapTargetUITests.swift; sourceTree = "<group>"; };
 		2AD364BE6D5143E6554EDFCE /* MovementMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementMediaView.swift; sourceTree = "<group>"; };
 		2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Milestone4UITests.swift; sourceTree = "<group>"; };
@@ -232,6 +235,7 @@
 		4FE483AC96738DD39D33167F /* GuidedSessionResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedSessionResultStore.swift; sourceTree = "<group>"; };
 		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
 		51AC7133422C55E1116C4D81 /* WSMarkGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSMarkGeometry.swift; sourceTree = "<group>"; };
+		54B7968294B6D22F66ACC8C8 /* LocationPermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationPermissionView.swift; sourceTree = "<group>"; };
 		5A37992E14C3ADABCFD41467 /* WSLayoutMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSLayoutMatrixTests.swift; sourceTree = "<group>"; };
 		5B3442BE6DF9F90A9C582286 /* TreadmillDistanceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreadmillDistanceSheet.swift; sourceTree = "<group>"; };
 		5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
@@ -431,6 +435,7 @@
 				F89F2D90B5ECD79BB65212FD /* FloatingTabBarUITests.swift */,
 				458B6D1DC77674D347C7ABF0 /* GuidedResumeUITests.swift */,
 				6E5F628F0B9A7928DA7DA5AE /* HistoryEmptyStateUITests.swift */,
+				22E1B07BF1F51BC476BBC5ED /* LocationPermissionUITests.swift */,
 				1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */,
 				2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */,
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
@@ -466,6 +471,7 @@
 				2C2F88EFC2EB5D541B9AA700 /* Info.plist */,
 				CAD3990DA838FA141746FB9D /* InstantRunView.swift */,
 				7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */,
+				54B7968294B6D22F66ACC8C8 /* LocationPermissionView.swift */,
 				AA496765F3551500A8BAB109 /* ManagePlanView.swift */,
 				F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */,
 				E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */,
@@ -789,6 +795,7 @@
 				9953DDA6A2256BD883E523B0 /* FloatingTabBarUITests.swift in Sources */,
 				837A08A89525E4FD9859C4F5 /* GuidedResumeUITests.swift in Sources */,
 				61AD272462383EA658C16D71 /* HistoryEmptyStateUITests.swift in Sources */,
+				66FB7D8F41017F7A415C4D8C /* LocationPermissionUITests.swift in Sources */,
 				D34DE6FD21590BB8FA11E10C /* MarkAccessibilityUITests.swift in Sources */,
 				75E07B2861F6C64B59F12907 /* Milestone4UITests.swift in Sources */,
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
@@ -885,6 +892,7 @@
 				34513DBB32E5BF6C3636E34C /* HistoryView.swift in Sources */,
 				AB22AFE5879E6C8C7E860F53 /* InstantRunView.swift in Sources */,
 				385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */,
+				3EE58C39AD96925E88DBDF1B /* LocationPermissionView.swift in Sources */,
 				46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */,
 				D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */,
 				7A57E157111123CE544627C3 /* MobilityDetailView.swift in Sources */,

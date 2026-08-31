@@ -29,6 +29,10 @@ enum UITestOnboardingHelper {
     // coverage just by forgetting a parameter -- OnboardingFlowUITests keeps the real taps.
     static let seedCompletedOnboardingLaunchArgument = "-uiTestingSeedCompletedOnboarding"
     static let skipCountdownLaunchArgument = "-uiTestingSkipCountdown"
+    // Opt-in, and off for every other test on purpose: the primer covers preflight as soon
+    // as an outdoor run reaches it on a simulator that has never been asked about location,
+    // which swallows the START WORKOUT tap.
+    static let presentLocationPrimerLaunchArgument = "-uiTestingPresentLocationPrimer"
 
     static func freshLaunchArguments(
         simulateLiveRecording: Bool = false,
@@ -37,7 +41,8 @@ enum UITestOnboardingHelper {
         seedTodayRun: Bool = false,
         seedTodayStrength: Bool = false,
         seedCompletedOnboarding: Bool = false,
-        skipCountdown: Bool = false
+        skipCountdown: Bool = false,
+        presentLocationPrimer: Bool = false
     ) -> [String] {
         var args = [resetStoreLaunchArgument, uiTestingLaunchArgument] + englishLocaleArguments
         if simulateLiveRecording {
@@ -61,6 +66,9 @@ enum UITestOnboardingHelper {
         if skipCountdown {
             args.append(skipCountdownLaunchArgument)
         }
+        if presentLocationPrimer {
+            args.append(presentLocationPrimerLaunchArgument)
+        }
         return args
     }
 
@@ -73,7 +81,8 @@ enum UITestOnboardingHelper {
         seedTodayRun: Bool = false,
         seedTodayStrength: Bool = false,
         seedCompletedOnboarding: Bool = false,
-        skipCountdown: Bool = false
+        skipCountdown: Bool = false,
+        presentLocationPrimer: Bool = false
     ) {
         app.launchArguments = freshLaunchArguments(
             simulateLiveRecording: simulateLiveRecording,
@@ -82,7 +91,8 @@ enum UITestOnboardingHelper {
             seedTodayRun: seedTodayRun,
             seedTodayStrength: seedTodayStrength,
             seedCompletedOnboarding: seedCompletedOnboarding,
-            skipCountdown: skipCountdown
+            skipCountdown: skipCountdown,
+            presentLocationPrimer: presentLocationPrimer
         )
         // As a launch *argument*, not a launch environment variable. The environment form is
         // silently inert -- measured on iPhone 16e / iOS 26.0, the headline rendered identically
