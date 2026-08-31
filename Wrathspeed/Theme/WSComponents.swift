@@ -372,6 +372,15 @@ struct WSTabBar: View {
     /// height.
     static let height: CGFloat = 56
 
+    /// Width of a tab that is not selected.
+    ///
+    /// The design sizes the bar asymmetrically: every unselected tab is a fixed 46pt icon
+    /// button and the selected one absorbs whatever is left, which on a 390pt screen makes
+    /// the active pill about 198pt -- well over half the bar. Giving all four an equal share
+    /// instead, as this did, shrank the pill to roughly 130pt and pushed the three icons
+    /// apart, which is the difference you see against the drawing.
+    static let inactiveTabWidth: CGFloat = 46
+
     /// How far the capsule's bottom edge sits above the *physical* bottom of the screen —
     /// not above the safe area.
     ///
@@ -452,7 +461,11 @@ struct WSTabBar: View {
         // Fills the capsule's full height so the whole cell is tappable. Sizing the content to
         // 44pt instead would leave a dead strip top and bottom that still looks like part of
         // the bar, and would put the tap target exactly on the 44pt floor with nothing spare.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        //
+        // Width is asymmetric on purpose -- see `inactiveTabWidth`. A 46pt cell still clears
+        // the 44pt minimum target.
+        .frame(maxWidth: isSelected ? .infinity : nil, maxHeight: .infinity)
+        .frame(width: isSelected ? nil : Self.inactiveTabWidth)
         .background {
             if isSelected {
                 Capsule(style: .continuous)
