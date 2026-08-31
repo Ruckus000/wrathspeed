@@ -46,52 +46,52 @@ struct MobilityPlayerView: View {
                         .padding(.horizontal, WSSpace.gutter)
                         .padding(.top, 16)
                     if let movement = session.movements[safe: index] {
-                // These three routines are linked straight off Today, so this is the
-                // mobility screen people actually reach -- and until now it drew a bare
-                // SF Symbol while the equivalent screen behind Plan showed a demo clip.
-                // `mediaExerciseID` had been on the model since the media work landed and
-                // was never populated or read; the catalog now carries it.
-                //
-                // Movements the clip library does not depict keep the symbol rather than
-                // borrowing a near-enough clip: MovementMediaView falls back on its own
-                // when the id is absent, and a nil id resolves the same way.
-                MovementMediaView(
-                    movementID: movement.mediaExerciseID ?? "",
-                    symbolName: movement.symbolName,
-                    height: 180
-                )
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 20)
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(movement.name.uppercased())
-                        .wsType(.control, weight: .heavy)
-                    Text(movement.cue)
-                        .wsType(.body)
-                        .foregroundStyle(WSColor.text50)
-                }
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 12)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Current movement \(movement.name). \(movement.cue)")
-                // A routine movement is a step that points at a catalog movement by id, and
-                // the catalog is where the instruction copy lives -- one home for the text
-                // rather than a copy per routine that references it.
-                if let described = catalogMovement(for: movement) {
-                    WSInstructionCard(described)
+                        // Order follows the design: position, name, clip, then the countdown,
+                        // and only then the cue and the instructions. The timer sat last until
+                        // a visual check caught it -- the instruction card had pushed it below
+                        // the fold, and on a screen that advances by itself when the clock runs
+                        // out, the clock is the one thing that must never need a scroll to see.
+                        //
+                        // Movements the clip library does not depict keep their symbol rather
+                        // than borrowing a near-enough clip: MovementMediaView falls back on
+                        // its own when the id is absent, and a nil id resolves the same way.
+                        Text("\(index + 1) / \(session.movements.count)")
+                            .wsType(.metric)
+                            .foregroundStyle(WSColor.text40)
+                            .padding(.horizontal, WSSpace.gutter)
+                            .padding(.top, 14)
+                        Text(movement.name.uppercased())
+                            .wsType(.control, weight: .heavy)
+                            .foregroundStyle(WSColor.text)
+                            .padding(.horizontal, WSSpace.gutter)
+                            .padding(.top, 6)
+                            .accessibilityLabel("Current movement \(movement.name)")
+                        MovementMediaView(
+                            movementID: movement.mediaExerciseID ?? "",
+                            symbolName: movement.symbolName,
+                            height: 180
+                        )
                         .padding(.horizontal, WSSpace.gutter)
                         .padding(.top, 14)
-                }
-                Text(timerLabel)
-                    .wsType(.metricL, weight: .bold)
-                    .foregroundStyle(WSColor.accent)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 20)
-                    .accessibilityLabel("Time remaining \(timerLabel)")
-                Text("\(index + 1) / \(session.movements.count)")
-                    .wsType(.metric)
-                    .foregroundStyle(WSColor.text40)
-                    .padding(.horizontal, WSSpace.gutter)
-                    .padding(.top, 8)
+                        Text(timerLabel)
+                            .wsType(.metricL, weight: .bold)
+                            .foregroundStyle(WSColor.accent)
+                            .padding(.horizontal, WSSpace.gutter)
+                            .padding(.top, 14)
+                            .accessibilityLabel("Time remaining \(timerLabel)")
+                        Text(movement.cue)
+                            .wsType(.body)
+                            .foregroundStyle(WSColor.text50)
+                            .padding(.horizontal, WSSpace.gutter)
+                            .padding(.top, 10)
+                        // A routine movement is a step that points at a catalog movement by
+                        // id, and the catalog is where the instruction copy lives -- one home
+                        // for the text rather than a copy per routine that references it.
+                        if let described = catalogMovement(for: movement) {
+                            WSInstructionCard(described)
+                                .padding(.horizontal, WSSpace.gutter)
+                                .padding(.top, 14)
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
