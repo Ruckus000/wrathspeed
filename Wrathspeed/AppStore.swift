@@ -1465,6 +1465,9 @@ final class AppStore {
             $0.blueprint.kind.isRunning && $0.status == .scheduled && $0.date > today
         }) else { return }
         plan.workouts[index].blueprint.date = today
+        // Pulling a future run back to today moves it past everything between, so a UI test
+        // reading the plan sees the same order a real move would leave behind.
+        plan.restoreDateOrder()
         self.plan = plan
         persist()
     }
@@ -1605,6 +1608,9 @@ final class AppStore {
         currentPlan.workouts = currentPlan.workouts.map { workout in
             workout.id == id || workout.blueprint.id == id ? transform(workout) : workout
         }
+        // `moveWorkout` comes through here, and a moved workout keeps its old index until this
+        // runs. Consumers that render `workouts` directly show it in the wrong place otherwise.
+        currentPlan.restoreDateOrder()
         plan = currentPlan
     }
 
