@@ -24,6 +24,18 @@ public struct WeekWindow: Sendable {
         self.end = end
     }
 
+    /// The week beginning at `start`, for callers that already hold a week boundary -- a group
+    /// key from `weekGroups()`, or the week a calendar screen is paged to.
+    ///
+    /// This was removed as unused when `WeekWindow` was introduced and reinstated once three
+    /// callers wanted it. It exists so those callers do not each re-derive `start + 7 days` and
+    /// its comparison, which is how the closed-interval bug got into five places to begin with.
+    public init?(startingAt start: Date, calendar: Calendar = .current) {
+        guard let end = calendar.date(byAdding: .day, value: 7, to: start) else { return nil }
+        self.start = start
+        self.end = end
+    }
+
     /// Half-open, unlike `DateInterval.contains`: the final instant belongs to the next week.
     public func contains(_ date: Date) -> Bool {
         date >= start && date < end

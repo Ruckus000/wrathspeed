@@ -167,11 +167,7 @@ struct PlanView: View {
 
     private func weekDayStrip() -> [(date: Date, label: String, hasWorkout: Bool, isToday: Bool)] {
         let cal = Calendar.current
-        let start = groups.first { week in
-            let end = cal.date(byAdding: .day, value: 7, to: week.start) ?? week.start
-            let today = Date()
-            return today >= week.start && today < end
-        }?.start ?? cal.startOfDay(for: Date())
+        let start = currentWeekGroup?.start ?? cal.startOfDay(for: Date())
         return (0..<7).compactMap { offset in
             guard let date = cal.date(byAdding: .day, value: offset, to: start) else { return nil }
             let hasWorkout = currentWeekWorkouts.contains { cal.isDate($0.date, inSameDayAs: date) }
@@ -217,12 +213,18 @@ struct PlanView: View {
 
     private var groups: [(start: Date, workouts: [ScheduledWorkout])] { store.weekGroups() }
 
-    private var currentWeekWorkouts: [ScheduledWorkout] {
+    /// The plan week today falls in. Asked once here rather than re-derived by each member that
+    /// wants it -- three screens each deciding independently which week is "now" is how Today
+    /// and Plan came to disagree about the same week's mileage.
+    private var currentWeekGroup: (start: Date, workouts: [ScheduledWorkout])? {
         let today = Date()
-        return groups.first { week in
-            let end = Calendar.current.date(byAdding: .day, value: 7, to: week.start) ?? week.start
-            return today >= week.start && today < end
-        }?.workouts ?? groups.first?.workouts ?? []
+        return groups.first { WeekWindow(startingAt: $0.start)?.contains(today) ?? false }
+    }
+
+    // The two fallbacks below differ on purpose: the day strip needs some week to draw, while
+    // the workout list would rather show the plan's first week than nothing.
+    private var currentWeekWorkouts: [ScheduledWorkout] {
+        currentWeekGroup?.workouts ?? groups.first?.workouts ?? []
     }
 
     private var upcomingWeeks: [(start: Date, workouts: [ScheduledWorkout])] {
