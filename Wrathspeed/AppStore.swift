@@ -1317,18 +1317,18 @@ final class AppStore {
     }
 
     private func currentWeekMileage(in plan: TrainingPlan, calendar: Calendar) -> Double {
-        let interval = calendar.dateInterval(of: .weekOfYear, for: Date())
+        let window = calendar.weekWindow(for: Date())
         return plan.workouts.filter { workout in
             workout.status == .scheduled && workout.blueprint.kind.isRunning && workout.blueprint.kind != .race
-                && (interval?.contains(workout.date) ?? false)
+                && (window?.contains(workout.date) ?? false)
         }.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }
     }
 
     private func weekMileage(completed: Bool) -> (done: Double, planned: Double) {
         guard let plan else { return (0, 0) }
-        let interval = Calendar.current.dateInterval(of: .weekOfYear, for: Date())
+        let window = Calendar.current.weekWindow(for: Date())
         let week = plan.workouts.filter {
-            $0.blueprint.kind.isRunning && (interval?.contains($0.date) ?? false)
+            $0.blueprint.kind.isRunning && (window?.contains($0.date) ?? false)
         }
         let planned = week.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }
         let done = week.filter { $0.status == .completed }.reduce(0) { $0 + ($1.result?.distanceMeters ?? $1.blueprint.plannedDistanceMeters) }

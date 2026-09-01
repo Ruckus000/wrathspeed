@@ -340,17 +340,23 @@ struct StrengthPlayerView: View {
             Text("LOG THIS SET")
                 .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.accent)
-            WSRow {
-                Text("REPS")
-                    .wsType(.label, weight: .heavy)
-            } trailing: {
-                WSStepperControl(
-                    valueText: "\(reps)",
-                    decrement: { reps = max(1, reps - 1); persistProgressIfNeeded(force: true) },
-                    increment: { reps += 1; persistProgressIfNeeded(force: true) }
-                )
+            // A hold has nothing to count. The stepper was seeded from `defaultReps`, which is
+            // 8 on a plank only because the planner needs a number there -- so after a
+            // 30-second side plank the log offered "REPS 8". The set is already known to be
+            // done, and for how long, from the hold timer above.
+            if !isHold(current) {
+                WSRow {
+                    Text("REPS")
+                        .wsType(.label, weight: .heavy)
+                } trailing: {
+                    WSStepperControl(
+                        valueText: "\(reps)",
+                        decrement: { reps = max(1, reps - 1); persistProgressIfNeeded(force: true) },
+                        increment: { reps += 1; persistProgressIfNeeded(force: true) }
+                    )
+                }
+                .padding(.top, 12)
             }
-            .padding(.top, 12)
             WSRow {
                 Text("LOAD")
                     .wsType(.label, weight: .heavy)
@@ -567,6 +573,16 @@ struct StrengthPlayerView: View {
         return set.exercise.symbolName
     }
 
+    /// Whether the set is outlasted rather than counted. The active card has always branched
+    /// on this to choose between `holdCard` and `repsCard`; naming it lets the rest screen's
+    /// log make the same call instead of assuming everything has reps.
+    ///
+    /// Reads through `displayedExercise`, so substituting a plank in for a squat moves the log
+    /// with it -- the same way the card above it already moves.
+    private func isHold(_ set: StrengthSet) -> Bool {
+        displayedExercise(for: set)?.holdSeconds != nil
+    }
+
     /// The exercise actually being performed, following a substitution. `holdSeconds` and the
     /// instruction copy both hang off this, so a substituted movement shows its own.
     private func displayedExercise(for set: StrengthSet) -> StrengthExercise? {
@@ -652,7 +668,11 @@ struct StrengthPlayerView: View {
         guard logs.indices.contains(logIndex) else { return }
         logs[logIndex].completed = !skipped
         logs[logIndex].skipped = skipped
-        logs[logIndex].reps = reps
+        // `reps` is already optional, and every reader already treats nil as "this movement
+        // isn't counted in reps" -- `StrengthDetailView.setDetail` simply omits the line. So a
+        // hold records nothing rather than recording a number that means nothing.
+        let countsReps = current.map { !isHold($0) } ?? true
+        logs[logIndex].reps = countsReps ? reps : nil
         logs[logIndex].loadValue = loadValue > 0 ? loadValue : nil
         logs[logIndex].loadUnit = loadUnit
         logs[logIndex].note = note.isEmpty ? nil : note

@@ -134,6 +134,7 @@
 		D2EA131B8B52496C2577FAB2 /* MobilityCatalogLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E92A38D8AF2A82E6B2A46348 /* MobilityCatalogLoader.swift */; };
 		D34DE6FD21590BB8FA11E10C /* MarkAccessibilityUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA66C05D39FCE65D9AC46DB /* MarkAccessibilityUITests.swift */; };
 		D3F25A0FFAE6C37D724AE434 /* WorkoutPreflightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94DFD20A1BAFBD94E33B47EC /* WorkoutPreflightView.swift */; };
+		D5725351BCD88DAADD20F84F /* MovementLibraryMetaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7AD5FD72FC5A25A19E00FA9 /* MovementLibraryMetaTests.swift */; };
 		D65FDBEDBA00C604B4BCE703 /* UITestOnboardingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0226C028B3AEA93CF981DCF2 /* UITestOnboardingHelper.swift */; };
 		D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */; };
 		DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */; };
@@ -303,6 +304,7 @@
 		C3D775A70F9B51D2BE1C6F1E /* WrathspeedCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WrathspeedCore; path = WrathspeedCore; sourceTree = SOURCE_ROOT; };
 		C49FE3FC05C57B7375BEAE9F /* SessionRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecoveryTests.swift; sourceTree = "<group>"; };
 		C4BF4A4556588718FF9A783E /* MovementLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementLibraryView.swift; sourceTree = "<group>"; };
+		C7AD5FD72FC5A25A19E00FA9 /* MovementLibraryMetaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovementLibraryMetaTests.swift; sourceTree = "<group>"; };
 		C96F8875F059AE59AFFA5D9B /* WSInstructionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSInstructionCard.swift; sourceTree = "<group>"; };
 		C9A1597742ABDA88C50324EA /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		CAD3990DA838FA141746FB9D /* InstantRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstantRunView.swift; sourceTree = "<group>"; };
@@ -395,6 +397,7 @@
 				9DAED163BE4A498B0C2618B9 /* HealthImportPersistenceTests.swift */,
 				652F94F27F65A00D2B75770C /* MockWorkoutReminderScheduler.swift */,
 				AEFB936D83E16A02C8A57CD3 /* MovementInstructionTests.swift */,
+				C7AD5FD72FC5A25A19E00FA9 /* MovementLibraryMetaTests.swift */,
 				F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */,
 				4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */,
 				7A47D9B99F540B98D0AFBE30 /* PlanMutationTests.swift */,
@@ -863,6 +866,7 @@
 				9E6C3C58A33CAF7EDB5138DB /* HealthImportPersistenceTests.swift in Sources */,
 				EBD1A6E1491FF628060B1971 /* MockWorkoutReminderScheduler.swift in Sources */,
 				345004735EF3FB7F36F8F87B /* MovementInstructionTests.swift in Sources */,
+				D5725351BCD88DAADD20F84F /* MovementLibraryMetaTests.swift in Sources */,
 				35057545D76FE3DA5D2A1B62 /* OnboardingFlowTests.swift in Sources */,
 				CEBC7D2957268FB10456BF06 /* PersistenceMigrationTests.swift in Sources */,
 				CFCA2597B2606BCEFF0E00D6 /* PlanMutationTests.swift in Sources */,

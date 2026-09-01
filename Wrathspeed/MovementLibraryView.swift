@@ -89,22 +89,33 @@ struct MovementLibraryView: View {
         return "\(strength + movements) MOVEMENTS, WITH DEMOS"
     }
 
+    /// The one-line summary under a strength movement's name, on the row and on its detail
+    /// screen -- both read this, so they cannot disagree.
+    ///
+    /// A hold has no reps. `defaultReps` stays 8 on a plank because the planner needs a number
+    /// there, but printing it put "8 REPS" under SIDE PLANK, directly above a step reading
+    /// "Hold, breathing normally". `holdSeconds` is the field that separates the two.
+    static func meta(for exercise: StrengthExercise) -> String {
+        if let seconds = exercise.holdSeconds { return "\(seconds)s hold" }
+        return "\(exercise.defaultReps) reps"
+    }
+
     /// Strength first, then the mobility phases in their catalog order. Empty groups are
     /// dropped so an unreadable catalog shows nothing rather than a bare heading.
     private var sections: [(title: String, entries: [MovementLibraryEntry])] {
         var result: [(title: String, entries: [MovementLibraryEntry])] = []
 
-        let strength = store.strengthCatalog.exercises.map {
+        let strength = store.strengthCatalog.exercises.map { exercise in
             MovementLibraryEntry(
-                id: $0.id,
-                name: $0.name,
-                symbolName: $0.symbolName,
-                cue: $0.cue,
-                meta: "\($0.defaultReps) reps",
-                howToDoIt: $0.howToDoIt,
-                shouldFeel: $0.shouldFeel,
-                commonMistake: $0.commonMistake,
-                easier: $0.easier
+                id: exercise.id,
+                name: exercise.name,
+                symbolName: exercise.symbolName,
+                cue: exercise.cue,
+                meta: Self.meta(for: exercise),
+                howToDoIt: exercise.howToDoIt,
+                shouldFeel: exercise.shouldFeel,
+                commonMistake: exercise.commonMistake,
+                easier: exercise.easier
             )
         }
         if !strength.isEmpty {
