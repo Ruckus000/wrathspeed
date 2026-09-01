@@ -77,10 +77,16 @@ struct MovementLibraryView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    /// Total across both catalogues, so the screen says how much there is before you scroll.
-    private var countHint: String {
-        let count = sections.reduce(0) { $0 + $1.entries.count }
-        return "\(count) MOVEMENTS, WITH DEMOS"
+    private var countHint: String { Self.countHint(for: store) }
+
+    /// The one place this sentence is built. Settings shows the same count on the row that
+    /// leads here, and computing it separately from the catalogues let the two disagree the
+    /// moment the library gained any filtering -- it counts what this screen will actually
+    /// list, not what the catalogues hold.
+    static func countHint(for store: AppStore) -> String {
+        let strength = store.strengthCatalog.exercises.count
+        let movements = MovementPhase.allCases.reduce(0) { $0 + store.movementCatalog.inPhase($1).count }
+        return "\(strength + movements) MOVEMENTS, WITH DEMOS"
     }
 
     /// Strength first, then the mobility phases in their catalog order. Empty groups are

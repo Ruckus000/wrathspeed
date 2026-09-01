@@ -11,22 +11,15 @@ struct WSEyebrow: View {
     }
 }
 
-/// The back affordance every screen uses: a bordered pill, not bare text.
-///
-/// The design draws this identically in eleven places -- Settings, the library and its
-/// detail, the history details, Plan, the weekly calendar, Manage Plan, Content Licenses and
-/// onboarding -- and it was bare text in all of them. A pill reads as something you press;
-/// a grey word at the top of a screen reads as a heading, especially in a design where
-/// headings are also grey and uppercase.
-///
-/// `.chrome` is the role the ramp already reserves for "back and close", and like the tab
-/// bar it deliberately does not grow with Dynamic Type.
-/// The bordered pill the design uses for screen-level navigation -- back at the top of a
+/// The bordered pill the design uses for screen-level navigation: back at the top of a
 /// screen, and the two links out of Plan. 44pt tall, 15pt sides, hairline edge, capsule.
 ///
-/// The label carries the frame, not the Button: applied outside, the hit region collapses to
-/// the glyph run and the control becomes a thin strip that a test still finds and a finger
-/// misses. This repo has been bitten by that twice.
+/// The label carries the frame, not the Button that wraps it: applied outside, the hit region
+/// collapses to the glyph run and the control becomes a thin strip that a test still finds
+/// and a finger misses. This repo has been bitten by that twice.
+///
+/// `.chrome` is the role the ramp reserves for "back and close", and like the tab bar it
+/// deliberately does not grow with Dynamic Type.
 struct WSPillLabel: View {
     var title: String
 
@@ -41,6 +34,13 @@ struct WSPillLabel: View {
     }
 }
 
+/// The back affordance every screen uses: a bordered pill, not bare text.
+///
+/// The design draws this identically in eleven places -- Settings, the library and its
+/// detail, both history details, Plan, the weekly calendar, Manage Plan, Content Licenses and
+/// onboarding -- and it was bare text in all of them. A pill reads as something you press; a
+/// grey word at the top of a screen reads as a heading, especially in a design where headings
+/// are also grey and uppercase.
 struct WSBackButton: View {
     var title: String
     /// Spoken label. Defaults to the visible title, which is also how several UI tests find

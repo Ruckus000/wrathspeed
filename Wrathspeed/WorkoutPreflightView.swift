@@ -225,7 +225,7 @@ struct WorkoutPreflightView: View {
                 .background(WSColor.bgInset, in: RoundedRectangle(cornerRadius: WSRadius.list, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: WSRadius.list, style: .continuous)
-                        .stroke(WSColor.hairline.opacity(0.8), lineWidth: 1)
+                        .stroke(WSColor.hairlineSoft, lineWidth: 1)
                 )
                 .padding(.top, 8)
                 .accessibilityElement(children: .combine)

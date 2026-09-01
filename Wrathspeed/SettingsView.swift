@@ -85,7 +85,10 @@ struct SettingsView: View {
 
                 group("RUNNING PROFILE") {
                     WSListCard {
-                        WSListRow(title: "UNITS") {
+                        // Divider only when rows follow it. Everything below is behind
+                        // `if let profile`, so a nil profile would otherwise leave a hairline
+                        // hanging at the bottom of the card with nothing under it.
+                        WSListRow(title: "UNITS", showDivider: store.profile != nil) {
                             WSSegmentedControl(
                                 options: DistanceUnit.allCases,
                                 label: { $0 == .miles ? "MILES" : "KM" },
@@ -227,10 +230,9 @@ struct SettingsView: View {
         return "\(prefs.ability.title.uppercased()) · \(prefs.durationMinutes) MIN · \(prefs.sessionsPerWeek)/WK"
     }
 
-    private var libraryHint: String {
-        let count = store.strengthCatalog.exercises.count + store.movementCatalog.movements.count
-        return "\(count) MOVEMENTS, WITH DEMOS"
-    }
+    /// Deferred to the library rather than recomputed, so the row cannot advertise a count
+    /// the screen behind it does not list.
+    private var libraryHint: String { MovementLibraryView.countHint(for: store) }
 
     /// Group heading. The design renders these in white at 35% with 2pt tracking, not in the
     /// accent the app used -- accent headings competed with the values inside the cards.
