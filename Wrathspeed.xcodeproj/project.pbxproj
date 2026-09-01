@@ -47,6 +47,7 @@
 		3CC57FEA3020E17C575F5168 /* mobility_catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = F9F2C82776E44393CEF04BB8 /* mobility_catalog.json */; };
 		3D4030E840DDFA21419CB4FB /* WSMarkGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51AC7133422C55E1116C4D81 /* WSMarkGeometry.swift */; };
 		3EE58C39AD96925E88DBDF1B /* LocationPermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54B7968294B6D22F66ACC8C8 /* LocationPermissionView.swift */; };
+		41CF7EFB8AB6BBB0CD0BB4D8 /* WeeklyCalendarOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3F4C418EE11A3FB55C8AB40 /* WeeklyCalendarOrderTests.swift */; };
 		42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */; };
 		46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA496765F3551500A8BAB109 /* ManagePlanView.swift */; };
 		46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */; };
@@ -329,6 +330,7 @@
 		EF6DBA5EC9F40023975C40C5 /* WorkoutReminderScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutReminderScheduler.swift; sourceTree = "<group>"; };
 		F1D8C3399C62380D401F02FA /* MobilityRoutineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilityRoutineView.swift; sourceTree = "<group>"; };
 		F2FC8D270CE0AC2F405E6658 /* WatchTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTodayView.swift; sourceTree = "<group>"; };
+		F3F4C418EE11A3FB55C8AB40 /* WeeklyCalendarOrderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCalendarOrderTests.swift; sourceTree = "<group>"; };
 		F496DF678C9371178579F128 /* WrathspeedTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WrathspeedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowTests.swift; sourceTree = "<group>"; };
 		F89F2D90B5ECD79BB65212FD /* FloatingTabBarUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabBarUITests.swift; sourceTree = "<group>"; };
@@ -408,6 +410,7 @@
 				EC19A1E4D3A32B80A2304748 /* StrengthMediaCoverageTests.swift */,
 				643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */,
 				3D93BDD6445638B874648A88 /* WatchLaunchTimeoutTests.swift */,
+				F3F4C418EE11A3FB55C8AB40 /* WeeklyCalendarOrderTests.swift */,
 				0E2009D994ADC5DACCC9F7D1 /* WorkoutReminderTests.swift */,
 				16BA6A73DFA699CCFD7A5F29 /* WorkoutResultMatchActionTests.swift */,
 				FE5F45C0CD88B74614790F6D /* WorkoutResultRecordTests.swift */,
@@ -885,6 +888,7 @@
 				C4CEF76CF81DED1D7E5C2432 /* WSTabBarTests.swift in Sources */,
 				BAF6681421E0E52D5B31AA54 /* WSTypeTests.swift in Sources */,
 				CA2C6BFB50A108A54512C6D4 /* WatchLaunchTimeoutTests.swift in Sources */,
+				41CF7EFB8AB6BBB0CD0BB4D8 /* WeeklyCalendarOrderTests.swift in Sources */,
 				6D1E826E8B9EC666BE7D1D5C /* WorkoutReminderTests.swift in Sources */,
 				C5C3B436CDF986130BAD38C3 /* WorkoutResultMatchActionTests.swift in Sources */,
 				BCFE818563C3592790D2F8BF /* WorkoutResultRecordTests.swift in Sources */,

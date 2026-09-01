@@ -157,10 +157,21 @@ struct WeeklyCalendarView: View {
         }
     }
 
-    private var weekWorkouts: [ScheduledWorkout] {
-        let end = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-        return store.displayPlan?.workouts.filter { $0.date >= weekStart && $0.date < end } ?? []
+    /// Workouts inside `week`, in date order.
+    ///
+    /// The sort used to trail a `?? []` on the line above it. `??` binds looser than member
+    /// access, so it applied to the empty fallback rather than to the filtered list, and the
+    /// week came back in plan-array order -- which stops being date order as soon as a workout
+    /// is moved, since neither `updateWorkoutInPlan` nor `MissedWorkService` re-sorts after
+    /// rewriting a date in place. The parentheses are the whole fix; they are load-bearing.
+    static func workouts(in week: WeekWindow, from plan: TrainingPlan?) -> [ScheduledWorkout] {
+        (plan?.workouts.filter { week.contains($0.date) } ?? [])
             .sorted { $0.date < $1.date }
+    }
+
+    private var weekWorkouts: [ScheduledWorkout] {
+        guard let week = WeekWindow(startingAt: weekStart, calendar: calendar) else { return [] }
+        return Self.workouts(in: week, from: store.displayPlan)
     }
 
     private var weekLabel: String {
