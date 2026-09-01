@@ -1141,10 +1141,7 @@ final class AppStore {
         guard let plan else { return (1, 1) }
         let groups = weekGroups()
         let today = Date()
-        let index = groups.firstIndex { week in
-            let end = Calendar.current.date(byAdding: .day, value: 7, to: week.start) ?? week.start
-            return today >= week.start && today < end
-        } ?? 0
+        let index = groups.firstIndex { WeekWindow(startingAt: $0.start)?.contains(today) ?? false } ?? 0
         return (index + 1, max(1, plan.goal.weekCount))
     }
 
