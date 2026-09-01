@@ -1465,6 +1465,9 @@ final class AppStore {
             $0.blueprint.kind.isRunning && $0.status == .scheduled && $0.date > today
         }) else { return }
         plan.workouts[index].blueprint.date = today
+        // Pulling a future run back to today moves it past everything between, so a UI test
+        // reading the plan sees the same order a real move would leave behind.
+        plan.restoreDateOrder()
         self.plan = plan
         persist()
     }
@@ -1476,12 +1479,30 @@ final class AppStore {
     /// has none -- so "the next session" was a coin flip on today's weekday, which is the trap
     /// `UITestOnboardingHelper` documents as having made two tests fail only on a Friday.
     /// Tests that do not care about holds are unaffected: every focus opens with a squat.
+    /// The contract is "today offers a strength session containing a hold", not "today offers
+    /// some strength session". The difference matters: the guard used to be
+    /// `todaysStrength.isEmpty`, so whenever today already carried a session the seed did
+    /// nothing at all and the test ran against whatever happened to be there. That is how a CI
+    /// run reached `StrengthHoldLogUITests` with a legs-and-core session -- no hold in it
+    /// anywhere -- and failed hunting for a hold card, while the same test passed locally.
+    /// Seeding has to leave the same state however the day was arranged beforehand.
     func seedTodayStrengthForUITestingIfNeeded() {
-        guard UITestingSupport.shouldSeedTodayStrength, todaysStrength.isEmpty else { return }
+        guard UITestingSupport.shouldSeedTodayStrength else { return }
+        func carriesHold(_ session: StrengthSession) -> Bool {
+            session.sets.contains { $0.exercise.holdSeconds != nil }
+        }
+        guard !todaysStrength.contains(where: carriesHold) else { return }
         let today = Calendar.current.startOfDay(for: Date())
         guard let index = strengthSessions.firstIndex(where: { session in
-            session.date > today && session.sets.contains { $0.exercise.holdSeconds != nil }
+            session.date > today && carriesHold(session)
         }) else { return }
+        // Anything already sitting on today is moved out of the way first. Today offers
+        // `todaysStrength.first`, so leaving a second session there would make which one the
+        // test sees depend on array order.
+        let displaced = Calendar.current.date(byAdding: .day, value: -1, to: today) ?? today
+        for existing in strengthSessions.indices where Calendar.current.isDateInToday(strengthSessions[existing].date) {
+            strengthSessions[existing].date = displaced
+        }
         strengthSessions[index].date = today
         persist()
     }
@@ -1605,6 +1626,9 @@ final class AppStore {
         currentPlan.workouts = currentPlan.workouts.map { workout in
             workout.id == id || workout.blueprint.id == id ? transform(workout) : workout
         }
+        // `moveWorkout` comes through here, and a moved workout keeps its old index until this
+        // runs. Consumers that render `workouts` directly show it in the wrong place otherwise.
+        currentPlan.restoreDateOrder()
         plan = currentPlan
     }
 

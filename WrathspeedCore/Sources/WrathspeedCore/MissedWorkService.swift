@@ -142,6 +142,8 @@ public enum MissedWorkService {
             else { return workout }
             return AdaptationRules.applySkip(workout)
         }
+        // Rescheduling above rewrote dates in place, leaving moved workouts at their old indices.
+        copy.restoreDateOrder()
         return copy
     }
 
@@ -186,6 +188,8 @@ public enum MissedWorkService {
             guard missedIDs.contains(workout.id), workout.status == .scheduled else { return workout }
             return AdaptationRules.applySkip(workout)
         }
+        // Replacements took the extension week's dates, so the array is no longer in date order.
+        copy.restoreDateOrder()
         return copy
     }
 

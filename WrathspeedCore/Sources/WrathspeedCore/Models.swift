@@ -506,6 +506,25 @@ public struct TrainingPlan: Codable, Equatable, Sendable, Identifiable {
         self.workouts = workouts
         self.generatedAt = generatedAt
     }
+
+    /// Puts `workouts` back in date order.
+    ///
+    /// Date order is an invariant every producer already maintains -- `PlanGenerator`,
+    /// `BeginnerPlanGenerator`, `PlanReconciler` and the persistence migration all sort before
+    /// handing a plan over -- and consumers rely on it: the weekly calendar renders `workouts`
+    /// straight into a `ForEach`, so array order is display order.
+    ///
+    /// Rescheduling breaks it. Moving a workout rewrites `blueprint.date` in place, which leaves
+    /// the workout at its old index, and the calendar then listed a run moved to Friday where
+    /// Tuesday used to be. Call this after anything that can put a workout on a different day.
+    ///
+    /// Not needed for changes that cannot move a workout -- marking one complete, attaching a
+    /// result -- which is why this is an explicit call rather than a `didSet`. A `didSet` would
+    /// also re-sort during loops that mutate elements by index, and `sort` is not guaranteed
+    /// stable, so equal-dated workouts could shuffle underneath an in-progress loop.
+    public mutating func restoreDateOrder() {
+        workouts.sort { $0.date < $1.date }
+    }
 }
 
 public struct UpcomingWorkoutsPayload: Codable, Equatable, Sendable {

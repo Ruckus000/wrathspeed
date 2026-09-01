@@ -60,15 +60,24 @@ final class StrengthHoldLogUITests: XCTestCase {
         // Bounded by the sets a session can hold, and by what the card *is* rather than a fixed
         // number of taps: a hard-coded index that quietly landed on the wrong movement would
         // make the absence assertion below pass for the wrong reason.
+        // Wait for whichever card this set renders before deciding it is not a hold. Checking
+        // `exists` straight after a tap races the transition, and on a loaded machine a slow
+        // render reads as "not a hold" and the loop taps past the one set it came for.
+        let anyCard = app.buttons.matching(
+            NSPredicate(format: "identifier IN {'strength_hold_toggle', 'strength_set_done'}")
+        ).firstMatch
         var advances = 0
-        while !holdToggle.exists && advances < 20 {
+        while advances < 20 {
+            XCTAssertTrue(anyCard.waitForExistence(timeout: 5), "No exercise card rendered after \(advances) advances")
+            if holdToggle.exists { break }
             guard next.exists, next.isEnabled else { break }
             next.tap()
             advances += 1
         }
         XCTAssertTrue(
-            holdToggle.waitForExistence(timeout: 5),
-            "Never reached a hold after \(advances) advances — the seeded session should contain one"
+            holdToggle.exists,
+            "Walked the whole session in \(advances) advances without finding a hold. The seed "
+                + "should have put a hold-carrying session on today."
         )
 
         // MARK: The hold, on screen
