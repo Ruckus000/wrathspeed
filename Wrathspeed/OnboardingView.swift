@@ -32,10 +32,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 if step > 0 {
-                    Button("← BACK") { step -= 1 }
-                        .wsType(.body, weight: .heavy, tracking: 1)
-                        .foregroundStyle(WSColor.text50)
-                        .accessibilityLabel("Back")
+                    WSBackButton(title: "← BACK", accessibilityLabel: "Back") { step -= 1 }
                 }
                 Spacer()
             }

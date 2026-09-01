@@ -7,9 +7,7 @@ struct ContentLicensesView: View {
     var body: some View {
         WSScreen {
             HStack {
-                Button("← SETTINGS") { dismiss() }
-                    .wsType(.body, weight: .heavy)
-                    .foregroundStyle(WSColor.text50)
+                WSBackButton(title: "← SETTINGS") { dismiss() }
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)

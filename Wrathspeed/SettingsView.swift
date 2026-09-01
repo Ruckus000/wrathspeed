@@ -13,199 +13,201 @@ struct SettingsView: View {
                     .foregroundStyle(WSColor.text)
                     .padding(.horizontal, WSSpace.gutter)
                     .padding(.top, 10)
-                section("LIVE RUN METRICS") {
-                    WSChipRow {
-                        ForEach(LiveMetric.allCases, id: \.self) { metric in
-                            WSChip(title: metric.chipLabel, selected: store.liveMetrics.contains(metric)) {
-                                store.toggleLiveMetric(metric)
-                            }
-                        }
-                    }
-                }
-                section("DATA DENSITY") {
-                    WSChipRow(spacing: 8) {
-                        ForEach(DataDensity.allCases, id: \.self) { density in
-                            WSChip(title: density.title, selected: store.dataDensity == density) {
-                                store.setDataDensity(density)
-                            }
-                        }
-                    }
-                }
-                section("COACHING") {
-                    Button {
-                        store.cuesEnabled.toggle()
-                        store.session.cuesEnabled = store.cuesEnabled
-                        store.save()
-                    } label: {
-                        WSRow {
-                            Text("AUDIO CUES")
-                                .wsType(.body, weight: .heavy)
-                                .foregroundStyle(WSColor.text)
-                        } trailing: {
-                            Text(store.cuesEnabled ? "ON" : "OFF")
-                                .wsType(.label, weight: .heavy, tracking: 1)
-                                .foregroundStyle(store.cuesEnabled ? .white : WSColor.text)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(store.cuesEnabled ? WSColor.accent : Color.clear, in: Capsule())
-                                .overlay(Capsule().stroke(store.cuesEnabled ? WSColor.accent : WSColor.border, lineWidth: 1.5))
-                        }
-                        // The row is mostly Spacer, which is not hit-testable on its own.
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    // The chips sat directly under the ON/OFF row with nothing naming them,
-                    // so what they controlled was only inferable from the chip titles.
-                    Text("CUE STYLE")
-                        .wsType(.body, weight: .bold)
-                        .foregroundStyle(WSColor.text)
-                        .padding(.top, 14)
-                        .accessibilityHidden(true)
-                    WSChipRow(spacing: 8) {
-                        ForEach(CueStyle.allCases, id: \.self) { style in
-                            WSChip(title: style.title, selected: store.cueStyle == style) {
-                                store.setCueStyle(style)
-                            }
-                        }
-                    }
-                    // Hidden above and restated here so VoiceOver reads the group's name once,
-                    // attached to the controls it actually names.
-                    .accessibilityElement(children: .contain)
-                    .accessibilityLabel("Cue style")
-                }
-                section("UNITS") {
-                    WSChipRow(spacing: 8) {
-                        WSChip(title: "Miles", selected: store.unit == .miles) { setUnit(.miles) }
-                        WSChip(title: "Kilometers", selected: store.unit == .kilometers) { setUnit(.kilometers) }
-                    }
-                }
-                section("CONTENT") {
-                    NavigationLink {
-                        MovementLibraryView()
-                    } label: {
-                        Text("MOVEMENT LIBRARY ›")
-                            .wsType(.body, weight: .heavy)
-                            .foregroundStyle(WSColor.text)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }
-                    .accessibilityIdentifier("settings.movementLibrary")
-                    NavigationLink {
-                        ContentLicensesView()
-                    } label: {
-                        Text("CONTENT LICENSES ›")
-                            .wsType(.body, weight: .heavy)
-                            .foregroundStyle(WSColor.text)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }
-                }
-                if store.n100 != nil {
-                    section("PLAN ADJUSTMENT") {
-                        Button("END NOT FEELING 100%") {
-                            store.endNotFeeling100()
-                        }
-                        .wsType(.body, weight: .heavy)
-                        .foregroundStyle(WSColor.accent)
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }
-                }
-                section("DIAGNOSTICS") {
-                    Button("EXPORT REDACTED DIAGNOSTICS") {
-                        if let data = try? DiagnosticsExporter.exportJSON(from: store),
-                           let json = String(data: data, encoding: .utf8) {
-                            UIPasteboard.general.string = json
-                            store.showToast("DIAGNOSTICS COPIED")
-                        }
-                    }
-                    .wsType(.body, weight: .heavy)
-                    .foregroundStyle(WSColor.accent)
-                    .accessibilityLabel("Export redacted diagnostics to clipboard")
-                    Text("Includes app version, schema version, and non-sensitive counts only.")
+                if let subtitle = planSubtitle {
+                    Text(subtitle)
                         .wsType(.metric)
-                        .foregroundStyle(WSColor.text40)
-                        .padding(.top, 8)
+                        .foregroundStyle(WSColor.text50)
+                        .padding(.horizontal, WSSpace.gutter)
+                        .padding(.top, 6)
                 }
-                section("RUNNING PROFILE") {
-                    if let profile = store.profile {
-                        WSHairlineRow(label: "ABILITY", value: profile.ability.title.uppercased())
-                        NavigationLink {
-                            PaceZonesView()
+
+                group("LIVE RUN") {
+                    WSListCard {
+                        WSListRow(title: "METRICS SHOWN") {
+                            // Multi-select: several segments can read as chosen at once, which
+                            // is why the control takes an `isSelected` closure rather than a
+                            // single binding.
+                            WSSegmentedControl(
+                                options: LiveMetric.allCases,
+                                label: \.chipLabel,
+                                isSelected: { store.liveMetrics.contains($0) },
+                                select: { store.toggleLiveMetric($0) }
+                            )
+                        }
+                        WSListRow(title: "DATA DENSITY", showDivider: false) {
+                            WSSegmentedControl(
+                                options: DataDensity.allCases,
+                                label: \.title,
+                                isSelected: { store.dataDensity == $0 },
+                                select: { store.setDataDensity($0) }
+                            )
+                        }
+                    }
+                }
+
+                group("COACHING") {
+                    WSListCard {
+                        Button {
+                            store.cuesEnabled.toggle()
+                            store.session.cuesEnabled = store.cuesEnabled
+                            store.save()
                         } label: {
-                            WSRow {
-                                Text("VDOT · PACE ZONES")
-                                    .wsType(.body, weight: .bold)
-                                    .foregroundStyle(Color.white.opacity(0.6))
-                            } trailing: {
-                                Text("\(WSFormat.vdot(profile.vdot)) ›")
+                            WSListRow(
+                                title: "AUDIO CUES",
+                                hint: store.cuesEnabled ? "SPOKEN DURING A RUN" : "SILENT",
+                                showDivider: store.cuesEnabled
+                            ) {
+                                Text(store.cuesEnabled ? "ON" : "OFF")
+                                    .wsType(.label, weight: .heavy, tracking: 1)
+                                    .foregroundStyle(store.cuesEnabled ? .white : WSColor.text)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(store.cuesEnabled ? WSColor.accent : Color.clear, in: Capsule())
+                                    .overlay(Capsule().stroke(store.cuesEnabled ? WSColor.accent : WSColor.border, lineWidth: 1.5))
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        // The design hides the style picker while cues are off, which is
+                        // honest: it controls nothing in that state.
+                        if store.cuesEnabled {
+                            WSListRow(title: "CUE STYLE", showDivider: false) {
+                                WSSegmentedControl(
+                                    options: CueStyle.allCases,
+                                    label: \.title,
+                                    isSelected: { store.cueStyle == $0 },
+                                    select: { store.setCueStyle($0) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                group("RUNNING PROFILE") {
+                    WSListCard {
+                        // Divider only when rows follow it. Everything below is behind
+                        // `if let profile`, so a nil profile would otherwise leave a hairline
+                        // hanging at the bottom of the card with nothing under it.
+                        WSListRow(title: "UNITS", showDivider: store.profile != nil) {
+                            WSSegmentedControl(
+                                options: DistanceUnit.allCases,
+                                label: { $0 == .miles ? "MILES" : "KM" },
+                                isSelected: { store.unit == $0 },
+                                select: { setUnit($0) }
+                            )
+                        }
+                        if let profile = store.profile {
+                            NavigationLink {
+                                PaceZonesView()
+                            } label: {
+                                WSListRow(title: "PACE ZONES", hint: "VDOT SETS EVERY TARGET PACE") {
+                                    Text("\(WSFormat.vdot(profile.vdot)) ›")
+                                        .wsType(.metric, weight: .bold)
+                                        .foregroundStyle(WSColor.accent)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            WSListRow(title: "ABILITY") {
+                                Text(profile.ability.title.uppercased())
                                     .wsType(.metric, weight: .bold)
-                                    .foregroundStyle(WSColor.accent)
+                                    .foregroundStyle(WSColor.text70)
                             }
-                            .padding(.vertical, 12)
-                        }
-                        .overlay(alignment: .bottom) { Rectangle().fill(WSColor.hairline).frame(height: 1) }
-                        WSHairlineRow(label: "DAYS / WEEK", value: "\(profile.daysPerWeek)", showDivider: false)
-                    }
-                }
-                section("STRENGTH") {
-                    namedChips("ABILITY") {
-                        chipGroup(StrengthAbility.allCases.map(\.title), selected: store.strengthPrefs.ability.title) { title in
-                            if let item = StrengthAbility.allCases.first(where: { $0.title == title }) {
-                                updateStrength { $0.ability = item }
-                            }
-                        }
-                    }
-                    namedChips("FOCUS") {
-                        chipGroup(StrengthGoal.allCases.map(\.title), selected: store.strengthPrefs.goal.title) { title in
-                            if let item = StrengthGoal.allCases.first(where: { $0.title == title }) {
-                                updateStrength { $0.goal = item }
-                            }
-                        }
-                    }
-                    namedChips("SESSION LENGTH") {
-                        WSChipRow(spacing: 8) {
-                            ForEach([30, 45, 60], id: \.self) { minutes in
-                                WSChip(title: "\(minutes) min", selected: store.strengthPrefs.durationMinutes == minutes) {
-                                    updateStrength { $0.durationMinutes = minutes }
-                                }
-                            }
-                        }
-                    }
-                    namedChips("TRAINING DAYS") {
-                        WSChipRow(spacing: 6) {
-                            ForEach(Weekday.allCases, id: \.self) { day in
-                                WSChip(title: day.chipLabel, selected: store.strengthPrefs.preferredDays.contains(day)) {
-                                    updateStrength { prefs in
-                                        if prefs.preferredDays.contains(day) {
-                                            if prefs.preferredDays.count > 1 {
-                                                prefs.preferredDays.removeAll { $0 == day }
-                                            }
-                                        } else {
-                                            prefs.preferredDays.append(day)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    namedChips("EQUIPMENT") {
-                        chipGroup(StrengthEquipment.allCases.map(\.title), selected: "") { title in
-                            if let item = StrengthEquipment.allCases.first(where: { $0.title == title }) {
-                                updateStrength { prefs in
-                                    if prefs.equipment.contains(item) {
-                                        if prefs.equipment.count > 1 { prefs.equipment.remove(item) }
-                                    } else {
-                                        prefs.equipment.insert(item)
-                                    }
-                                }
+                            WSListRow(title: "DAYS / WEEK", showDivider: false) {
+                                Text("\(profile.daysPerWeek)")
+                                    .wsType(.metric, weight: .bold)
+                                    .foregroundStyle(WSColor.text70)
                             }
                         }
                     }
                 }
-                WSOutlineButton(title: "REBUILD WEEKS") {
+
+                group("STRENGTH") {
+                    WSListCard {
+                        NavigationLink {
+                            StrengthPreferencesView()
+                        } label: {
+                            WSListNavRow(title: "PREFERENCES", hint: strengthSummary, showDivider: false)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.strengthPreferences")
+                    }
+                }
+
+                group("CONTENT") {
+                    WSListCard {
+                        NavigationLink {
+                            MovementLibraryView()
+                        } label: {
+                            WSListNavRow(title: "MOVEMENT LIBRARY", hint: libraryHint)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.movementLibrary")
+                        NavigationLink {
+                            ContentLicensesView()
+                        } label: {
+                            WSListNavRow(
+                                title: "CONTENT LICENSES",
+                                hint: "WHERE THE BUNDLED MEDIA COMES FROM",
+                                showDivider: false
+                            )
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+                if store.n100 != nil {
+                    group("PLAN ADJUSTMENT") {
+                        WSListCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("An adjustment is active. Ending it returns every future week to the plan as generated.")
+                                    .wsType(.body, weight: .medium)
+                                    .foregroundStyle(WSColor.text70)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                WSOutlineButton(title: "END NOT FEELING 100%", height: 44) {
+                                    store.endNotFeeling100()
+                                }
+                            }
+                            .padding(16)
+                        }
+                    }
+                }
+
+                group("DIAGNOSTICS") {
+                    WSListCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            WSOutlineButton(title: "EXPORT REDACTED DIAGNOSTICS", height: 44, borderColor: WSColor.border) {
+                                if let data = try? DiagnosticsExporter.exportJSON(from: store),
+                                   let json = String(data: data, encoding: .utf8) {
+                                    UIPasteboard.general.string = json
+                                    store.showToast("DIAGNOSTICS COPIED")
+                                }
+                            }
+                            .accessibilityLabel("Export redacted diagnostics to clipboard")
+                            Text("Includes app version, schema version, and non-sensitive counts only.")
+                                .wsType(.caption, weight: .medium)
+                                .foregroundStyle(WSColor.text40)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(16)
+                    }
+                }
+
+                WSOutlineButton(title: "REBUILD FUTURE WEEKS") {
                     store.regeneratePlan()
                     store.showToast("FUTURE WEEKS REBUILT")
                 }
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 18)
+                .padding(.horizontal, WSSpace.cardGutter)
+                .padding(.top, 22)
+                Text("Rebuilds every future week from your current VDOT. Completed work is never changed.")
+                    .wsType(.caption, weight: .medium)
+                    .foregroundStyle(WSColor.text35)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, WSSpace.gutter)
+                    .padding(.top, 8)
                 WSLockup(.caged, style: .monoLight)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 36)
@@ -215,48 +217,36 @@ struct SettingsView: View {
         }
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .wsType(.metricS, tracking: 1.5)
-                .foregroundStyle(WSColor.accent)
-            content()
-        }
-        .padding(.horizontal, WSSpace.gutter)
-        .padding(.top, 22)
+    /// "HALF MARATHON · WEEK 5 OF 12" -- the design puts the plan under the screen title so
+    /// Settings says what it is settings *for*.
+    private var planSubtitle: String? {
+        guard let plan = store.plan else { return nil }
+        let week = store.currentWeekIndex()
+        return "\(plan.goal.kind.displayName.uppercased()) · WEEK \(week.current) OF \(week.total)"
     }
 
-    /// A chip row with a name above it. Five of these sat consecutively under the STRENGTH
-    /// header with nothing naming any of them, so which row set ability, focus, length, days
-    /// or equipment was only inferable from the chip titles -- and VoiceOver read the lot as
-    /// five undifferentiated groups. The label is hidden from VoiceOver and restated on the
-    /// row so the name is announced once, attached to the controls it names.
-    private func namedChips<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .wsType(.body, weight: .bold)
-                .foregroundStyle(WSColor.text)
-                .accessibilityHidden(true)
-            content()
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(title.capitalized)
+    private var strengthSummary: String {
+        let prefs = store.strengthPrefs
+        return "\(prefs.ability.title.uppercased()) · \(prefs.durationMinutes) MIN · \(prefs.sessionsPerWeek)/WK"
     }
 
-    private func chipGroup(_ titles: [String], selected: String, action: @escaping (String) -> Void) -> some View {
-        WSChipRow(spacing: 8) {
-            ForEach(titles, id: \.self) { title in
-                let isOn: Bool = {
-                    if selected.isEmpty {
-                        return StrengthEquipment.allCases.first { $0.title == title }.map { store.strengthPrefs.equipment.contains($0) } ?? false
-                    }
-                    return title == selected
-                }()
-                WSChip(title: title, selected: isOn) { action(title) }
-            }
+    /// Deferred to the library rather than recomputed, so the row cannot advertise a count
+    /// the screen behind it does not list.
+    private var libraryHint: String { MovementLibraryView.countHint(for: store) }
+
+    /// Group heading. The design renders these in white at 35% with 2pt tracking, not in the
+    /// accent the app used -- accent headings competed with the values inside the cards.
+    private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .wsType(.metricS, tracking: 2)
+                .foregroundStyle(WSColor.text35)
+                .padding(.horizontal, WSSpace.gutter)
+            content()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 24)
     }
+
 
     private func setUnit(_ unit: DistanceUnit) {
         guard var profile = store.profile else { return }
@@ -265,11 +255,6 @@ struct SettingsView: View {
         store.regeneratePlan(profile: profile)
     }
 
-    private func updateStrength(_ mutate: (inout StrengthPreferences) -> Void) {
-        var preferences = store.strengthPrefs
-        mutate(&preferences)
-        store.updateStrengthPreferences(preferences)
-    }
 }
 
 struct PaceZonesView: View {
@@ -280,9 +265,8 @@ struct PaceZonesView: View {
 
     var body: some View {
         WSScreen {
-            Button("← SETTINGS") { dismiss() }
-                .wsType(.body, weight: .heavy, tracking: 1)
-                .foregroundStyle(WSColor.text50)
+            WSBackButton(title: "← SETTINGS") { dismiss() }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
             WSEyebrow(text: "VDOT \(WSFormat.vdot(store.profile?.vdot ?? 0))")

@@ -11,6 +11,53 @@ struct WSEyebrow: View {
     }
 }
 
+/// The bordered pill the design uses for screen-level navigation: back at the top of a
+/// screen, and the two links out of Plan. 44pt tall, 15pt sides, hairline edge, capsule.
+///
+/// The label carries the frame, not the Button that wraps it: applied outside, the hit region
+/// collapses to the glyph run and the control becomes a thin strip that a test still finds
+/// and a finger misses. This repo has been bitten by that twice.
+///
+/// `.chrome` is the role the ramp reserves for "back and close", and like the tab bar it
+/// deliberately does not grow with Dynamic Type.
+struct WSPillLabel: View {
+    var title: String
+
+    var body: some View {
+        Text(title)
+            .wsType(.chrome, tracking: 1.2)
+            .foregroundStyle(WSColor.text70)
+            .padding(.horizontal, 15)
+            .frame(height: 44)
+            .overlay(Capsule(style: .continuous).stroke(WSColor.border, lineWidth: 1))
+            .contentShape(Capsule(style: .continuous))
+    }
+}
+
+/// The back affordance every screen uses: a bordered pill, not bare text.
+///
+/// The design draws this identically in eleven places -- Settings, the library and its
+/// detail, both history details, Plan, the weekly calendar, Manage Plan, Content Licenses and
+/// onboarding -- and it was bare text in all of them. A pill reads as something you press; a
+/// grey word at the top of a screen reads as a heading, especially in a design where headings
+/// are also grey and uppercase.
+struct WSBackButton: View {
+    var title: String
+    /// Spoken label. Defaults to the visible title, which is also how several UI tests find
+    /// these. Deriving it from the title instead produced "Back to BACK" and broke five
+    /// queries, so it stays explicit wherever the screen already had a considered one.
+    var accessibilityLabel: String?
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            WSPillLabel(title: title)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel ?? title)
+    }
+}
+
 struct WSPrimaryButton: View {
     var title: String
     var height: CGFloat = 62
@@ -45,6 +92,10 @@ struct WSOutlineButton: View {
     var title: String
     var height: CGFloat = 52
     var color: Color = WSColor.accent
+    /// Edge colour, when it differs from the label's. The diagnostics button is measured in
+    /// the design as accent text inside a white-18% border -- one `color` cannot say that,
+    /// and using the border colour for both made the label almost invisible.
+    var borderColor: Color?
     var action: () -> Void
 
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
@@ -61,7 +112,7 @@ struct WSOutlineButton: View {
                 .frame(minHeight: height * min(scale, 1.4))
                 .overlay(
                     RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
-                        .stroke(color, lineWidth: 1.5)
+                        .stroke(borderColor ?? color, lineWidth: 1.5)
                 )
         }
         .buttonStyle(.plain)
@@ -372,6 +423,15 @@ struct WSTabBar: View {
     /// height.
     static let height: CGFloat = 56
 
+    /// Width of a tab that is not selected.
+    ///
+    /// The design sizes the bar asymmetrically: every unselected tab is a fixed 46pt icon
+    /// button and the selected one absorbs whatever is left, which on a 390pt screen makes
+    /// the active pill about 198pt -- well over half the bar. Giving all four an equal share
+    /// instead, as this did, shrank the pill to roughly 130pt and pushed the three icons
+    /// apart, which is the difference you see against the drawing.
+    static let inactiveTabWidth: CGFloat = 46
+
     /// How far the capsule's bottom edge sits above the *physical* bottom of the screen —
     /// not above the safe area.
     ///
@@ -452,7 +512,11 @@ struct WSTabBar: View {
         // Fills the capsule's full height so the whole cell is tappable. Sizing the content to
         // 44pt instead would leave a dead strip top and bottom that still looks like part of
         // the bar, and would put the tap target exactly on the 44pt floor with nothing spare.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        //
+        // Width is asymmetric on purpose -- see `inactiveTabWidth`. A 46pt cell still clears
+        // the 44pt minimum target.
+        .frame(maxWidth: isSelected ? .infinity : nil, maxHeight: .infinity)
+        .frame(width: isSelected ? nil : Self.inactiveTabWidth)
         .background {
             if isSelected {
                 Capsule(style: .continuous)

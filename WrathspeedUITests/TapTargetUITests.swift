@@ -127,17 +127,26 @@ final class TapTargetUITests: XCTestCase {
         scrollTo(row, in: app)
         XCTAssertTrue(row.waitForExistence(timeout: 6), "AUDIO CUES row not found in Settings")
 
-        XCTAssertEqual(row.label, "AUDIO CUES, ON", "Cues should start on after a store reset")
+        // Matched on the state suffix rather than the whole label. The row carries a hint
+        // line between its title and its value, and that hint changes with the state too, so
+        // an exact-string assertion breaks on copy edits that have nothing to do with what
+        // this test is about -- which is that the centre of the row is tappable.
+        XCTAssertTrue(
+            row.label.hasSuffix(", ON"),
+            "Cues should start on after a store reset (label was '\(row.label)')"
+        )
         row.tap()
 
-        // The row's label carries its own state ("AUDIO CUES, ON" / "... OFF"), so a real
-        // toggle shows up as a label change. Deliberately a fresh query rather than a
-        // predicate wait on `row`: toggling rebuilds the row's accessibility element, and a
-        // `firstMatch` reference held across the tap goes stale mid-wait. That is how this
-        // failed on CI -- the waiter timed out hunting the old "AUDIO CUES, ON" element while
-        // the pill had visibly flipped to OFF.
+        // The row's label carries its own state, so a real toggle shows up as a label change.
+        // Deliberately a fresh query rather than a predicate wait on `row`: toggling rebuilds
+        // the row's accessibility element, and a `firstMatch` reference held across the tap
+        // goes stale mid-wait. That is how this failed on CI -- the waiter timed out hunting
+        // the old element while the pill had visibly flipped to OFF.
+        let toggledOff = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH[c] 'AUDIO CUES' AND label ENDSWITH ', OFF'")
+        ).firstMatch
         XCTAssertTrue(
-            app.buttons["AUDIO CUES, OFF"].waitForExistence(timeout: 5),
+            toggledOff.waitForExistence(timeout: 5),
             "Tapping the centre of the AUDIO CUES row did not toggle it off"
         )
     }
