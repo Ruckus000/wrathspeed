@@ -105,6 +105,7 @@
 		A87C0CAA1BD1309D797E025E /* WSTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FED451768F4FC33153BFD72 /* WSTheme.swift */; };
 		AB22AFE5879E6C8C7E860F53 /* InstantRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD3990DA838FA141746FB9D /* InstantRunView.swift */; };
 		AC92B4BF12CD54FF75AE5273 /* StrengthMediaCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC19A1E4D3A32B80A2304748 /* StrengthMediaCoverageTests.swift */; };
+		AEC4D1E9D7BAE2F9D89D15B5 /* StrengthHoldLogUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC2E86E81DACF2C0D0B7500 /* StrengthHoldLogUITests.swift */; };
 		B0504C1BCC111B02EE234E94 /* WrathspeedWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 204CDE73903492B877A70262 /* WrathspeedWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B192DCD69A155A78B19E1D17 /* WSInstructionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96F8875F059AE59AFFA5D9B /* WSInstructionCard.swift */; };
 		B80CDD50E12330F96C9FA043 /* HealthImportAnchorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F9B612342ADE9FF97239E59 /* HealthImportAnchorStore.swift */; };
@@ -236,6 +237,7 @@
 		458B6D1DC77674D347C7ABF0 /* GuidedResumeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedResumeUITests.swift; sourceTree = "<group>"; };
 		4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceMigrationTests.swift; sourceTree = "<group>"; };
 		4A2050F6B21929B1231DA766 /* StrengthPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthPreferencesView.swift; sourceTree = "<group>"; };
+		4BC2E86E81DACF2C0D0B7500 /* StrengthHoldLogUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthHoldLogUITests.swift; sourceTree = "<group>"; };
 		4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilityPlayerView.swift; sourceTree = "<group>"; };
 		4FE483AC96738DD39D33167F /* GuidedSessionResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedSessionResultStore.swift; sourceTree = "<group>"; };
 		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
@@ -450,6 +452,7 @@
 				43D4CD11C1AC4AD354D1C3B7 /* OnboardingFlowUITests.swift */,
 				CF5AB36402A48762CF6E8383 /* PlanStartPreflightUITests.swift */,
 				16C406BC82830CFAEAF59093 /* PreflightLiveStartUITests.swift */,
+				4BC2E86E81DACF2C0D0B7500 /* StrengthHoldLogUITests.swift */,
 				29E5D016423BA6095A79851E /* TapTargetUITests.swift */,
 				0226C028B3AEA93CF981DCF2 /* UITestOnboardingHelper.swift */,
 			);
@@ -813,6 +816,7 @@
 				D907B338CB33E3147C77B2FB /* OnboardingFlowUITests.swift in Sources */,
 				29A8948FA9694CB749505CF7 /* PlanStartPreflightUITests.swift in Sources */,
 				7EC60BAAACE48C992A0F0857 /* PreflightLiveStartUITests.swift in Sources */,
+				AEC4D1E9D7BAE2F9D89D15B5 /* StrengthHoldLogUITests.swift in Sources */,
 				94178B25D46E2C45E5D80270 /* TapTargetUITests.swift in Sources */,
 				D65FDBEDBA00C604B4BCE703 /* UITestOnboardingHelper.swift in Sources */,
 			);

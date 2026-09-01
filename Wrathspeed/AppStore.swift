@@ -1473,10 +1473,18 @@ final class AppStore {
     }
 
     /// The same, for the strength session Today offers.
+    ///
+    /// Picks a session containing a hold rather than simply the next one. Only `fullBody`
+    /// sessions carry one -- with the default two-a-week split the other is `legsCore`, which
+    /// has none -- so "the next session" was a coin flip on today's weekday, which is the trap
+    /// `UITestOnboardingHelper` documents as having made two tests fail only on a Friday.
+    /// Tests that do not care about holds are unaffected: every focus opens with a squat.
     func seedTodayStrengthForUITestingIfNeeded() {
         guard UITestingSupport.shouldSeedTodayStrength, todaysStrength.isEmpty else { return }
         let today = Calendar.current.startOfDay(for: Date())
-        guard let index = strengthSessions.firstIndex(where: { $0.date > today }) else { return }
+        guard let index = strengthSessions.firstIndex(where: { session in
+            session.date > today && session.sets.contains { $0.exercise.holdSeconds != nil }
+        }) else { return }
         strengthSessions[index].date = today
         persist()
     }
