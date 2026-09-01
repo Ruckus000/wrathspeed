@@ -44,12 +44,12 @@ public enum MissedWorkService {
         }
         guard !missed.isEmpty else { return nil }
 
-        let weekInterval = calendar.dateInterval(of: .weekOfYear, for: asOf)
-        let weekMissed = missed.filter { weekInterval?.contains($0.date) ?? false }
+        let weekWindow = WeekWindow(containing: asOf, calendar: calendar)
+        let weekMissed = missed.filter { weekWindow?.contains($0.date) ?? false }
         let weekScheduled = plan.workouts.filter { workout in
             workout.blueprint.kind.isRunning
                 && (workout.status == .scheduled || workout.status == .convertedToEasy)
-                && (weekInterval?.contains(workout.date) ?? false)
+                && (weekWindow?.contains(workout.date) ?? false)
         }
         let isFullWeek = !weekScheduled.isEmpty && weekMissed.count == weekScheduled.count
         return MissedWorkSituation(missedWorkouts: missed, isFullWeekMissed: isFullWeek)
@@ -159,9 +159,9 @@ public enum MissedWorkService {
         calendar: Calendar = .current
     ) -> TrainingPlan {
         var copy = plan
-        guard let interval = calendar.dateInterval(of: .weekOfYear, for: extensionWeekStart) else { return copy }
+        guard let window = WeekWindow(containing: extensionWeekStart, calendar: calendar) else { return copy }
         let extensionSlots = copy.workouts.filter { workout in
-            interval.contains(workout.date)
+            window.contains(workout.date)
                 && workout.status == .scheduled
                 && workout.blueprint.kind.isRunning
         }.sorted { $0.date < $1.date }

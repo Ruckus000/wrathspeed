@@ -388,8 +388,8 @@ struct TodayView: View {
 
     private var weekMileage: (done: Double, planned: Double) {
         guard let plan = store.plan else { return (0, 0) }
-        let interval = Calendar.current.dateInterval(of: .weekOfYear, for: Date())
-        let week = plan.workouts.filter { $0.blueprint.kind.isRunning && (interval?.contains($0.date) ?? false) }
+        let window = Calendar.current.weekWindow(for: Date())
+        let week = plan.workouts.filter { $0.blueprint.kind.isRunning && (window?.contains($0.date) ?? false) }
         let planned = week.reduce(0) { $0 + $1.blueprint.plannedDistanceMeters }
         let done = week.filter { $0.status == .completed }.reduce(0) { $0 + ($1.result?.distanceMeters ?? $1.blueprint.plannedDistanceMeters) }
         return (done, planned)
