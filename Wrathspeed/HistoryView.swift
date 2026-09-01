@@ -389,11 +389,7 @@ struct RunDetailView: View {
     var body: some View {
         WSScreen {
             WSRow {
-                Button("← HISTORY") { dismiss() }
-                    .wsType(.body, weight: .heavy, tracking: 1)
-                    .foregroundStyle(WSColor.text50)
-                    .frame(minHeight: 44, alignment: .leading)
-                    .accessibilityLabel("Back to history")
+                WSBackButton(title: "← HISTORY", accessibilityLabel: "Back to history") { dismiss() }
             } trailing: {
                 Text(WSFormat.weekdayDate(currentResult.startedAt))
                     .wsType(.metric)

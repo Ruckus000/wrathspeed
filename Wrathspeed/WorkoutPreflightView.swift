@@ -193,15 +193,41 @@ struct WorkoutPreflightView: View {
                 .wsType(.metricS, tracking: 1.5)
                 .foregroundStyle(WSColor.text40)
                 .padding(.top, 16)
+            // Each step is a card carrying its effort and what that effort feels like. The
+            // list used to be a name and a distance, which told you the shape of the run but
+            // not how to run it -- and this screen exists to answer exactly that before you
+            // start.
             ForEach(blueprint.steps.prefix(6)) { step in
-                WSRow {
-                    Text(step.name)
-                        .wsType(.body, weight: .bold)
-                } trailing: {
-                    Text(stepSummary(step))
-                        .wsType(.metric)
-                        .foregroundStyle(WSColor.text50)
+                VStack(alignment: .leading, spacing: 0) {
+                    WSRow {
+                        Text(step.name)
+                            .wsType(.body, weight: .bold)
+                            .foregroundStyle(WSColor.text)
+                    } trailing: {
+                        Text(stepSummary(step))
+                            .wsType(.metric)
+                            .foregroundStyle(WSColor.text50)
+                    }
+                    if let zone = stepZone(step) {
+                        Text("EFFORT · \(zone.title)")
+                            .wsType(.metricS, tracking: 1.5)
+                            .foregroundStyle(WSColor.accent)
+                            .padding(.top, 10)
+                        Text(zone.effortDescription)
+                            .wsType(.caption, weight: .medium)
+                            .foregroundStyle(WSColor.text70)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 4)
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(WSColor.bgInset, in: RoundedRectangle(cornerRadius: WSRadius.list, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: WSRadius.list, style: .continuous)
+                        .stroke(WSColor.hairline.opacity(0.8), lineWidth: 1)
+                )
+                .padding(.top, 8)
                 .accessibilityElement(children: .combine)
             }
             if blueprint.steps.count > 6 {
@@ -210,6 +236,13 @@ struct WorkoutPreflightView: View {
                     .foregroundStyle(WSColor.text40)
             }
         }
+    }
+
+    /// The pace zone a step is run at, when it has one. `rpe` and `none` steps -- warm-ups,
+    /// walk breaks -- have no zone and simply omit the effort line rather than inventing one.
+    private func stepZone(_ step: WorkoutStep) -> PaceZone? {
+        if case .zone(let zone) = step.intensity { return zone }
+        return nil
     }
 
     private var gpsReadiness: (label: String, detail: String) {

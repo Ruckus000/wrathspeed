@@ -39,10 +39,7 @@ struct MobilityDetailView: View {
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
             WSRow {
-                Button("← HISTORY") { dismiss() }
-                    .wsType(.body, weight: .heavy, tracking: 1)
-                    .foregroundStyle(WSColor.text50)
-                    .frame(minHeight: 44, alignment: .leading)
+                WSBackButton(title: "← HISTORY") { dismiss() }
                     .accessibilityLabel("Back to history")
             } trailing: {
                 Text(WSFormat.weekdayDate(result.startedAt))

@@ -25,38 +25,31 @@ struct PlanView: View {
                         .padding(.top, 8)
                         .accessibilityLabel("Undo last plan change")
                 }
-                NavigationLink {
-                    WeeklyCalendarView()
-                } label: {
-                    // The frame belongs on the label. Outside the link it grew the layout
-                    // but left the link's own hit and accessibility frame the size of the
-                    // glyph run -- 13.3pt -- which is what made this intermittently
-                    // impossible to tap.
-                    Text("WEEKLY CALENDAR")
-                        .wsType(.label, weight: .heavy, tracking: 1)
-                        .foregroundStyle(WSColor.text50)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
-                .accessibilityIdentifier("plan_weekly_calendar")
-                .accessibilityLabel("Open weekly calendar")
-                NavigationLink {
-                    if let profile = store.profile {
-                        ManagePlanView(profile: profile)
+                // Pills, side by side, as the design draws them -- they were stacked plain
+                // text, which read as two headings rather than two things you can press.
+                // WSFlowLayout so they wrap instead of clipping once the type grows.
+                WSFlowLayout(spacing: 8, rowSpacing: 8) {
+                    NavigationLink {
+                        WeeklyCalendarView()
+                    } label: {
+                        WSPillLabel(title: "WEEKLY CALENDAR")
                     }
-                } label: {
-                    Text("MANAGE PLAN")
-                        .wsType(.label, weight: .heavy, tracking: 1)
-                        .foregroundStyle(WSColor.text50)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("plan_weekly_calendar")
+                    .accessibilityLabel("Open weekly calendar")
+                    NavigationLink {
+                        if let profile = store.profile {
+                            ManagePlanView(profile: profile)
+                        }
+                    } label: {
+                        WSPillLabel(title: "MANAGE PLAN")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("plan_manage_plan")
+                    .accessibilityLabel("Manage plan schedule")
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
-                .accessibilityIdentifier("plan_manage_plan")
-                .accessibilityLabel("Manage plan schedule")
                 weekCalendar
                 if let situation = store.missedWorkSituation {
                     Button("REVIEW MISSED WORK (\(situation.missedWorkouts.count))") {
@@ -294,9 +287,8 @@ struct WeekDetailView: View {
 
     var body: some View {
         WSScreen {
-            Button("← PLAN") { dismiss() }
-                .wsType(.body, weight: .heavy, tracking: 1)
-                .foregroundStyle(WSColor.text50)
+            WSBackButton(title: "← PLAN") { dismiss() }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 8)
             WSEyebrow(text: eyebrow)

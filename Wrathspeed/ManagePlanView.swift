@@ -125,9 +125,7 @@ struct ManagePlanView: View {
     var body: some View {
         WSScreen {
             HStack {
-                Button("← BACK") { dismiss() }
-                    .wsType(.body, weight: .heavy)
-                    .foregroundStyle(WSColor.text50)
+                WSBackButton(title: "← BACK") { dismiss() }
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)

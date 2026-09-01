@@ -20,31 +20,43 @@ struct MobilityPlayerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Button("← CLOSE") {
+            // Title and dismiss share one row, as the design draws them: the routine name
+            // is pinned rather than scrolling away, and closing is a corner glyph rather than
+            // a word competing with the heading beneath it.
+            // WSRow, not a bare HStack with a Spacer: a routine title and a glyph on opposite
+            // ends is exactly the pair `WSRowAdoptionTests` guards, because each side can
+            // otherwise be squeezed narrower than its own longest word.
+            WSRow {
+                Text(session.title.uppercased())
+                    .wsType(.displayS)
+                    .foregroundStyle(WSColor.text)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityAddTraits(.isHeader)
+            } trailing: {
+                Button {
                     do {
                         try persistProgress(force: true)
                         dismiss()
                     } catch {}
+                } label: {
+                    Text("✕")
+                        .wsType(.chrome)
+                        .foregroundStyle(WSColor.text45)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
-                .wsType(.body, weight: .heavy)
-                .foregroundStyle(WSColor.text50)
+                .buttonStyle(.plain)
                 .accessibilityLabel("Close")
-                Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)
-            .padding(.top, 12)
+            .padding(.top, 22)
             // CLOSE above and the advance button below stay pinned; only the movement
             // scrolls. The instruction card can run to a few hundred points, and in a plain
             // VStack that overflow squeezed the header to nothing -- CLOSE still existed for
             // an accessibility query but had no hit area left, so tapping it did nothing.
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(session.title.uppercased())
-                        .wsType(.displayM)
-                        .foregroundStyle(WSColor.text)
-                        .padding(.horizontal, WSSpace.gutter)
-                        .padding(.top, 16)
                     if let movement = session.movements[safe: index] {
                         // Order follows the design: position, name, clip, then the countdown,
                         // and only then the cue and the instructions. The timer sat last until
@@ -104,7 +116,7 @@ struct MobilityPlayerView: View {
             .padding(.horizontal, WSSpace.gutter)
             .padding(.bottom, 40)
         }
-        .background(WSColor.bg.ignoresSafeArea())
+        .background(WSColor.bgSheet.ignoresSafeArea())
         .onAppear {
             restoreOrStart()
             startTimer()

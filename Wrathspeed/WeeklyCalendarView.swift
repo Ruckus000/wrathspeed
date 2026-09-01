@@ -20,10 +20,7 @@ struct WeeklyCalendarView: View {
     var body: some View {
         WSScreen {
             HStack {
-                Button("← PLAN") { dismiss() }
-                    .wsType(.body, weight: .heavy)
-                    .foregroundStyle(WSColor.text50)
-                    .accessibilityLabel("Back to plan")
+                WSBackButton(title: "← PLAN", accessibilityLabel: "Back to plan") { dismiss() }
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)
