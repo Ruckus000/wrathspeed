@@ -185,6 +185,32 @@ extension WorkoutKind {
     }
 }
 
+extension PaceZone {
+    var title: String {
+        switch self {
+        case .easy: "EASY"
+        case .marathon: "MARATHON"
+        case .threshold: "THRESHOLD"
+        case .interval: "INTERVAL"
+        case .repetition: "REPETITION"
+        case .recovery: "RECOVERY"
+        }
+    }
+
+    /// What the effort should feel like, in words rather than a pace. The design puts this
+    /// under every step in preflight, so a plan can be understood before it is run.
+    var effortDescription: String {
+        switch self {
+        case .easy: "Conversational. You could hold a full sentence."
+        case .marathon: "Comfortably hard. Talking is possible but clipped."
+        case .threshold: "Controlled discomfort you could hold for about an hour."
+        case .interval: "Hard. Breathing is the limit, not the legs."
+        case .repetition: "Fast and short, with full recovery between."
+        case .recovery: "Slower than easy. The point is to arrive fresh tomorrow."
+        }
+    }
+}
+
 extension RunLocation {
     var title: String {
         switch self {

@@ -23,6 +23,93 @@ final class WSLayoutMatrixTests: XCTestCase {
     /// The gutters are fixed, so this is what a component actually gets to live in.
     private func content(_ width: CGFloat) -> CGFloat { width - WSSpace.gutter * 2 }
 
+    // MARK: - Grouped list and segmented control
+
+    /// The segmented track is the design's settings control, and its segments carry a fixed
+    /// design height. A fixed height plus growing text is exactly the case that clips, so it
+    /// is measured here rather than trusted.
+    func testSegmentedControlStaysInsideItsCard() {
+        // Two worst cases, and the second is the one that actually bit: three long options,
+        // and seven short ones. Seven segments spent so much width on padding that every day
+        // truncated to a single letter -- and a three-option test could never have seen it.
+        let cases: [[String]] = [
+            ["Minimal", "Standard", "Drill Sergeant"],
+            ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+        ]
+        for options in cases {
+        for width in widths {
+            for size in textSizes {
+                let control = WSSegmentedControl(
+                    options: options,
+                    label: { $0 },
+                    isSelected: { $0 == options[1] },
+                    select: { _ in }
+                )
+                // A track lives inside a card row, which is inset from the card gutter.
+                let available = width - WSSpace.cardGutter * 2 - 32
+                let measured = measure(control, width: available, size: size)
+                XCTAssertLessThanOrEqual(
+                    measured.width, available + 0.5,
+                    "segmented control spills at \(width)pt / \(size)"
+                )
+                XCTAssertGreaterThan(
+                    measured.height, 0,
+                    "segmented control collapsed at \(width)pt / \(size)"
+                )
+                // Each segment must keep enough width for its own label. Below this the text
+                // truncates to an ellipsis, which is what "S…" and "M…" looked like.
+                let perSegment = (available - CGFloat(options.count - 1) * 3 - 6) / CGFloat(options.count)
+                XCTAssertGreaterThanOrEqual(
+                    perSegment, 30,
+                    "segments squeezed to \(perSegment)pt with \(options.count) options at \(width)pt / \(size)"
+                )
+            }
+        }
+        }
+    }
+
+    /// A list row puts a title and a value on opposite ends. `WSRow` should stack them rather
+    /// than squeeze either, and the row must never fall under the 44pt touch minimum.
+    func testListRowsKeepTheirTouchTargetAndDoNotSpill() {
+        for width in widths {
+            for size in textSizes {
+                let row = WSListRow(title: "CONTENT LICENSES", hint: "WHERE THE BUNDLED MEDIA COMES FROM") {
+                    Text("45.0 ›").wsType(.metric, weight: .bold)
+                }
+                let available = width - WSSpace.cardGutter * 2
+                let measured = measure(row, width: available, size: size)
+                XCTAssertLessThanOrEqual(
+                    measured.width, available + 0.5,
+                    "list row spills at \(width)pt / \(size)"
+                )
+                XCTAssertGreaterThanOrEqual(
+                    measured.height, 44,
+                    "list row fell under the 44pt touch minimum at \(width)pt / \(size)"
+                )
+            }
+        }
+    }
+
+    /// The pill is chrome and does not grow, but it still has to clear 44pt and stay inside
+    /// the column at the narrowest width.
+    func testNavigationPillsStayReachable() {
+        for width in widths {
+            for size in textSizes {
+                for title in ["← SETTINGS", "WEEKLY CALENDAR", "MANAGE PLAN"] {
+                    let measured = measure(WSPillLabel(title: title), width: content(width), size: size)
+                    XCTAssertGreaterThanOrEqual(
+                        measured.height, 44,
+                        "pill '\(title)' fell under 44pt at \(width)pt / \(size)"
+                    )
+                    XCTAssertLessThanOrEqual(
+                        measured.width, content(width) + 0.5,
+                        "pill '\(title)' spills at \(width)pt / \(size)"
+                    )
+                }
+            }
+        }
+    }
+
     // MARK: - Nothing spills out of the content column
 
     func testButtonsStayInsideTheContentColumn() {

@@ -40,6 +40,7 @@
 		35057545D76FE3DA5D2A1B62 /* OnboardingFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D955E217DE5DC7092EED75 /* OnboardingFlowTests.swift */; };
 		35A9D38A9CFD8F627089813F /* WrathspeedApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15F4FC0EBEE89139D8A8C61D /* WrathspeedApp.swift */; };
 		35B9374EC17463BF8DEB33BA /* WatchStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C83236791022F5208F5DC89 /* WatchStore.swift */; };
+		37504C71CFEBE002E331777F /* StrengthPreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2050F6B21929B1231DA766 /* StrengthPreferencesView.swift */; };
 		385B2A81801F47910BF0E06D /* LiveRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D8CB62C4441B29426DBFD20 /* LiveRunView.swift */; };
 		39DC7827A28AC1C7A31A77BD /* WorkoutRouteRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE9728CECC60D2E0C2F71E5 /* WorkoutRouteRecorder.swift */; };
 		3BD6C5E243D861E1FFC3915A /* WSMarkLockup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E654BEA900BB3E34005E08 /* WSMarkLockup.swift */; };
@@ -49,6 +50,7 @@
 		42B22ADF46231E1A73A44ACA /* UITestingHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 643CF5C692C85600C0C0866D /* UITestingHarnessTests.swift */; };
 		46B76C9B513F1C547A28476C /* ManagePlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA496765F3551500A8BAB109 /* ManagePlanView.swift */; };
 		46D939B4D95BE0DB23B11C1C /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 418BE3FDC48040B95EB6D597 /* Anton-Regular.ttf */; };
+		4BE5CAB15F975B1BE93F082E /* WSList.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9D373A1CD6B4E363F58EC1 /* WSList.swift */; };
 		4CE2F27B00D079671AFC6E3B /* WSComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15C3868B4CD63B285917AFB /* WSComponents.swift */; };
 		54C2D20468188657C73AE520 /* WeeklyCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623774FFF1E871E49DE1774E /* WeeklyCalendarView.swift */; };
 		5556FA81D699935F03C32F92 /* Archivo-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E6F2F7941085072F4B2A8C75 /* Archivo-Variable.ttf */; };
@@ -232,6 +234,7 @@
 		45783DB7053C7A126781F384 /* WSMarkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSMarkTests.swift; sourceTree = "<group>"; };
 		458B6D1DC77674D347C7ABF0 /* GuidedResumeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedResumeUITests.swift; sourceTree = "<group>"; };
 		4753F77EEAA5BC93EE73099D /* PersistenceMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceMigrationTests.swift; sourceTree = "<group>"; };
+		4A2050F6B21929B1231DA766 /* StrengthPreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrengthPreferencesView.swift; sourceTree = "<group>"; };
 		4F758519E22C68AC3B1BB7DF /* MobilityPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MobilityPlayerView.swift; sourceTree = "<group>"; };
 		4FE483AC96738DD39D33167F /* GuidedSessionResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedSessionResultStore.swift; sourceTree = "<group>"; };
 		50A5504FE777036C5125075E /* strength_catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = strength_catalog.json; sourceTree = "<group>"; };
@@ -312,6 +315,7 @@
 		D68DDE74F3F9C8CB706ACE82 /* NotFeeling100View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotFeeling100View.swift; sourceTree = "<group>"; };
 		DA6BD22CACFB4E918421417D /* WorkoutResultTreadmillTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutResultTreadmillTests.swift; sourceTree = "<group>"; };
 		DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WCSessionBridge.swift; sourceTree = "<group>"; };
+		DD9D373A1CD6B4E363F58EC1 /* WSList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSList.swift; sourceTree = "<group>"; };
 		DDBCD2FE6ED5AB0F7BBBEB64 /* PersistedEntities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistedEntities.swift; sourceTree = "<group>"; };
 		E02338D89AEFC9356EBF5B2D /* WorkoutResultRelaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutResultRelaunchTests.swift; sourceTree = "<group>"; };
 		E483C98F5D35228B28E66CCB /* CelebrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CelebrationView.swift; sourceTree = "<group>"; };
@@ -497,6 +501,7 @@
 				B5624E7D9E0C87082198D4F7 /* StrengthCatalogLoader.swift */,
 				818FAC2E07C383F4C591702E /* StrengthDetailView.swift */,
 				AC2693A6CBA485E0CAB4A16E /* StrengthPlayerView.swift */,
+				4A2050F6B21929B1231DA766 /* StrengthPreferencesView.swift */,
 				065AFE97EBE1A9AFFEE14C20 /* TodayView.swift */,
 				5B3442BE6DF9F90A9C582286 /* TreadmillDistanceSheet.swift */,
 				B109C99D068CDA5571F02ECC /* UITestingSupport.swift */,
@@ -519,6 +524,7 @@
 				C15C3868B4CD63B285917AFB /* WSComponents.swift */,
 				FF2D8057349F1E37AC208309 /* WSFormat.swift */,
 				C96F8875F059AE59AFFA5D9B /* WSInstructionCard.swift */,
+				DD9D373A1CD6B4E363F58EC1 /* WSList.swift */,
 				15C5722CE9CEB04F6455A31F /* WSRow.swift */,
 			);
 			path = Theme;
@@ -918,6 +924,7 @@
 				C5ABE30016A04262D243ADA9 /* StrengthCatalogLoader.swift in Sources */,
 				23832CC9857DA2E25B6CE345 /* StrengthDetailView.swift in Sources */,
 				1D610A28057F2C45E39A3200 /* StrengthPlayerView.swift in Sources */,
+				37504C71CFEBE002E331777F /* StrengthPreferencesView.swift in Sources */,
 				C6F5EA8D16FF6B78EC7338B5 /* TodayView.swift in Sources */,
 				19DD501CE963E0330FE36085 /* TreadmillDistanceSheet.swift in Sources */,
 				605509E7B1013D6B37BB7150 /* UITestingSupport.swift in Sources */,
@@ -925,6 +932,7 @@
 				4CE2F27B00D079671AFC6E3B /* WSComponents.swift in Sources */,
 				CFC8C89C1396CD14C3FDC1D7 /* WSFormat.swift in Sources */,
 				B192DCD69A155A78B19E1D17 /* WSInstructionCard.swift in Sources */,
+				4BE5CAB15F975B1BE93F082E /* WSList.swift in Sources */,
 				C7375DFC4457263B637CAA8B /* WSMark.swift in Sources */,
 				958AA0C93C9E3F55AC50DF6E /* WSMarkGeometry.swift in Sources */,
 				27BE114FA61ABCC9B8B9A2EE /* WSMarkLockup.swift in Sources */,

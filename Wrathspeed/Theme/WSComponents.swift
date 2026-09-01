@@ -11,6 +11,53 @@ struct WSEyebrow: View {
     }
 }
 
+/// The back affordance every screen uses: a bordered pill, not bare text.
+///
+/// The design draws this identically in eleven places -- Settings, the library and its
+/// detail, the history details, Plan, the weekly calendar, Manage Plan, Content Licenses and
+/// onboarding -- and it was bare text in all of them. A pill reads as something you press;
+/// a grey word at the top of a screen reads as a heading, especially in a design where
+/// headings are also grey and uppercase.
+///
+/// `.chrome` is the role the ramp already reserves for "back and close", and like the tab
+/// bar it deliberately does not grow with Dynamic Type.
+/// The bordered pill the design uses for screen-level navigation -- back at the top of a
+/// screen, and the two links out of Plan. 44pt tall, 15pt sides, hairline edge, capsule.
+///
+/// The label carries the frame, not the Button: applied outside, the hit region collapses to
+/// the glyph run and the control becomes a thin strip that a test still finds and a finger
+/// misses. This repo has been bitten by that twice.
+struct WSPillLabel: View {
+    var title: String
+
+    var body: some View {
+        Text(title)
+            .wsType(.chrome, tracking: 1.2)
+            .foregroundStyle(WSColor.text70)
+            .padding(.horizontal, 15)
+            .frame(height: 44)
+            .overlay(Capsule(style: .continuous).stroke(WSColor.border, lineWidth: 1))
+            .contentShape(Capsule(style: .continuous))
+    }
+}
+
+struct WSBackButton: View {
+    var title: String
+    /// Spoken label. Defaults to the visible title, which is also how several UI tests find
+    /// these. Deriving it from the title instead produced "Back to BACK" and broke five
+    /// queries, so it stays explicit wherever the screen already had a considered one.
+    var accessibilityLabel: String?
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            WSPillLabel(title: title)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel ?? title)
+    }
+}
+
 struct WSPrimaryButton: View {
     var title: String
     var height: CGFloat = 62
@@ -45,6 +92,10 @@ struct WSOutlineButton: View {
     var title: String
     var height: CGFloat = 52
     var color: Color = WSColor.accent
+    /// Edge colour, when it differs from the label's. The diagnostics button is measured in
+    /// the design as accent text inside a white-18% border -- one `color` cannot say that,
+    /// and using the border colour for both made the label almost invisible.
+    var borderColor: Color?
     var action: () -> Void
 
     @ScaledMetric(relativeTo: .body) private var scale: CGFloat = 1
@@ -61,7 +112,7 @@ struct WSOutlineButton: View {
                 .frame(minHeight: height * min(scale, 1.4))
                 .overlay(
                     RoundedRectangle(cornerRadius: WSRadius.control, style: .continuous)
-                        .stroke(color, lineWidth: 1.5)
+                        .stroke(borderColor ?? color, lineWidth: 1.5)
                 )
         }
         .buttonStyle(.plain)
