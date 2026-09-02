@@ -69,7 +69,14 @@ final class CoachUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS[c] %@", "next unstarted quality workout")
         ).firstMatch
         XCTAssertTrue(concreteReply.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.buttons["coach_keep_as_is"].waitForExistence(timeout: 8))
+        // KEEP AS IS renders on blocked proposals too, so it proves only that a card appeared.
+        // The thing this button exists to do is produce something the runner can apply.
+        let apply = app.buttons["coach_apply"]
+        let applyWithWarning = app.buttons["coach_apply_with_warning"]
+        XCTAssertTrue(
+            apply.waitForExistence(timeout: 8) || applyWithWarning.waitForExistence(timeout: 2),
+            "I'M SORE produced a blocked card instead of an applicable proposal"
+        )
     }
 
     func testUnavailableCoachCanApplyAProposalAndReturnToPlan() throws {

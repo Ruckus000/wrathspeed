@@ -645,10 +645,21 @@ final class PlanMutationTests: XCTestCase {
             )
         }
 
+        // Asked after every workout has passed: nothing the coach can act on, so no references.
+        // This used to yield all 30 -- completed runs numbered alongside future ones -- which is
+        // how a runner late in a plan got a model that had seen forty finished runs and nothing
+        // it could edit.
         let context = try XCTUnwrap(store.coachContext(asOf: Calendar.current.date(byAdding: .day, value: 30, to: start)!))
-        XCTAssertEqual(context.workouts.count, 30)
-        XCTAssertEqual(context.workouts.first?.reference, "w1")
-        XCTAssertEqual(context.workouts.last?.reference, "w30")
+        XCTAssertTrue(context.workouts.isEmpty, "a past-only plan has nothing the coach can reference")
+
+        // Asked at the start: index 0 is completed and drops out, the 29 upcoming runs are
+        // numbered in date order from w1, and the model's window caps them at 28.
+        let upcoming = try XCTUnwrap(store.coachContext(asOf: start))
+        XCTAssertEqual(upcoming.workouts.count, CoachPlanRules.modelReferenceLimit)
+        XCTAssertEqual(upcoming.workouts.first?.reference, "w1")
+        XCTAssertEqual(upcoming.workouts.first?.title, "Run 1", "the completed run 0 must not take w1")
+        XCTAssertEqual(upcoming.workouts.last?.reference, "w28")
+        XCTAssertEqual(upcoming.workouts.last?.title, "Run 28")
         XCTAssertEqual(context.recentResults.count, 8)
         XCTAssertEqual(context.recentResults.first?.distanceMeters, 5_000)
         XCTAssertEqual(context.adherence, 1.0 / 30.0, accuracy: 0.0001)
