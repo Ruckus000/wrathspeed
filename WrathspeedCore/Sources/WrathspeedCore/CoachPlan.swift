@@ -564,7 +564,17 @@ public enum CoachPlanRules {
                 continue
             }
         }
-        return result.sorted { $0.reference < $1.reference }
+        // Numeric, not lexical: as strings "w10" sorts before "w2", so any proposal past nine
+        // rows read out of order on the card. References without a number sort last.
+        let index: (String) -> Int? = { $0.hasPrefix("w") ? Int($0.dropFirst()) : nil }
+        return result.sorted { lhs, rhs in
+            switch (index(lhs.reference), index(rhs.reference)) {
+            case let (l?, r?): return l < r
+            case (.some, .none): return true
+            case (.none, .some): return false
+            case (.none, .none): return lhs.reference < rhs.reference
+            }
+        }
     }
 
     private static func cutIntensity(
@@ -783,8 +793,15 @@ public enum CoachPlanRules {
         copy.blueprint.plannedDistanceMeters *= factor
         copy.blueprint.steps = copy.blueprint.steps.map { step in
             var step = step
-            if case let .distance(meters) = step.target {
+            switch step.target {
+            case let .distance(meters):
                 step.target = .distance(meters: meters * factor)
+            case let .duration(seconds):
+                // A timed long run shrinks with the rest of it. Only distance steps scaled
+                // before, so a 60-minute long run "reduced by 20%" stayed at 60 minutes.
+                step.target = .duration(seconds: seconds * factor)
+            default:
+                break
             }
             return step
         }

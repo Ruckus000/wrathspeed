@@ -527,4 +527,40 @@ final class CoachPlanTests: XCTestCase {
         XCTAssertTrue(messages.contains { $0.contains("race day") }, "travel on race day must be called out by name")
         XCTAssertTrue(messages.contains { $0.contains("race week") }, "removing the day-19 run is a race-week change")
     }
+
+    // MARK: - Proposal shape
+
+    func testSorenessCutScalesTimedStepsAsWellAsDistance() throws {
+        // Every fixture used distance steps, so a timed long run "reduced by 20%" quietly kept
+        // its full duration. A 60-minute long run cut by 20% is 48 minutes.
+        var timedLong = workout(day: 8, kind: .longRun)
+        timedLong.blueprint.steps = [WorkoutStep(name: "Long", target: .duration(seconds: 3_600), intensity: .zone(.easy))]
+        let plan = plan([workout(day: 6, kind: .tempo), timedLong])
+
+        let result = try CoachPlanRules.preview(
+            intent: .cutIntensity, plan: plan, profile: profile(), asOf: date(4), calendar: calendar
+        )
+
+        let after = try XCTUnwrap(result.plan.workouts.first { $0.id == timedLong.id })
+        guard case let .duration(seconds) = after.blueprint.steps.first?.target else {
+            return XCTFail("the timed step must stay a timed step")
+        }
+        XCTAssertEqual(seconds, 2_880, accuracy: 0.001)
+    }
+
+    func testProposalChangesSortNumericallyPastNine() throws {
+        // As strings, "w10" sorts before "w2". Eleven changed workouts must read w1 through w11.
+        let workouts = (1...11).map { workout(day: $0 + 4, kind: .easy) }
+        let current = plan(workouts)
+        var proposed = current
+        proposed.workouts = proposed.workouts.map { workout in
+            var copy = workout
+            copy.blueprint.plannedDistanceMeters += 100
+            return copy
+        }
+
+        let changes = CoachPlanRules.changes(from: current, to: proposed, asOf: asOf, calendar: calendar)
+
+        XCTAssertEqual(changes.map(\.reference), (1...11).map { "w\($0)" }, "w10 must follow w9, not w1")
+    }
 }
