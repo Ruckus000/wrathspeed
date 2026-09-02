@@ -120,14 +120,17 @@ final class CoachProviderTests: XCTestCase {
                 ),
                 context: context
             ),
-            .clarificationRequired
+            // Fields the intent never reads do not demote it. The evaluation harness recorded
+            // the on-device model filling unrelated optionals on nearly every correct intent;
+            // rejecting them turned right answers into clarifications (Tools/coach-eval).
+            .cutIntensity
         )
         XCTAssertEqual(
             CoachIntentMapper.map(
                 CoachTypedResponse(reply: "", intent: "answerOnly", workoutReference: "w3"),
                 context: context
             ),
-            .clarificationRequired
+            .answerOnly
         )
     }
 
