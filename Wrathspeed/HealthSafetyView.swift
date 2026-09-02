@@ -38,15 +38,19 @@ struct HealthSafetyView: View {
             )
             block(
                 title: "STOP IF IT HURTS",
-                body: "Training is uncomfortable. It should not be sharp. Stop anything that stings, shoots, or sends pins and needles down a limb, and stop a set the moment your form falls apart — a rep done badly is worth less than the rep you did not do."
+                body: "Training is uncomfortable. It should not be sharp. Stop anything that stings, shoots, or sends pins and needles down a limb, and stop a set once your form falls apart."
             )
             block(
                 title: "BUILD UP GRADUALLY",
-                body: "Most running injuries come from doing too much too soon rather than from doing it wrong. The plan adds distance slowly on purpose. If a week feels like too much, use NOT FEELING 100% rather than pushing through it."
+                body: "Doing too much too soon is one of the most common causes of running injury. The plan adds distance slowly on purpose. If a week feels like too much, use NOT FEELING 100% rather than pushing through it."
             )
+            // Says what the guidance actually does. The first version claimed the instructions
+            // flag unsettled evidence where it exists; they do not. What they do is pick wording
+            // that holds up whichever way a live debate lands -- which is a different promise,
+            // and the one that is true.
             block(
                 title: "THE MOVEMENT GUIDANCE",
-                body: "The instructions on each movement are written for a general beginner audience. They cannot account for your history, and where the evidence is genuinely unsettled they say so rather than picking a side. If a physio has told you something different about your own body, follow the physio."
+                body: "The instructions on each movement are written for a general beginner audience, and cannot account for your history. Some of what they teach is genuinely debated among coaches and physiotherapists; where that is true, the wording aims to be safe whichever way the debate lands rather than taking a side. If a physio has told you something different about your own body, follow the physio."
             )
 
             Spacer(minLength: 34)
