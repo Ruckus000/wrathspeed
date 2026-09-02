@@ -143,11 +143,27 @@ public struct PlanMoveValidation: Equatable, Sendable {
 }
 
 public struct PlanUndoSnapshot: Codable, Equatable, Sendable {
-  public var plan: TrainingPlan
-  public var n100: N100Adjustment?
+    public var plan: TrainingPlan
+    public var n100: N100Adjustment?
+    /// Schedule changes historically only needed the plan and adjustment. Keeping this
+    /// optional makes old undo payloads decode while allowing coach VDOT/schedule edits to
+    /// restore the separately stored profile exactly.
+    public var profile: RunnerProfile?
 
-  public init(plan: TrainingPlan, n100: N100Adjustment?) {
-    self.plan = plan
-    self.n100 = n100
-  }
+    public init(plan: TrainingPlan, n100: N100Adjustment?, profile: RunnerProfile? = nil) {
+        self.plan = plan
+        self.n100 = n100
+        self.profile = profile
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case plan, n100, profile
+    }
+
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        plan = try values.decode(TrainingPlan.self, forKey: .plan)
+        n100 = try values.decodeIfPresent(N100Adjustment.self, forKey: .n100)
+        profile = try values.decodeIfPresent(RunnerProfile.self, forKey: .profile)
+    }
 }

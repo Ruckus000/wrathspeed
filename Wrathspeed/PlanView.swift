@@ -7,6 +7,7 @@ struct PlanView: View {
     @State private var pendingStart: WorkoutBlueprint?
     @State private var selectedWeek: Date?
     @State private var showMissedWork = false
+    @State private var showCoach = false
 
     var body: some View {
         NavigationStack {
@@ -47,6 +48,14 @@ struct PlanView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("plan_manage_plan")
                     .accessibilityLabel("Manage plan schedule")
+                    Button {
+                        showCoach = true
+                    } label: {
+                        WSPillLabel(title: "COACH")
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("plan_coach")
+                    .accessibilityLabel("Open AI coach")
                 }
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, store.lastUndoDescription != nil ? 4 : 8)
@@ -129,6 +138,9 @@ struct PlanView: View {
                 if let situation = store.missedWorkSituation {
                     MissedWorkSheet(situation: situation)
                 }
+            }
+            .fullScreenCover(isPresented: $showCoach) {
+                CoachView()
             }
         }
     }
