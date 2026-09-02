@@ -480,17 +480,14 @@ public enum CoachPlanRules {
         else { return [] }
         let currentWorkouts = Dictionary(uniqueKeysWithValues: current.workouts.map { ($0.id, $0) })
         let proposedWorkouts = Dictionary(uniqueKeysWithValues: proposed.workouts.map { ($0.id, $0) })
+        // Same numbering the model was shown -- see `references(in:asOf:calendar:limit:)`.
         let currentRefs = Dictionary(
-            uniqueKeysWithValues: current.workouts
-                .sorted { $0.date < $1.date }
-                .enumerated()
-                .map { ($0.element.id, "w\($0.offset + 1)") }
+            uniqueKeysWithValues: references(in: current, asOf: asOf, calendar: calendar)
+                .map { ($0.workout.id, $0.reference) }
         )
         let proposedRefs = Dictionary(
-            uniqueKeysWithValues: proposed.workouts
-                .sorted { $0.date < $1.date }
-                .enumerated()
-                .map { ($0.element.id, "w\($0.offset + 1)") }
+            uniqueKeysWithValues: references(in: proposed, asOf: asOf, calendar: calendar)
+                .map { ($0.workout.id, $0.reference) }
         )
 
         var result: [CoachProposalChange] = []
@@ -542,18 +539,23 @@ public enum CoachPlanRules {
         calendar: Calendar
     ) throws -> CoachPlanRuleResult {
         let today = calendar.startOfDay(for: asOf)
-        guard let weekStart = calendar.dateInterval(of: .weekOfYear, for: today)?.start,
-              let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart)
-        else { throw CoachPlanRuleError.noEligibleWorkout("I couldn’t determine the current training week.") }
+        // The next seven days, not the calendar week. `weekOfYear` starts on Sunday, and the
+        // generator puts a week's one quality session on its earliest run day -- so once that
+        // day had passed, "make this week safer" found nothing until the week rolled over.
+        // Asked on a Wednesday, a runner means Wednesday through Tuesday.
+        guard let windowEnd = calendar.date(byAdding: .day, value: 7, to: today)
+        else { throw CoachPlanRuleError.noEligibleWorkout("I couldn’t work out the next seven days.") }
 
-        let currentWeek = plan.workouts.filter {
-            isUnstarted($0, asOf: asOf, calendar: calendar) && $0.date >= weekStart && $0.date < weekEnd
+        let window = plan.workouts.filter {
+            isUnstarted($0, asOf: asOf, calendar: calendar) && $0.date >= today && $0.date < windowEnd
         }
-        guard let quality = currentWeek.filter({ $0.blueprint.kind.isQuality && $0.blueprint.kind != .race }).sorted(by: dateOrder).first else {
-            throw CoachPlanRuleError.noEligibleWorkout("There is no unstarted quality workout left this week to convert.")
+        guard let quality = window.filter({ $0.blueprint.kind.isQuality && $0.blueprint.kind != .race }).sorted(by: dateOrder).first else {
+            throw CoachPlanRuleError.noEligibleWorkout("There is no unstarted quality workout in the next seven days to convert.")
         }
-        guard let longRun = currentWeek.first(where: { $0.blueprint.kind == .longRun }) else {
-            throw CoachPlanRuleError.noEligibleWorkout("There is no unstarted long run left this week to reduce.")
+        // Date order here too. `first(where:)` on array order picked whichever long run was
+        // stored first, which stops being the soonest one after any reschedule.
+        guard let longRun = window.filter({ $0.blueprint.kind == .longRun }).sorted(by: dateOrder).first else {
+            throw CoachPlanRuleError.noEligibleWorkout("There is no unstarted long run in the next seven days to reduce.")
         }
 
         var proposed = plan
@@ -703,6 +705,35 @@ public enum CoachPlanRules {
         }
         throw CoachPlanRuleError.noSafeTravelSchedule
     }
+
+    /// The workouts the coach can talk about, in the order the model sees them, each with its
+    /// `wN` handle.
+    ///
+    /// One function, used by the prompt context and by the proposal diff, so a reference on the
+    /// card is always the workout the model was shown. It numbered *every* workout before,
+    /// completed ones included, and the prompt then took the first 28 -- so late in a plan the
+    /// model was handed forty finished runs and not one it could act on.
+    ///
+    /// Only unstarted workouts are numbered: a completed run is not something the coach can edit,
+    /// and showing it invites the model to reference it. `limit` is the model's window; the
+    /// proposal diff passes `nil` so a regeneration that reaches past `w28` still labels every
+    /// row. The two agree on every number they share because they share the filter and order.
+    public static func references(
+        in plan: TrainingPlan,
+        asOf: Date,
+        calendar: Calendar,
+        limit: Int? = nil
+    ) -> [(workout: ScheduledWorkout, reference: String)] {
+        let eligible = plan.workouts
+            .filter { isUnstarted($0, asOf: asOf, calendar: calendar) }
+            .sorted(by: dateOrder)
+        let shown = limit.map { Array(eligible.prefix($0)) } ?? eligible
+        return shown.enumerated().map { (workout: $0.element, reference: "w\($0.offset + 1)") }
+    }
+
+    /// The window the prompt renders. Kept here rather than in the provider so the context
+    /// builder and the diff cannot disagree about it.
+    public static let modelReferenceLimit = 28
 
     private static func isUnstarted(
         _ workout: ScheduledWorkout,

@@ -238,17 +238,20 @@ final class AppStore {
         guard asOf.timeIntervalSinceReferenceDate.isFinite else { return nil }
         guard let plan, let profile else { return nil }
         let calendar = Calendar.current
-        let sorted = plan.workouts.sorted { $0.date < $1.date }
-        let references = sorted.enumerated().map { index, workout in
+        // The same numbering the proposal diff uses, capped to what the prompt renders, so the
+        // context holds exactly the workouts the model can see and nothing it cannot act on.
+        let references = CoachPlanRules.references(
+            in: plan, asOf: asOf, calendar: calendar, limit: CoachPlanRules.modelReferenceLimit
+        ).map { entry in
             CoachContext.WorkoutReference(
-                id: workout.id,
-                reference: "w\(index + 1)",
-                date: workout.date,
-                kind: workout.blueprint.kind,
-                title: workout.blueprint.title,
-                status: workout.status,
-                plannedDistanceMeters: workout.blueprint.plannedDistanceMeters,
-                location: workout.blueprint.location
+                id: entry.workout.id,
+                reference: entry.reference,
+                date: entry.workout.date,
+                kind: entry.workout.blueprint.kind,
+                title: entry.workout.blueprint.title,
+                status: entry.workout.status,
+                plannedDistanceMeters: entry.workout.blueprint.plannedDistanceMeters,
+                location: entry.workout.blueprint.location
             )
         }
         let resultSummaries = results

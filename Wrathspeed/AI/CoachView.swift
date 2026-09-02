@@ -334,7 +334,11 @@ struct CoachView: View {
         input = ""
         messages.append(CoachMessage(role: .user, text: message))
         let normalized = message.lowercased()
-        if normalized.contains("sore") {
+        // Same gate the model path uses. A bare `contains("sore")` here turned "I'm not sore"
+        // into a proposal while `CoachIntentRecovery` correctly refused it -- two fallbacks that
+        // disagreed. `resolve` with `.answerOnly` yields `.cutIntensity` only when the message
+        // carries a soreness marker, an explicit edit request, and no opt-out.
+        if CoachIntentRecovery.resolve(modelIntent: .answerOnly, message: message) == .cutIntensity {
             deterministicFallback(intent: .cutIntensity)
         } else if normalized.contains("travel") {
             messages.append(CoachMessage(role: .coach, text: "Tell me the exact travel start and end dates first."))

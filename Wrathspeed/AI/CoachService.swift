@@ -152,7 +152,9 @@ final class AppleCoachProvider: CoachProviding {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]
         formatter.timeZone = .current
-        let workouts = context.workouts.prefix(28).map { workout in
+        // The context is already capped to `CoachPlanRules.modelReferenceLimit`; a second cap
+        // here is where the prompt and the card drifted apart before.
+        let workouts = context.workouts.map { workout in
             "\(workout.reference): \(formatter.string(from: workout.date)) \(workout.title) [\(workout.kind.rawValue), \(workout.status.rawValue), \(Int(workout.plannedDistanceMeters.rounded()))m, \(workout.location.rawValue)]"
         }.joined(separator: "\n")
         let results = context.recentResults.map { result in
