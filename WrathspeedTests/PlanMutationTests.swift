@@ -844,4 +844,34 @@ final class PlanMutationTests: XCTestCase {
         try store.applyMissedWork(choice: .skipMissed, situation: situation, preview: preview)
         XCTAssertEqual(planChangeCount(context), 1)
     }
+
+    /// While NOT FEELING 100% is active the runner sees an overlay, not the plan the coach would
+    /// edit. Editing intents must be refused -- for any mode, not just a pause -- and must say
+    /// why, and an adjustment whose window has closed must not refuse anything.
+    func testCoachRefusesEditsWhileNotFeeling100IsActive() throws {
+        let (store, _) = try makeStore()
+        store.plan = samplePlan(workoutDate: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+        store.profile = store.plan?.profile
+
+        for mode in [N100Mode.pause, .reducedDifficulty] {
+            store.n100 = N100Adjustment(start: Date(), dayCount: 5, mode: mode, returnPace: .balanced)
+            let blocked = store.previewCoachIntent(.cutIntensity)
+            XCTAssertFalse(blocked.isApplicable)
+            XCTAssertTrue(
+                blocked.blockingWarnings.first?.message.contains("NOT FEELING 100%") ?? false,
+                "\(mode): the refusal must say the adjustment is why, not fall through to a rule message"
+            )
+        }
+
+        // Expired: started ten days ago for three days. The coach is free to edit again.
+        store.n100 = N100Adjustment(
+            start: Calendar.current.date(byAdding: .day, value: -10, to: Date())!,
+            dayCount: 3, mode: .pause, returnPace: .balanced
+        )
+        let afterwards = store.previewCoachIntent(.cutIntensity)
+        XCTAssertFalse(
+            afterwards.blockingWarnings.contains { $0.message.contains("NOT FEELING 100%") },
+            "a closed window must not block"
+        )
+    }
 }

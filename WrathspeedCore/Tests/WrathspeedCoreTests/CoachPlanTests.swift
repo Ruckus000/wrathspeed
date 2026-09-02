@@ -461,4 +461,70 @@ final class CoachPlanTests: XCTestCase {
             XCTAssertThrowsError(try decoder.decode(CoachIntent.self, from: Data(payload.utf8)))
         }
     }
+
+    // MARK: - Race week
+
+    /// Every earlier test used a goal with no race date, so the one guard that knew race day
+    /// existed had never executed. These are the first with a race on the calendar.
+    private func racePlan(_ workouts: [ScheduledWorkout], raceDay: Int) -> TrainingPlan {
+        TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK, raceDate: date(raceDay)),
+            profile: profile(),
+            workouts: workouts
+        )
+    }
+
+    func testSorenessCutIsBlockedWhenItWouldChangeRaceWeek() throws {
+        // Race on day 20; race week is days 14-20. Asked on day 14, the next seven days hold a
+        // taper quality session and the last long run -- exactly what a soreness cut would take.
+        let plan = racePlan([
+            workout(day: 16, kind: .tempo),
+            workout(day: 18, kind: .longRun),
+            workout(day: 20, kind: .race)
+        ], raceDay: 20)
+
+        let result = try CoachPlanRules.preview(
+            intent: .cutIntensity, plan: plan, profile: profile(), asOf: date(14), calendar: calendar
+        )
+
+        let blocking = result.warnings.filter { $0.severity == .blocking }
+        XCTAssertEqual(blocking.count, 1, "a change landing in race week must block, not warn softly")
+        XCTAssertTrue(blocking.first?.message.contains("race week") ?? false)
+    }
+
+    func testSorenessCutOutsideRaceWeekIsNotBlocked() throws {
+        // Same plan, asked on day 4: the cut lands on days 6 and 8, well clear of the taper.
+        let plan = racePlan([
+            workout(day: 6, kind: .tempo),
+            workout(day: 8, kind: .longRun),
+            workout(day: 16, kind: .tempo),
+            workout(day: 18, kind: .longRun),
+            workout(day: 20, kind: .race)
+        ], raceDay: 20)
+
+        let result = try CoachPlanRules.preview(
+            intent: .cutIntensity, plan: plan, profile: profile(), asOf: date(4), calendar: calendar
+        )
+
+        XCTAssertTrue(result.warnings.filter { $0.severity == .blocking }.isEmpty, "race week must only be guarded when it is actually touched")
+        XCTAssertFalse(result.changes.isEmpty)
+    }
+
+    func testTravelOnRaceDayIsBlockedAndNamed() throws {
+        // Travel spans days 19-20. Day 19's easy run is removed (a real change, so the rule does
+        // not throw `.noChanges` first) and day 20 is race day.
+        let plan = racePlan([
+            workout(day: 19, kind: .easy),
+            workout(day: 20, kind: .race)
+        ], raceDay: 20)
+
+        let result = try CoachPlanRules.preview(
+            intent: .reshapeForTravel(travelDates: [date(19), date(20)]),
+            plan: plan, profile: profile(), asOf: date(10), calendar: calendar
+        )
+
+        let messages = result.warnings.filter { $0.severity == .blocking }.map(\.message)
+        XCTAssertTrue(messages.contains { $0.contains("race day") }, "travel on race day must be called out by name")
+        XCTAssertTrue(messages.contains { $0.contains("race week") }, "removing the day-19 run is a race-week change")
+    }
 }

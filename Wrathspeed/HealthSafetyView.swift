@@ -9,11 +9,15 @@ import WrathspeedCore
 /// which is the same shape of screen: a title, a lead paragraph, then labelled blocks.
 struct HealthSafetyView: View {
     @Environment(\.dismiss) private var dismiss
+    /// Where the back button says it goes. Settings pushes this screen; the coach presents it as
+    /// a sheet, and "← SETTINGS" over a coach conversation would be a lie.
+    var backTitle: String = "← SETTINGS"
+    var backAccessibilityLabel: String = "Back to settings"
 
     var body: some View {
         WSScreen {
             HStack {
-                WSBackButton(title: "← SETTINGS", accessibilityLabel: "Back to settings") { dismiss() }
+                WSBackButton(title: backTitle, accessibilityLabel: backAccessibilityLabel) { dismiss() }
                 Spacer()
             }
             .padding(.horizontal, WSSpace.gutter)

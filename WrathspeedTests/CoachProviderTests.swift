@@ -198,7 +198,9 @@ final class CoachProviderTests: XCTestCase {
 
     func testCoachRepliesExplainDeterministicProposalAndProposalFollowUps() {
         let reply = CoachIntentRecovery.reply(for: .cutIntensity, modelReply: "I understand.")
-        XCTAssertTrue(reply.contains("next unstarted quality workout"))
+        // The reply must describe both halves of what the rule does. It used to mention only
+        // the long-run cut while the quality workout was also shortened to 80%.
+        XCTAssertTrue(reply.contains("80% of its distance"), "the quality workout's own cut must be stated")
         XCTAssertTrue(reply.contains("20%"))
         XCTAssertTrue(reply.contains("nothing is applied"))
 

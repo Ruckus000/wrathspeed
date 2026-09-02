@@ -334,7 +334,7 @@ public enum CoachPlanRules {
         }
         try validatePlanIntegrity(plan)
         try validateProfile(profile)
-        let result: CoachPlanRuleResult
+        var result: CoachPlanRuleResult
         switch intent {
         case .cutIntensity:
             result = try cutIntensity(plan: plan, asOf: asOf, calendar: calendar)
@@ -363,6 +363,40 @@ public enum CoachPlanRules {
             throw CoachPlanRuleError.unsupportedIntent
         case .clarificationRequired, .answerOnly:
             throw CoachPlanRuleError.unsupportedIntent
+        }
+        // Race week is the seven days ending on race day. A soreness cut or a travel reshape that
+        // reaches into it is a taper change, not a safety adjustment, and nothing here knew race
+        // week existed: only the day itself was protected, and only from being landed on. Every
+        // earlier test used a goal with no race date, so that one guard had never run.
+        if let raceDate = plan.goal.raceDate {
+            let raceDay = calendar.startOfDay(for: raceDate)
+            if let raceWeekStart = calendar.date(byAdding: .day, value: -6, to: raceDay) {
+                let formatter = DateFormatter()
+                formatter.calendar = calendar
+                formatter.timeZone = calendar.timeZone
+                formatter.dateFormat = "MMM d"
+                let dateOf: (UUID) -> Date? = { id in
+                    (result.plan.workouts.first { $0.id == id } ?? plan.workouts.first { $0.id == id })?.date
+                }
+                let touchesRaceWeek = result.changes.contains { change in
+                    guard let id = change.workoutID, let date = dateOf(id) else { return false }
+                    let day = calendar.startOfDay(for: date)
+                    return day >= raceWeekStart && day <= raceDay
+                }
+                if touchesRaceWeek {
+                    result.warnings.append(CoachProposalWarning(
+                        severity: .blocking,
+                        message: "That would change race week (\(formatter.string(from: raceWeekStart))–\(formatter.string(from: raceDay))). Race week is protected here; change it by hand if you need to."
+                    ))
+                }
+                if case let .reshapeForTravel(travelDates) = intent,
+                   travelDates.contains(where: { calendar.isDate($0, inSameDayAs: raceDate) }) {
+                    result.warnings.append(CoachProposalWarning(
+                        severity: .blocking,
+                        message: "One of those travel dates is race day (\(formatter.string(from: raceDay)))."
+                    ))
+                }
+            }
         }
         try validateProtectedWorkoutsUnchanged(
             current: plan,

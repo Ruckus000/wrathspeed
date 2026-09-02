@@ -140,7 +140,7 @@ final class AppleCoachProvider: CoachProviding {
     retargetVDOT only when a finite target VDOT is supplied; moving a long run requires a weekday;
     moving a workout indoors requires its stable workout reference. Never return answerOnly for a
     supported plan-edit request. For cutIntensity, say that you will preview turning the next
-    unstarted quality workout easy and reducing the current week’s unstarted long run by 20%.
+    quality workout into an easy run at 80% of its distance and reducing the next long run by 20%.
     Do not propose a plan when a validation-critical field is missing. Use a short stable workout
     reference such as w1, w2, or w3; never use UUIDs. Only these intent values are valid:
     cutIntensity, reshapeForTravel, retargetVDOT, moveLongRun, moveWorkoutIndoors,
@@ -252,7 +252,9 @@ enum CoachIntentRecovery {
     static func reply(for intent: CoachIntent, modelReply: String) -> String {
         switch intent {
         case .cutIntensity:
-            return "I’ll make this week safer by turning the next unstarted quality workout easy and reducing this week’s unstarted long run by 20%. Review the exact changes below; nothing is applied until you approve them."
+            // Says what the rule does. It used to say the quality workout was "turned easy" and
+            // only the long run reduced; the conversion also cuts it to 80% of its distance.
+            return "I’ll make the next seven days safer: the next quality workout becomes an easy run at 80% of its distance, and the next long run is reduced by 20%. Review the exact changes below; nothing is applied until you approve them."
         case .reshapeForTravel:
             return "I’ll reshape only future workouts around those travel dates, preserve the long run, and show the exact changes below. Nothing is applied until you approve them."
         case .retargetVDOT:
