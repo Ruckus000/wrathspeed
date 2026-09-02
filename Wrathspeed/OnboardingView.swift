@@ -77,7 +77,10 @@ struct OnboardingView: View {
             if step == totalSteps - 1 {
                 Text("Wrathspeed is a training app, not medical advice. Build up gradually, stop anything that causes sharp pain, and talk to a doctor first if you have a health condition or an injury that is still settling.")
                     .wsType(.caption, weight: .medium)
-                    .foregroundStyle(WSColor.text40)
+                    // `text40` is 3.77:1 against `bg`, under the 4.5:1 WCAG AA needs for text
+                    // this size. Of everything in the app this is the line least worth making
+                    // people squint at. `text50` is 5.33:1.
+                    .foregroundStyle(WSColor.text50)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.bottom, 14)
             }
