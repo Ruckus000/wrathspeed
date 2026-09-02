@@ -162,8 +162,11 @@ final class AppleCoachProvider: CoachProviding {
             let heartRate = result.heartRateAverage.map { String(format: "%.0f bpm", $0) } ?? "unknown HR"
             return "\(formatter.string(from: result.date)): \(Int(result.distanceMeters.rounded()))m, \(pace), \(heartRate)"
         }.joined(separator: "\n")
+        // `today` was missing, so the model could not resolve "tomorrow" or "next Tuesday" to a
+        // date -- every relative date it produced was a guess against workouts it could see.
         return """
         Runner context (derived summaries only):
+        today=\(formatter.string(from: context.asOf)), currentWeekStart=\(formatter.string(from: context.currentWeekStart)),
         goal=\(context.goal.kind.displayName), vdot=\(String(format: "%.1f", context.profile.vdot)),
         availableDays=\(context.profile.resolvedRunWeekdays().map(\.displayName).joined(separator: ", ")),
         longRunDay=\(context.profile.longRunWeekday.displayName), adherence=\(String(format: "%.0f%%", context.adherence * 100))

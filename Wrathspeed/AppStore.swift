@@ -353,6 +353,9 @@ final class AppStore {
                     calendar: calendar
                 )
                 var changes = CoachPlanRules.changes(from: currentPlan, to: proposedPlan, asOf: evaluatedAt, calendar: calendar)
+                // The PROFILE row below is always present, so without this a regeneration that
+                // changed no workout still produced an "applicable" proposal with nothing in it.
+                guard !changes.isEmpty else { throw CoachPlanRuleError.noChanges }
                 changes.append(CoachProposalChange(
                     reference: "PROFILE",
                     kind: .updated,
