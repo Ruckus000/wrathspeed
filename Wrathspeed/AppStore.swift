@@ -236,7 +236,10 @@ final class AppStore {
     /// chat text never enter this value, which also keeps the provider boundary reusable.
     func coachContext(asOf: Date = Date()) -> CoachContext? {
         guard asOf.timeIntervalSinceReferenceDate.isFinite else { return nil }
-        guard let plan, let profile else { return nil }
+        // What the runner sees, not the base plan underneath an active NOT FEELING 100%
+        // adjustment. Editing intents are refused while one is active, so the model only ever
+        // answers questions against this view, and the answer matches the screen.
+        guard let plan = displayPlan, let profile else { return nil }
         let calendar = Calendar.current
         // The same numbering the proposal diff uses, capped to what the prompt renders, so the
         // context holds exactly the workouts the model can see and nothing it cannot act on.
@@ -302,6 +305,26 @@ final class AppStore {
                 calendar: calendar,
                 message: "Finish setting up your plan before asking the coach to edit it."
             )
+        }
+
+        // While NOT FEELING 100% is active the runner is looking at an overlay, not the plan.
+        // Every editing intent compiles against the base plan underneath it, so a proposal here
+        // would describe runs the runner has never seen -- and during a pause, runs that are
+        // currently skipped. Refuse the edit and say what to do instead; questions still work,
+        // because `coachContext` reads the overlay.
+        if let n100 {
+            let today = calendar.startOfDay(for: evaluatedAt)
+            let active = today >= calendar.startOfDay(for: n100.start) && today < n100.windowEnd(calendar: calendar)
+            if active {
+                return blockedCoachProposal(
+                    intent: intent,
+                    plan: currentPlan,
+                    profile: currentProfile,
+                    evaluatedAt: evaluatedAt,
+                    calendar: calendar,
+                    message: "Your plan is adjusted for NOT FEELING 100% until \(WSFormat.monthDay(n100.windowEnd(calendar: calendar))). End that in Settings first, then ask me again."
+                )
+            }
         }
 
         do {
@@ -726,7 +749,7 @@ final class AppStore {
     private func rationale(for intent: CoachIntent) -> String {
         switch intent {
         case .cutIntensity:
-            "The next quality session becomes easy and the current week’s long run is reduced by 20%."
+            "The next quality session becomes an easy run at 80% of its distance, and the next long run is reduced by 20%."
         case .reshapeForTravel:
             "Travel days stay clear while the long run is preserved and quality work moves to safe open days."
         case .moveWorkoutIndoors:

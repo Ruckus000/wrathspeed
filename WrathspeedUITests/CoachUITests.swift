@@ -66,7 +66,7 @@ final class CoachUITests: XCTestCase {
         app.buttons["coach_quick_soreness"].tap()
 
         let concreteReply = app.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS[c] %@", "next unstarted quality workout")
+            NSPredicate(format: "label CONTAINS[c] %@", "80% of its distance")
         ).firstMatch
         XCTAssertTrue(concreteReply.waitForExistence(timeout: 8))
         // KEEP AS IS renders on blocked proposals too, so it proves only that a card appeared.
@@ -97,5 +97,24 @@ final class CoachUITests: XCTestCase {
             applyWithWarning.tap()
         }
         XCTAssertTrue(app.buttons["Open AI coach"].waitForExistence(timeout: 8))
+    }
+
+    /// The coach is where a runner types about pain, and `answerOnly` shows the model's own
+    /// words. It had no health statement at all; the one added to Settings must be one tap away.
+    func testCoachScreenCarriesTheHealthStatement() throws {
+        let app = XCUIApplication()
+        UITestOnboardingHelper.configureFreshLaunch(app, seedCompletedOnboarding: true)
+        app.launch()
+        UITestOnboardingHelper.completeOnboarding(app)
+        app.buttons["PLAN"].tap()
+        app.buttons["Open AI coach"].tap()
+
+        let link = app.buttons["coach_health_safety"]
+        XCTAssertTrue(link.waitForExistence(timeout: 8), "the coach screen must carry the health statement")
+        XCTAssertGreaterThanOrEqual(link.frame.height, 44)
+        link.tap()
+        XCTAssertTrue(app.staticTexts["HEALTH\nAND SAFETY"].waitForExistence(timeout: 6))
+        app.buttons["Back to coach"].tap()
+        XCTAssertTrue(link.waitForExistence(timeout: 6), "dismissing the sheet returns to the coach")
     }
 }

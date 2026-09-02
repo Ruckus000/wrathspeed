@@ -10,6 +10,7 @@ struct CoachView: View {
     @State private var input = ""
     @State private var messages: [CoachMessage] = []
     @State private var proposal: CoachProposal?
+    @State private var showHealthSafety = false
     @State private var isThinking = false
     @State private var actionError: String?
 
@@ -73,12 +74,45 @@ struct CoachView: View {
                     .padding(.top, 18)
             }
 
+            // The one screen where a runner types about pain to a model, and until now the one
+            // screen with no health statement. `answerOnly` shows the model's own words.
+            healthCaveat
+                .padding(.horizontal, WSSpace.gutter)
+                .padding(.top, 16)
+
             composer
                 .padding(.horizontal, WSSpace.gutter)
-                .padding(.top, 18)
+                .padding(.top, 12)
         }
         .toolbar(.hidden, for: .navigationBar)
         .background(WSColor.bg.ignoresSafeArea())
+        .sheet(isPresented: $showHealthSafety) {
+            HealthSafetyView(backTitle: "← COACH", backAccessibilityLabel: "Back to coach")
+        }
+    }
+
+    private var healthCaveat: some View {
+        WSRow {
+            Text("Not medical advice. If anything is sharp, stop.")
+                .wsType(.caption, weight: .medium)
+                .foregroundStyle(WSColor.text50)
+                .fixedSize(horizontal: false, vertical: true)
+        } trailing: {
+            // Frame and hit shape on the label, not the button. On the button, XCUITest measured
+            // this at 11pt -- the caption's text height -- because the button's accessibility
+            // frame is its label's. Same trap TodayView documents.
+            Button {
+                showHealthSafety = true
+            } label: {
+                Text("HEALTH AND SAFETY")
+                    .wsType(.caption, weight: .heavy, tracking: 1)
+                    .foregroundStyle(WSColor.accent)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("coach_health_safety")
+        }
     }
 
     private var quickPrompts: some View {
