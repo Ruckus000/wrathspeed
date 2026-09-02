@@ -72,6 +72,15 @@ struct OnboardingView: View {
             }
 
             Spacer()
+            // The app's only health statement people meet without going looking for it. Settings
+            // carries the full version; anyone already onboarded has only that route.
+            if step == totalSteps - 1 {
+                Text("Wrathspeed is a training app, not medical advice. Build up gradually, stop anything that causes sharp pain, and talk to a doctor first if you have a health condition or an injury that is still settling.")
+                    .wsType(.caption, weight: .medium)
+                    .foregroundStyle(WSColor.text40)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 14)
+            }
             WSPrimaryButton(title: primaryButtonTitle) {
                 advance()
             }

@@ -150,12 +150,23 @@ struct SettingsView: View {
                         } label: {
                             WSListNavRow(
                                 title: "CONTENT LICENSES",
-                                hint: "WHERE THE BUNDLED MEDIA COMES FROM",
+                                hint: "WHERE THE BUNDLED MEDIA COMES FROM"
+                            )
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        NavigationLink {
+                            HealthSafetyView()
+                        } label: {
+                            WSListNavRow(
+                                title: "HEALTH AND SAFETY",
+                                hint: "WHEN TO STOP, AND WHAT THIS APP IS NOT",
                                 showDivider: false
                             )
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("settings.healthSafety")
                     }
                 }
 

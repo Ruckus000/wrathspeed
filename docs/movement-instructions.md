@@ -24,7 +24,7 @@ Counted in reps. `TOO HARD? DO THIS` is a real regression for all of these.
 
 **Should feel** — Work through the thighs and glutes. Your heels stay down the whole time.
 
-**Common mistake** — Knees collapsing inward, or heels lifting near the bottom. Either one means you have gone past the depth you currently own.
+**Common mistake** — Knees collapsing inward, or heels lifting near the bottom. The knees caving usually means you have gone deeper than you control. Heels lifting is more often stiff ankles -- put a book under each heel and see if the depth comes back.
 
 **Too hard? Do this** — Sit down to a chair or bench and stand back up. Same movement, less depth.
 
@@ -89,6 +89,7 @@ Counted in reps. `TOO HARD? DO THIS` is a real regression for all of these.
 1. Stand tall with your feet hip-width and your weight through the balls of the feet.
 2. Rise as high as you can onto your toes.
 3. Lower slowly, all the way down, before starting the next rep.
+4. Do some sets with the knee slightly bent. That shifts the work onto the deeper calf muscle, which is the one doing most of the work when you run.
 
 **Should feel** — The calves through a long range. The slow lower is where most of the work is.
 
@@ -101,7 +102,7 @@ Counted in reps. `TOO HARD? DO THIS` is a real regression for all of these.
 
 **How to do it**
 1. Lie on your back with your arms straight up and your knees over your hips, bent at 90 degrees.
-2. Press your low back into the floor and keep it there for every rep.
+2. Flatten your low back gently against the floor and keep that same position for every rep -- you are holding it still, not pressing it hard.
 3. Slowly lower one arm overhead and the opposite leg toward the floor, then return and alternate.
 
 **Should feel** — A deep brace across the abdominals, hardest when the arm and leg reach furthest.
@@ -248,7 +249,7 @@ Counted in reps. `TOO HARD? DO THIS` is a real regression for all of these.
 
 **Common mistake** — Pulling on the back of your neck, or moving at the hips instead of curling the spine.
 
-**Too hard? Do this** — Extend back over the ball a shorter way, and cross your arms on your chest.
+**Too hard? Do this** — Extend back over the ball a shorter way, and cross your arms on your chest. If your back is sensitive to bending, skip this one -- the plank and dead bug cover what a runner needs.
 
 ## Strength — holds (3)
 Timed, not repped. There is no rep to count, so `SHOULD FEEL` carries most of the teaching.
@@ -392,7 +393,7 @@ Range and control rather than effort. Several have no meaningful regression, so 
 2. Step one foot forward and plant it flat on the floor outside the hand on that side.
 3. Return it to the plank position and alternate sides.
 
-**Should feel** — A deep stretch through the front hip and groin of the stepping leg.
+**Should feel** — The groin and deep hip of the leg you stepped forward, and the front of the hip of the leg left behind.
 
 **Common mistake** — Driving the knee under your chest instead of planting the foot outside the hand. That is a mountain climber, which is a different exercise.
 
@@ -416,7 +417,7 @@ Range and control rather than effort. Several have no meaningful regression, so 
 *Cue:* Hinge, walk the hands out to a plank, walk the feet in. Keep legs long.
 
 **How to do it**
-1. Stand tall, hinge at the hips and put your hands on the floor, bending the knees as little as you can.
+1. Stand tall, hinge at the hips and put your hands on the floor. Bend the knees as much as you need to -- this is a warm-up, not a hamstring stretch.
 2. Walk your hands out until you are in a plank.
 3. Walk your feet toward your hands with the legs as long as you can manage, then stand up.
 
@@ -439,7 +440,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 
 **Should feel** — The shoulders working while the torso stays quiet. The legs do nothing at all.
 
-**Common mistake** — A small pumping motion in front of the torso. The amplitude is the drill -- hand to cheek, hand to pocket.
+**Common mistake** — A small pumping motion in front of the torso. The amplitude is the drill -- hand to cheek, hand to pocket. That is the drill's range, not your easy-run range.
 
 **Too hard? Do this** — Slow it right down and find the full range first. Speed comes after.
 
@@ -462,12 +463,12 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 
 **How to do it**
 1. Travel forward at an easy jog.
-2. Reach one foot forward out in front of you.
+2. Reach one foot forward -- a comfortable reach, not the furthest you can get it.
 3. Sweep it actively backward before it lands, so it strikes the ground under your hip rather than in front of it.
 
 **Should feel** — The hamstring and glute pulling the foot back just before it lands.
 
-**Common mistake** — Letting the foot land where you reached it. The backward sweep before contact is the whole drill.
+**Common mistake** — Letting the foot land where you reached it. The backward sweep before contact is the whole drill. Save this one for when you are properly warm, and skip it if a hamstring is sore or recently strained -- this is the position hamstrings tear in.
 
 **Too hard? Do this** — Do it walking first, exaggerating the backward sweep.
 
@@ -479,7 +480,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Flick each heel up to your glute, keeping the knee pointing down at the floor.
 3. Keep the contacts quick and light rather than reaching for height.
 
-**Should feel** — The hamstrings snapping each heel up, at a fast and light rhythm.
+**Should feel** — A quick, light rhythm with the heels flicking close behind you. It should feel bouncy rather than effortful.
 
 **Common mistake** — Letting the knees swing forward, which turns it into a high-knee run, or landing heavily.
 
@@ -535,7 +536,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Land on the other leg and absorb the landing softly.
 3. Hold that landing for a beat before pushing back the other way.
 
-**Should feel** — The glute of the landing leg controlling you, then producing the next push.
+**Should feel** — The glute of the landing leg controlling you, then producing the next push. Stop the set if the landings turn loud or heavy, or anything starts to hurt.
 
 **Common mistake** — Rebounding immediately. The pause is what trains the landing, and the landing is the point.
 
@@ -549,7 +550,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Land on the opposite leg, absorbing quietly.
 3. Push straight off into the next bound, alternating legs and driving the opposite arm.
 
-**Should feel** — A long moment of flight, with the glute absorbing each landing.
+**Should feel** — A long moment of flight, with the glute absorbing each landing. Stop the set if the landings turn loud or heavy, or anything starts to hurt.
 
 **Common mistake** — Bounding straight out sideways. That is a lateral bound; this one travels forward and across.
 
@@ -563,7 +564,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Jump up and switch your legs in the air.
 3. Land in a lunge on the other side, absorbing softly through both legs.
 
-**Should feel** — Thighs and glutes on take-off, with both legs sharing the landing.
+**Should feel** — Thighs and glutes on take-off, with both legs sharing the landing. Stop the set if the landings turn loud or heavy, or anything starts to hurt.
 
 **Common mistake** — Landing stiff-legged and loud, or letting the front knee collapse inward as you land.
 
@@ -577,7 +578,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Jump and pull both knees toward your chest.
 3. Land softly through the whole foot, stand up, and reset before the next one.
 
-**Should feel** — An explosive jump followed by a quiet, controlled landing.
+**Should feel** — An explosive jump followed by a quiet, controlled landing. Stop the set if the landings turn loud or heavy, or anything starts to hurt.
 
 **Common mistake** — Rushing straight into the next jump. Each rep starts from a settled stand.
 
@@ -587,11 +588,11 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 *Cue:* Hop over low obstacles off both feet. Stiff ankles, minimal ground time.
 
 **How to do it**
-1. Set out a row of low obstacles, at least three of them.
+1. Set out a row of at least three low markers -- lines on the ground, a rolled towel, anything that gives way if you clip it. Nothing rigid enough to catch a tired foot.
 2. Hop over them with both feet together, one after another without stopping.
 3. Keep the ankles stiff and the ground contact between hurdles as short as you can.
 
-**Should feel** — Springy ankles, and very little time spent on the floor.
+**Should feel** — Springy ankles, and very little time spent on the floor. Stop the set if the landings turn loud or heavy, or anything starts to hurt.
 
 **Common mistake** — One hop over one hurdle with a reset in between, or jumping down from a box. It is a continuous row.
 
@@ -652,7 +653,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 
 **Should feel** — Along the back of the straight leg's thigh.
 
-**Common mistake** — Rounding the back to reach the foot. The reach comes from the hips, and rounding takes the stretch off the hamstring.
+**Common mistake** — Rounding the back to reach the foot. That drags the pull into the low back and onto the nerve rather than the muscle. If you feel tingling, or a stretch running down into the calf or foot, back off and bend the knee a little.
 
 **Too hard? Do this** — Sit on a cushion, and let the straight leg bend slightly.
 
@@ -684,7 +685,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 
 **Too hard? Do this** — Loop a strap or a towel around the ankle, or do it lying on your side.
 
-### `it-band-glute` — IT band and glute stretch
+### `it-band-glute` — Glute and outer hip stretch
 *Cue:* Cross the top leg over, hug the knee across the body.
 
 **How to do it**
@@ -720,7 +721,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Bring one knee up and let it fall across your body toward the floor.
 3. Keep both shoulders on the floor and turn your head the other way. Switch sides.
 
-**Should feel** — A rotation through the low back and the outside of the hip.
+**Should feel** — A gentle twist through the hips and the middle of the back, and a stretch across the outside of the hip. Keep it easy -- this is not a position to push into.
 
 **Common mistake** — Letting the opposite shoulder lift to get the knee lower. The shoulder staying down is what creates the twist.
 
@@ -732,13 +733,13 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 **How to do it**
 1. Lie on your side with the bottom leg bent for support.
 2. Let the top leg open away from the bottom one.
-3. Let gravity do the work and breathe. Then switch sides.
+3. Hold the leg open and breathe -- this one takes effort to hold. Then switch sides.
 
-**Should feel** — The inner thigh of the top leg, easing as you relax into it.
+**Should feel** — The inner thigh of the top leg, working as you hold it open.
 
-**Common mistake** — Pushing the leg down with your hand. This one opens by relaxing, not by forcing.
+**Common mistake** — Shoving the leg further open with your hand. Let the leg hold itself where it can.
 
-**Too hard? Do this** — Bend the top knee, which shortens the leg and softens the stretch.
+**Too hard? Do this** — Bend the top knee. That shortens the lever, so the leg is easier to hold up.
 
 ### `hug-knees-to-chest` — Knees to chest
 *Cue:* Hug both knees in, rock gently side to side.
@@ -764,7 +765,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 
 **Common mistake** — Holding tension in the shoulders instead of letting the chest sink.
 
-**Too hard? Do this** — Widen the knees, or put a cushion between your hips and your heels.
+**Too hard? Do this** — Widen the knees, or put a cushion between your hips and your heels. If the knees complain, use the cushion from the start.
 
 ## Foam rolling (4)
 `COMMON MISTAKE` carries the safety note here, because the risk is joint pressure rather than bad form.
@@ -777,7 +778,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Roll slowly from the ankle to just below the knee.
 3. When you find a tender spot, stop there and breathe until it eases. Then switch legs.
 
-**Should feel** — Firm pressure -- uncomfortable, but not sharp.
+**Should feel** — Firm pressure -- uncomfortable, but not sharp. If it stings or shoots, or you get pins and needles, come off it and move on.
 
 **Common mistake** — Rolling fast. Speed feels productive and does very little; the pauses are what work.
 
@@ -791,7 +792,7 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Roll slowly between the hip and a point just above the knee.
 3. Pause on tender spots and breathe until they ease. Then switch legs.
 
-**Should feel** — Firm pressure through the back of the thigh.
+**Should feel** — Firm pressure through the back of the thigh -- uncomfortable, but not sharp. If it stings or shoots, or you get pins and needles, come off it and move on.
 
 **Common mistake** — Rolling right over the back of the knee. Stay between the hip and just above it.
 
@@ -805,11 +806,11 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 2. Support yourself on your forearm, with your top foot on the floor.
 3. Roll slowly between the hip and a point just above the knee, then switch sides.
 
-**Should feel** — Sharp at first, easing as you stay with it. Back off if it feels like it is in the joint.
+**Should feel** — Firm pressure down the outside of the thigh -- uncomfortable, but never sharp. If it stings or shoots, or you get pins and needles, come off it and move on.
 
-**Common mistake** — Rolling onto the knee itself. Stop above it -- there is nothing to release at the joint and plenty to irritate.
+**Common mistake** — Grinding the last few inches above the knee. That is exactly where a sore outside-of-knee already hurts, and pressing on it adds to the problem. Spend the time nearer the hip.
 
-**Too hard? Do this** — Take more weight through the top foot and your forearm, so less of you is on the roller.
+**Too hard? Do this** — Take more weight through the top foot and your forearm, so less of you is on the roller. Or roll the muscle around it -- the side of your backside, the front-outside of the thigh -- rather than the band itself.
 
 ### `piriformis-smr` — Glute roll
 *Cue:* Sit on the roller, ankle over the opposite knee, hunt for the sore spot.
@@ -817,9 +818,9 @@ The mechanic and its purpose. `COMMON MISTAKE` here names the drill each one get
 **How to do it**
 1. Sit on the roller and cross one ankle over the opposite knee.
 2. Lean into the crossed side so your weight settles onto that glute.
-3. Move slowly to find the sore spot, then stay on it and breathe. Switch sides.
+3. Move slowly to find the sore spot, then settle on it and breathe for a few breaths. Switch sides.
 
-**Should feel** — Deep in the glute, often quite sharp once you find the spot.
+**Should feel** — Deep in the glute -- a strong, dull ache once you find the spot. If it turns sharp, or anything travels down the leg, come off that spot and move on.
 
 **Common mistake** — Moving constantly. This one is about finding a single spot and staying on it.
 
