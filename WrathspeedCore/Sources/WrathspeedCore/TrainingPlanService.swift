@@ -17,15 +17,28 @@ public enum TrainingPlanService {
         adjustment: N100Adjustment?,
         freezeMileageBaselineMeters: Double?,
         strengthPreferences: StrengthPreferences,
-        strengthCatalog: StrengthCatalog
+        strengthCatalog: StrengthCatalog,
+        preserveFutureScheduledIdentity: Bool = false
     ) throws -> GeneratedTrainingSchedule {
         let basePlan = try PlanGenerator.generateValidated(request)
-        let plan = PlanReconciler.reconcile(
-            existing: existingPlan,
-            generated: basePlan,
-            calendar: request.calendar,
-            freezeMileageBaselineMeters: freezeMileageBaselineMeters
-        )
+        let plan: TrainingPlan
+        if preserveFutureScheduledIdentity {
+            plan = try PlanReconciler.reconcilePreservingFutureScheduledIdentity(
+                existing: existingPlan,
+                generated: basePlan,
+                asOf: request.startDate,
+                calendar: request.calendar,
+                freezeMileageBaselineMeters: freezeMileageBaselineMeters
+            )
+        } else {
+            plan = PlanReconciler.reconcile(
+                existing: existingPlan,
+                generated: basePlan,
+                asOf: request.startDate,
+                calendar: request.calendar,
+                freezeMileageBaselineMeters: freezeMileageBaselineMeters
+            )
+        }
         let strengthSessions = StrengthPlanner.schedule(
             preferences: strengthPreferences,
             startDate: request.startDate,

@@ -120,9 +120,11 @@ struct WorkoutPreflightView: View {
         // left unguarded this covers preflight and eats the START WORKOUT tap of every
         // outdoor-run test. The test whose subject *is* the primer opts back in.
         guard !UITestingSupport.isUITesting || UITestingSupport.shouldPresentLocationPrimer else { return }
+        let status = CLLocationManager().authorizationStatus
+        let testOverride = UITestingSupport.isUITesting && UITestingSupport.shouldPresentLocationPrimer
         guard !didOfferLocationPermission,
               draftLocation == .outdoor,
-              CLLocationManager().authorizationStatus == .notDetermined
+              status == .notDetermined || testOverride
         else { return }
         didOfferLocationPermission = true
         showLocationPermission = true

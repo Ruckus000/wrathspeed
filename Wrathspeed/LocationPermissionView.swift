@@ -51,7 +51,10 @@ struct LocationPermissionView: View {
     @State private var declinedPrimer = false
 
     private var showsDenied: Bool {
-        declinedPrimer || authorization.status == .denied || authorization.status == .restricted
+        if UITestingSupport.isUITesting && UITestingSupport.shouldPresentLocationPrimer {
+            return declinedPrimer
+        }
+        return declinedPrimer || authorization.status == .denied || authorization.status == .restricted
     }
 
     var body: some View {

@@ -98,7 +98,7 @@ final class AppStore {
         #endif
         return LiveHealthImportService()
     }
-    private var reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler()
+    private var reminderScheduler: any WorkoutReminderScheduling
     private var didAttach = false
 
     /// Under UI test the live scheduler would raise the system notification prompt, which
@@ -111,16 +111,30 @@ final class AppStore {
     }
     private var toastTask: Task<Void, Never>?
 
+    private enum CoachApplyError: LocalizedError {
+        case stale
+        case invalid(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .stale:
+                "Your plan changed while this proposal was open. Review it again before applying."
+            case let .invalid(message):
+                message
+            }
+        }
+    }
+
     var unit: DistanceUnit { profile?.unit ?? DistanceUnit.default() }
 
     init(
         strengthCatalogLoader: @escaping () throws -> StrengthCatalog = { try StrengthCatalogLoader.load() },
-        reminderScheduler: any WorkoutReminderScheduling = AppStore.defaultReminderScheduler(),
-        workoutCoordinator: WorkoutSessionCoordinator = WorkoutSessionCoordinator()
+        reminderScheduler: (any WorkoutReminderScheduling)? = nil,
+        workoutCoordinator: WorkoutSessionCoordinator? = nil
     ) {
         self.strengthCatalogLoader = strengthCatalogLoader
-        self.reminderScheduler = reminderScheduler
-        self.workoutCoordinator = workoutCoordinator
+        self.reminderScheduler = reminderScheduler ?? Self.defaultReminderScheduler()
+        self.workoutCoordinator = workoutCoordinator ?? WorkoutSessionCoordinator()
     }
 
     var zones: PaceZones? {
@@ -216,6 +230,531 @@ final class AppStore {
     var displayPlan: TrainingPlan? {
         guard let plan else { return nil }
         return PlanAdjustmentService.effectivePlan(plan, adjustment: n100)
+    }
+
+    /// The coach receives only compact, derived summaries. Raw HealthKit samples, routes, and
+    /// chat text never enter this value, which also keeps the provider boundary reusable.
+    func coachContext(asOf: Date = Date()) -> CoachContext? {
+        guard asOf.timeIntervalSinceReferenceDate.isFinite else { return nil }
+        guard let plan, let profile else { return nil }
+        let calendar = Calendar.current
+        let sorted = plan.workouts.sorted { $0.date < $1.date }
+        let references = sorted.enumerated().map { index, workout in
+            CoachContext.WorkoutReference(
+                id: workout.id,
+                reference: "w\(index + 1)",
+                date: workout.date,
+                kind: workout.blueprint.kind,
+                title: workout.blueprint.title,
+                status: workout.status,
+                plannedDistanceMeters: workout.blueprint.plannedDistanceMeters,
+                location: workout.blueprint.location
+            )
+        }
+        let resultSummaries = results
+            .sorted { $0.startedAt > $1.startedAt }
+            .prefix(8)
+            .map {
+                CoachContext.ResultSummary(
+                    id: UUID(),
+                    date: $0.startedAt,
+                    distanceMeters: $0.distanceMeters,
+                    averagePaceSecPerKm: $0.averagePaceSecPerKm,
+                    heartRateAverage: $0.heartRateAverage
+                )
+            }
+        let due = plan.workouts.filter {
+            $0.blueprint.kind.isRunning && $0.date <= calendar.startOfDay(for: asOf)
+        }
+        let completed = due.filter { $0.status == .completed }.count
+        let adherence = due.isEmpty ? 1 : Double(completed) / Double(due.count)
+        return CoachContext(
+            asOf: asOf,
+            goal: plan.goal,
+            profile: profile,
+            currentWeekStart: calendar.dateInterval(of: .weekOfYear, for: asOf)?.start ?? asOf,
+            workouts: references,
+            recentResults: Array(resultSummaries),
+            adherence: adherence
+        )
+    }
+
+    /// Compiles one high-level intent against the current snapshot. This method never mutates
+    /// the store; the returned proposal is the only object the UI may submit for approval.
+    func previewCoachIntent(_ intent: CoachIntent) -> CoachProposal {
+        let evaluatedAt = Date()
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        let fallbackPlan = TrainingPlan(
+            goal: TrainingGoal(kind: .fiveK),
+            profile: RunnerProfile(ability: .beginner, daysPerWeek: 3, longRunWeekday: .sunday, unit: .kilometers),
+            workouts: []
+        )
+        guard let currentPlan = plan, let currentProfile = profile else {
+            return blockedCoachProposal(
+                intent: intent,
+                plan: plan ?? fallbackPlan,
+                profile: profile ?? fallbackPlan.profile,
+                evaluatedAt: evaluatedAt,
+                calendar: calendar,
+                message: "Finish setting up your plan before asking the coach to edit it."
+            )
+        }
+
+        do {
+            try CoachPlanRules.validatePlanIntegrity(currentPlan)
+            try CoachPlanRules.validateProfile(currentProfile)
+            switch intent {
+            case let .retargetVDOT(target):
+                let adjustment = try CoachPlanRules.validateVDOT(current: currentProfile.vdot, requested: target)
+                guard adjustment.effectiveTarget != currentProfile.vdot else {
+                    throw CoachPlanRuleError.noChanges
+                }
+                var proposedProfile = currentProfile
+                proposedProfile.vdot = adjustment.effectiveTarget
+                let generated = try buildRegeneratedSchedule(
+                    profile: proposedProfile,
+                    asOf: evaluatedAt,
+                    calendar: calendar,
+                    preserveFutureIdentity: true
+                )
+                var proposedPlan = generated.plan
+                proposedPlan.profile = proposedProfile
+                try CoachPlanRules.validateProtectedWorkoutsUnchanged(
+                    current: currentPlan,
+                    proposed: proposedPlan,
+                    asOf: evaluatedAt,
+                    calendar: calendar
+                )
+                var changes = CoachPlanRules.changes(from: currentPlan, to: proposedPlan, asOf: evaluatedAt, calendar: calendar)
+                changes.append(CoachProposalChange(
+                    reference: "PROFILE",
+                    kind: .updated,
+                    before: "VDOT \(String(format: "%.1f", currentProfile.vdot))",
+                    after: "VDOT \(String(format: "%.1f", adjustment.effectiveTarget))"
+                ))
+                return CoachProposal(
+                    evaluatedAt: evaluatedAt,
+                    calendarTimeZoneIdentifier: calendar.timeZone.identifier,
+                    intent: intent,
+                    rationale: "Future target paces will use the adjusted VDOT. Completed work stays unchanged.",
+                    changes: changes,
+                    warnings: adjustment.warnings,
+                    basePlan: currentPlan,
+                    baseProfile: currentProfile,
+                    baseN100: n100,
+                    proposedPlan: proposedPlan,
+                    proposedProfile: proposedProfile,
+                    proposedN100: n100
+                )
+            case let .moveLongRun(to):
+                try CoachPlanRules.validateLongRunWeekday(to, profile: currentProfile)
+                var proposedProfile = currentProfile
+                // If availability was implicit, freeze the currently derived run days before
+                // changing the long-run role so the request does not silently change frequency.
+                if proposedProfile.availableWeekdays == nil {
+                    proposedProfile.availableWeekdays = proposedProfile.resolvedRunWeekdays()
+                }
+                proposedProfile.longRunWeekday = to
+                let generated = try buildRegeneratedSchedule(
+                    profile: proposedProfile,
+                    asOf: evaluatedAt,
+                    calendar: calendar,
+                    preserveFutureIdentity: true
+                )
+                var proposedPlan = generated.plan
+                proposedPlan.profile = proposedProfile
+                try CoachPlanRules.validateProtectedWorkoutsUnchanged(
+                    current: currentPlan,
+                    proposed: proposedPlan,
+                    asOf: evaluatedAt,
+                    calendar: calendar
+                )
+                let changes = CoachPlanRules.changes(from: currentPlan, to: proposedPlan, asOf: evaluatedAt, calendar: calendar)
+                guard !changes.isEmpty else { throw CoachPlanRuleError.noChanges }
+                return CoachProposal(
+                    evaluatedAt: evaluatedAt,
+                    calendarTimeZoneIdentifier: calendar.timeZone.identifier,
+                    intent: intent,
+                    rationale: "Remaining weeks will keep your current run days and place the long run on \(to.displayName).",
+                    changes: changes,
+                    basePlan: currentPlan,
+                    baseProfile: currentProfile,
+                    baseN100: n100,
+                    proposedPlan: proposedPlan,
+                    proposedProfile: proposedProfile,
+                    proposedN100: n100
+                )
+            default:
+                let result = try CoachPlanRules.preview(
+                    intent: intent,
+                    plan: currentPlan,
+                    profile: currentProfile,
+                    asOf: evaluatedAt,
+                    calendar: calendar
+                )
+                var proposedPlan = result.plan
+                proposedPlan.profile = result.plan.profile
+                return CoachProposal(
+                    evaluatedAt: evaluatedAt,
+                    calendarTimeZoneIdentifier: calendar.timeZone.identifier,
+                    intent: intent,
+                    rationale: rationale(for: intent),
+                    changes: result.changes,
+                    warnings: result.warnings,
+                    basePlan: currentPlan,
+                    baseProfile: currentProfile,
+                    baseN100: n100,
+                    proposedPlan: proposedPlan,
+                    proposedProfile: proposedPlan.profile,
+                    proposedN100: n100
+                )
+            }
+        } catch {
+            return blockedCoachProposal(
+                intent: intent,
+                plan: currentPlan,
+                profile: currentProfile,
+                evaluatedAt: evaluatedAt,
+                calendar: calendar,
+                message: (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            )
+        }
+    }
+
+    @discardableResult
+    func applyCoachProposal(_ proposal: CoachProposal) -> CoachApplyResult {
+        guard proposal.isApplicable else {
+            return .rejected(reason: proposal.blockingWarnings.first?.message ?? "This proposal cannot be applied.")
+        }
+        guard let currentPlan = plan, let currentProfile = profile else {
+            return .rejected(reason: "There is no active plan to update.")
+        }
+        guard equivalentCoachPlans(currentPlan, proposal.basePlan, matchWorkoutIDs: true),
+              currentProfile == proposal.baseProfile,
+              n100 == proposal.baseN100
+        else {
+            let message = "Your plan changed while this proposal was open. Review it again before applying."
+            errorMessage = message
+            return .rejected(reason: message)
+        }
+
+        let affected = Array(Set(proposal.changes.compactMap(\.workoutID)))
+        let committed = performPlanMutation(
+            description: "Coach: \(proposal.title)",
+            kind: .scheduleRegeneration,
+            affected: affected,
+            successToast: "COACH UPDATE APPLIED",
+            mutate: {
+                guard let currentPlan = self.plan,
+                      equivalentCoachPlans(currentPlan, proposal.basePlan, matchWorkoutIDs: true),
+                      profile == proposal.baseProfile,
+                      n100 == proposal.baseN100
+                else { throw CoachApplyError.stale }
+                do {
+                    try revalidateCoachProposal(proposal)
+                } catch {
+                    throw CoachApplyError.invalid(
+                        (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                    )
+                }
+                self.plan = proposal.proposedPlan
+                self.profile = proposal.proposedProfile
+                self.n100 = proposal.proposedN100
+            }
+        )
+        if committed { return .applied }
+        return .rejected(reason: errorMessage ?? "Couldn’t apply the coach proposal.")
+    }
+
+    private func revalidateCoachProposal(_ proposal: CoachProposal) throws {
+        guard let currentPlan = plan, let currentProfile = profile else {
+            throw CoachPlanRuleError.unsupportedIntent
+        }
+        let calendar = try coachCalendar(for: proposal)
+        try CoachPlanRules.validatePlanIntegrity(currentPlan)
+        try CoachPlanRules.validateProfile(currentProfile)
+        try CoachPlanRules.validatePlanIntegrity(proposal.proposedPlan)
+        guard proposal.evaluatedAt.timeIntervalSinceReferenceDate.isFinite else {
+            throw CoachPlanRuleError.invalidDateInput
+        }
+        guard proposal.proposedPlan.profile == proposal.proposedProfile else {
+            throw CoachApplyError.invalid("The proposal contains mismatched profile data.")
+        }
+        guard proposal.proposedN100 == n100 else {
+            throw CoachApplyError.invalid("The proposal contains stale adjustment data.")
+        }
+        let expectedChanges = coachChanges(
+            from: currentPlan,
+            to: proposal.proposedPlan,
+            intent: proposal.intent,
+            asOf: proposal.evaluatedAt,
+            calendar: calendar
+        )
+        guard normalizedCoachChanges(expectedChanges) == normalizedCoachChanges(proposal.changes) else {
+            throw CoachApplyError.invalid("The proposal diff no longer matches its plan changes.")
+        }
+        try CoachPlanRules.validateProtectedWorkoutsUnchanged(
+            current: currentPlan,
+            proposed: proposal.proposedPlan,
+            asOf: proposal.evaluatedAt,
+            calendar: calendar
+        )
+        try validateCoachAffectedWorkoutsAreStillEditable(
+            proposal,
+            asOf: Date(),
+            calendar: Calendar.current
+        )
+
+        switch proposal.intent {
+        case let .retargetVDOT(target):
+            let adjustment = try CoachPlanRules.validateVDOT(current: currentProfile.vdot, requested: target)
+            guard adjustment.effectiveTarget != currentProfile.vdot else {
+                throw CoachPlanRuleError.noChanges
+            }
+            var expectedProfile = currentProfile
+            expectedProfile.vdot = adjustment.effectiveTarget
+            guard normalizedCoachWarnings(adjustment.warnings) == normalizedCoachWarnings(proposal.warnings) else {
+                throw CoachApplyError.invalid("The proposal warnings no longer match the requested adjustment.")
+            }
+            guard proposal.proposedProfile == expectedProfile else {
+                throw CoachApplyError.invalid("The proposal VDOT does not match the requested adjustment.")
+            }
+            let generated = try buildRegeneratedSchedule(
+                profile: expectedProfile,
+                asOf: proposal.evaluatedAt,
+                calendar: calendar,
+                preserveFutureIdentity: true
+            )
+            var expectedPlan = generated.plan
+            expectedPlan.profile = expectedProfile
+            guard equivalentCoachPlans(
+                expectedPlan,
+                proposal.proposedPlan,
+                matchWorkoutIDs: true,
+                ignoreRegeneratedStepIDs: true
+            ) else {
+                throw CoachApplyError.invalid("The proposal no longer matches the regenerated pace targets.")
+            }
+        case let .moveLongRun(to):
+            try CoachPlanRules.validateLongRunWeekday(to, profile: currentProfile)
+            guard proposal.warnings.isEmpty else {
+                throw CoachApplyError.invalid("The long-run proposal contains unexpected warnings.")
+            }
+            var expectedProfile = currentProfile
+            if expectedProfile.availableWeekdays == nil {
+                expectedProfile.availableWeekdays = expectedProfile.resolvedRunWeekdays()
+            }
+            expectedProfile.longRunWeekday = to
+            guard proposal.proposedProfile == expectedProfile else {
+                throw CoachApplyError.invalid("The proposal weekday does not match the requested long-run move.")
+            }
+            let generated = try buildRegeneratedSchedule(
+                profile: expectedProfile,
+                asOf: proposal.evaluatedAt,
+                calendar: calendar,
+                preserveFutureIdentity: true
+            )
+            var expectedPlan = generated.plan
+            expectedPlan.profile = expectedProfile
+            guard equivalentCoachPlans(
+                expectedPlan,
+                proposal.proposedPlan,
+                matchWorkoutIDs: true,
+                ignoreRegeneratedStepIDs: true
+            ) else {
+                throw CoachApplyError.invalid("The proposal no longer matches the regenerated schedule.")
+            }
+        case .cutIntensity, .reshapeForTravel, .moveWorkoutIndoors:
+            let expected = try CoachPlanRules.preview(
+                intent: proposal.intent,
+                plan: currentPlan,
+                profile: currentProfile,
+                asOf: proposal.evaluatedAt,
+                calendar: calendar
+            )
+            let ignoresRegeneratedStepIDs: Bool
+            switch proposal.intent {
+            case .cutIntensity:
+                ignoresRegeneratedStepIDs = true
+            case .reshapeForTravel, .moveWorkoutIndoors:
+                ignoresRegeneratedStepIDs = false
+            default:
+                ignoresRegeneratedStepIDs = false
+            }
+            guard equivalentCoachPlans(
+                expected.plan,
+                proposal.proposedPlan,
+                matchWorkoutIDs: true,
+                ignoreRegeneratedStepIDs: ignoresRegeneratedStepIDs
+            ),
+                  proposal.proposedProfile == currentProfile,
+                  normalizedCoachWarnings(expected.warnings) == normalizedCoachWarnings(proposal.warnings)
+            else {
+                throw CoachApplyError.invalid("The proposal no longer matches the requested edit.")
+            }
+        case .clarificationRequired, .answerOnly:
+            throw CoachPlanRuleError.unsupportedIntent
+        }
+    }
+
+    private func coachChanges(
+        from current: TrainingPlan,
+        to proposed: TrainingPlan,
+        intent: CoachIntent,
+        asOf: Date,
+        calendar: Calendar
+    ) -> [CoachProposalChange] {
+        var changes = CoachPlanRules.changes(from: current, to: proposed, asOf: asOf, calendar: calendar)
+        if case .retargetVDOT = intent {
+            changes.append(CoachProposalChange(
+                reference: "PROFILE",
+                kind: .updated,
+                before: "VDOT \(String(format: "%.1f", current.profile.vdot))",
+                after: "VDOT \(String(format: "%.1f", proposed.profile.vdot))"
+            ))
+        }
+        return changes
+    }
+
+    private func normalizedCoachChanges(_ changes: [CoachProposalChange]) -> [String] {
+        changes.map {
+            "\($0.workoutID?.uuidString ?? "PROFILE")|\($0.reference)|\($0.kind.rawValue)|\($0.before)|\($0.after)"
+        }.sorted()
+    }
+
+    private func normalizedCoachWarnings(_ warnings: [CoachProposalWarning]) -> [String] {
+        warnings.map { "\($0.severity.rawValue)|\($0.message)" }.sorted()
+    }
+
+    private func equivalentCoachPlans(
+        _ lhs: TrainingPlan,
+        _ rhs: TrainingPlan,
+        matchWorkoutIDs: Bool,
+        ignoreRegeneratedStepIDs: Bool = false
+    ) -> Bool {
+        guard lhs.goal == rhs.goal, lhs.profile == rhs.profile else { return false }
+        let left: [ScheduledWorkout]
+        let right: [ScheduledWorkout]
+        if matchWorkoutIDs {
+            let leftByID = Dictionary(uniqueKeysWithValues: lhs.workouts.map { ($0.id, $0) })
+            let rightByID = Dictionary(uniqueKeysWithValues: rhs.workouts.map { ($0.id, $0) })
+            guard leftByID.count == lhs.workouts.count,
+                  rightByID.count == rhs.workouts.count,
+                  Set(leftByID.keys) == Set(rightByID.keys)
+            else { return false }
+            left = leftByID.keys.sorted { $0.uuidString < $1.uuidString }.compactMap { leftByID[$0] }
+            right = leftByID.keys.sorted { $0.uuidString < $1.uuidString }.compactMap { rightByID[$0] }
+        } else {
+            left = lhs.workouts.sorted(by: coachWorkoutOrder)
+            right = rhs.workouts.sorted(by: coachWorkoutOrder)
+        }
+        guard left.count == right.count else { return false }
+        return zip(left, right).allSatisfy { lhs, rhs in
+            (!matchWorkoutIDs || lhs.id == rhs.id)
+                && lhs.status == rhs.status
+                && lhs.result == rhs.result
+                && lhs.scheduledTimeMinutes == rhs.scheduledTimeMinutes
+                && lhs.reminderEnabled == rhs.reminderEnabled
+                && lhs.blueprint.id == rhs.blueprint.id
+                && lhs.blueprint.date == rhs.blueprint.date
+                && lhs.blueprint.kind == rhs.blueprint.kind
+                && lhs.blueprint.title == rhs.blueprint.title
+                && lhs.blueprint.location == rhs.blueprint.location
+                && equivalentCoachSteps(
+                    lhs.blueprint.steps,
+                    rhs.blueprint.steps,
+                    ignoreIDs: ignoreRegeneratedStepIDs
+                )
+                && lhs.blueprint.plannedDistanceMeters == rhs.blueprint.plannedDistanceMeters
+                && lhs.blueprint.usesPaceTargets == rhs.blueprint.usesPaceTargets
+        }
+    }
+
+    private func validateCoachAffectedWorkoutsAreStillEditable(
+        _ proposal: CoachProposal,
+        asOf: Date,
+        calendar: Calendar
+    ) throws {
+        let today = calendar.startOfDay(for: asOf)
+        let affectedIDs = Set(proposal.changes.compactMap(\.workoutID))
+        for workoutID in affectedIDs {
+            guard let workout = plan?.workouts.first(where: { $0.id == workoutID }) else {
+                continue // Added generated work has no current workout to re-check.
+            }
+            guard workout.date >= today,
+                  workout.status == .scheduled || workout.status == .convertedToEasy
+            else {
+                throw CoachPlanRuleError.workoutAlreadyStarted
+            }
+        }
+    }
+
+    private func coachCalendar(for proposal: CoachProposal) throws -> Calendar {
+        guard let timeZone = TimeZone(identifier: proposal.calendarTimeZoneIdentifier) else {
+            throw CoachPlanRuleError.invalidDateInput
+        }
+        var calendar = Calendar.current
+        calendar.timeZone = timeZone
+        return calendar
+    }
+
+    private func coachWorkoutOrder(_ lhs: ScheduledWorkout, _ rhs: ScheduledWorkout) -> Bool {
+        if lhs.date != rhs.date { return lhs.date < rhs.date }
+        if lhs.blueprint.kind != rhs.blueprint.kind { return lhs.blueprint.kind.rawValue < rhs.blueprint.kind.rawValue }
+        if lhs.blueprint.title != rhs.blueprint.title { return lhs.blueprint.title < rhs.blueprint.title }
+        return lhs.blueprint.location.rawValue < rhs.blueprint.location.rawValue
+    }
+
+    private func equivalentCoachSteps(
+        _ lhs: [WorkoutStep],
+        _ rhs: [WorkoutStep],
+        ignoreIDs: Bool
+    ) -> Bool {
+        guard lhs.count == rhs.count else { return false }
+        return zip(lhs, rhs).allSatisfy { lhs, rhs in
+            (ignoreIDs || lhs.id == rhs.id)
+                && lhs.name == rhs.name
+                && lhs.target == rhs.target
+                && lhs.intensity == rhs.intensity
+        }
+    }
+
+    private func rationale(for intent: CoachIntent) -> String {
+        switch intent {
+        case .cutIntensity:
+            "The next quality session becomes easy and the current week’s long run is reduced by 20%."
+        case .reshapeForTravel:
+            "Travel days stay clear while the long run is preserved and quality work moves to safe open days."
+        case .moveWorkoutIndoors:
+            "Only the selected future workout changes location."
+        case .retargetVDOT, .moveLongRun, .clarificationRequired, .answerOnly:
+            ""
+        }
+    }
+
+    private func blockedCoachProposal(
+        intent: CoachIntent,
+        plan: TrainingPlan,
+        profile: RunnerProfile,
+        evaluatedAt: Date = Date(),
+        calendar: Calendar = .current,
+        message: String
+    ) -> CoachProposal {
+        CoachProposal(
+            evaluatedAt: evaluatedAt,
+            calendarTimeZoneIdentifier: calendar.timeZone.identifier,
+            intent: intent,
+            rationale: "",
+            changes: [],
+            warnings: [CoachProposalWarning(severity: .blocking, message: message)],
+            basePlan: plan,
+            baseProfile: profile,
+            baseN100: n100,
+            proposedPlan: plan,
+            proposedProfile: profile,
+            proposedN100: n100
+        )
     }
 
     func attach(context: ModelContext, resetStore: Bool = UITestingSupport.shouldResetStore, healthImporter: (any HealthImporting)? = nil) {
@@ -416,6 +955,7 @@ final class AppStore {
         let workoutsBefore = plan?.workouts ?? []
         plan = snapshot.plan
         n100 = snapshot.n100
+        profile = snapshot.profile ?? snapshot.plan.profile
         do {
             PlanChangeStore.stageRemove(entry.entity, in: context)
             try persistThrowing()
@@ -1514,13 +2054,16 @@ final class AppStore {
 
     private func buildRegeneratedSchedule(
         goal: TrainingGoal? = nil,
-        profile: RunnerProfile? = nil
+        profile: RunnerProfile? = nil,
+        asOf: Date = Date(),
+        calendar: Calendar? = nil,
+        preserveFutureIdentity: Bool = false
     ) throws -> GeneratedTrainingSchedule {
         guard let profile = profile ?? self.profile else { throw PlanInputError.invalidWeeklyMileage }
         let goal = goal ?? plan?.goal ?? TrainingGoal(kind: .fiveK)
-        var calendar = Calendar.current
-        calendar.timeZone = .current
-        let request = PlanRequest(goal: goal, profile: profile, startDate: Date(), calendar: calendar)
+        var generationCalendar = calendar ?? Calendar.current
+        generationCalendar.timeZone = calendar?.timeZone ?? .current
+        let request = PlanRequest(goal: goal, profile: profile, startDate: asOf, calendar: generationCalendar)
         let catalog = try strengthCatalogLoader()
         return try TrainingPlanService.regenerate(
             request: request,
@@ -1528,7 +2071,8 @@ final class AppStore {
             adjustment: nil,
             freezeMileageBaselineMeters: freezeMileage ? freezeMileageBaselineMeters : nil,
             strengthPreferences: strengthPrefs,
-            strengthCatalog: catalog
+            strengthCatalog: catalog,
+            preserveFutureScheduledIdentity: preserveFutureIdentity
         )
     }
 
@@ -1573,6 +2117,7 @@ final class AppStore {
         await reminderReconciliationTask?.value
     }
 
+    @discardableResult
     private func performPlanMutation(
         description: String,
         kind: PlanChangeKind,
@@ -1581,14 +2126,14 @@ final class AppStore {
         publishesWatch: Bool = true,
         evaluateAdaptationAfter: Bool = false,
         mutate: () throws -> Void
-    ) {
-        guard plan != nil else { return }
+    ) -> Bool {
+        guard plan != nil else { return false }
         let snapshot = capturePlanMutationSnapshot()
         let workoutsBefore = plan?.workouts ?? []
-        let undoSnapshot = PlanUndoSnapshot(plan: plan!, n100: n100)
+        let undoSnapshot = PlanUndoSnapshot(plan: plan!, n100: n100, profile: profile)
         guard let undoData = try? JSONEncoder().encode(undoSnapshot) else {
             errorMessage = "Couldn't record plan change."
-            return
+            return false
         }
 
         let change = PlanChange(
@@ -1608,7 +2153,7 @@ final class AppStore {
         } catch {
             restorePlanMutationSnapshot(snapshot)
             errorMessage = (error as? LocalizedError)?.errorDescription ?? "Couldn't save training data: \(error.localizedDescription)"
-            return
+            return false
         }
 
         if publishesWatch {
@@ -1619,6 +2164,7 @@ final class AppStore {
         }
         offerUndo()
         reconcileReminders(before: workoutsBefore, after: plan?.workouts ?? [])
+        return true
     }
 
     private func updateWorkoutInPlan(_ id: UUID, transform: (ScheduledWorkout) -> ScheduledWorkout) throws {

@@ -183,4 +183,119 @@ struct PlanGeneratorTests {
         #expect(output.plan.workouts.contains { $0.id == completedID && $0.status == .completed })
         #expect(output.strengthSessions.count == request.goal.weekCount)
     }
+
+    @Test func coachRegenerationPreservesFutureWorkoutIdentityAndReminderMetadata() throws {
+        let originalRequest = request(kind: .tenK, weeks: 12)
+        var existing = PlanGenerator.generate(originalRequest)
+        let tracked = try #require(existing.workouts.first(where: { $0.blueprint.kind == .tempo }))
+        let trackedIndex = try #require(existing.workouts.firstIndex(where: { $0.id == tracked.id }))
+        existing.workouts[trackedIndex].scheduledTimeMinutes = 7 * 60
+        existing.workouts[trackedIndex].reminderEnabled = true
+        existing.workouts[trackedIndex].status = .scheduled
+
+        var adjustedProfile = originalRequest.profile
+        adjustedProfile.vdot *= 1.02
+        let adjustedRequest = PlanRequest(
+            goal: originalRequest.goal,
+            profile: adjustedProfile,
+            startDate: originalRequest.startDate,
+            calendar: calendar
+        )
+        let output = try TrainingPlanService.regenerate(
+            request: adjustedRequest,
+            existingPlan: existing,
+            adjustment: nil,
+            freezeMileageBaselineMeters: nil,
+            strengthPreferences: StrengthPreferences(sessionsPerWeek: 0),
+            strengthCatalog: StrengthCatalog(exercises: []),
+            preserveFutureScheduledIdentity: true
+        )
+
+        let retained = try #require(output.plan.workouts.first(where: { $0.id == tracked.id }))
+        #expect(retained.blueprint.id == tracked.blueprint.id)
+        #expect(retained.scheduledTimeMinutes == 7 * 60)
+        #expect(retained.reminderEnabled)
+        #expect(retained.status == .scheduled)
+    }
+
+    @Test func coachRegenerationUsesPlanWeekSlotsAcrossSundayBoundary() throws {
+        let startDate = calendar.date(from: DateComponents(year: 2026, month: 1, day: 6))!
+        let originalProfile = RunnerProfile(
+            ability: .intermediate,
+            weeklyMileageMeters: 30_000,
+            longestRunMeters: 10_000,
+            daysPerWeek: 4,
+            longRunWeekday: .sunday,
+            unit: .kilometers
+        )
+        let goal = TrainingGoal(kind: .fiveK, weekCount: 8)
+        let originalRequest = PlanRequest(
+            goal: goal,
+            profile: originalProfile,
+            startDate: startDate,
+            calendar: calendar
+        )
+        let existing = PlanGenerator.generate(originalRequest)
+
+        var adjustedProfile = originalProfile
+        adjustedProfile.availableWeekdays = originalProfile.resolvedRunWeekdays()
+        adjustedProfile.longRunWeekday = .saturday
+        let adjustedRequest = PlanRequest(
+            goal: goal,
+            profile: adjustedProfile,
+            startDate: startDate,
+            calendar: calendar
+        )
+        let output = try TrainingPlanService.regenerate(
+            request: adjustedRequest,
+            existingPlan: existing,
+            adjustment: nil,
+            freezeMileageBaselineMeters: nil,
+            strengthPreferences: StrengthPreferences(sessionsPerWeek: 0),
+            strengthCatalog: StrengthCatalog(exercises: []),
+            preserveFutureScheduledIdentity: true
+        )
+
+        #expect(Set(output.plan.workouts.map(\.id)) == Set(existing.workouts.map(\.id)))
+        #expect(output.plan.workouts.filter { $0.blueprint.kind == .longRun }.allSatisfy {
+            calendar.component(.weekday, from: $0.date) == Weekday.saturday.rawValue
+        })
+    }
+
+    @Test func coachRegenerationFailsClosedWhenFutureSlotCannotBeReconciled() throws {
+        let originalRequest = request(kind: .tenK, weeks: 12)
+        var existing = PlanGenerator.generate(originalRequest)
+        let orphanDate = calendar.date(byAdding: .day, value: 2, to: originalRequest.startDate)!
+        existing.workouts.append(ScheduledWorkout(
+            blueprint: WorkoutBlueprint(
+                date: orphanDate,
+                kind: .freeRun,
+                title: "Unmapped future run",
+                steps: [],
+                plannedDistanceMeters: 2_000,
+                usesPaceTargets: false
+            )
+        ))
+
+        var adjustedProfile = originalRequest.profile
+        adjustedProfile.vdot *= 1.02
+        let adjustedRequest = PlanRequest(
+            goal: originalRequest.goal,
+            profile: adjustedProfile,
+            startDate: originalRequest.startDate,
+            calendar: calendar
+        )
+
+        #expect(throws: PlanReconciler.Error.futureWorkoutIdentityUnmatched(existing.workouts.last!.id)) {
+            _ = try TrainingPlanService.regenerate(
+                request: adjustedRequest,
+                existingPlan: existing,
+                adjustment: nil,
+                freezeMileageBaselineMeters: nil,
+                strengthPreferences: StrengthPreferences(sessionsPerWeek: 0),
+                strengthCatalog: StrengthCatalog(exercises: []),
+                preserveFutureScheduledIdentity: true
+            )
+        }
+    }
 }
