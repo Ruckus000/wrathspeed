@@ -235,54 +235,13 @@ final class AppStore {
     /// The coach receives only compact, derived summaries. Raw HealthKit samples, routes, and
     /// chat text never enter this value, which also keeps the provider boundary reusable.
     func coachContext(asOf: Date = Date()) -> CoachContext? {
-        guard asOf.timeIntervalSinceReferenceDate.isFinite else { return nil }
         // What the runner sees, not the base plan underneath an active NOT FEELING 100%
         // adjustment. Editing intents are refused while one is active, so the model only ever
         // answers questions against this view, and the answer matches the screen.
         guard let plan = displayPlan, let profile else { return nil }
-        let calendar = Calendar.current
-        // The same numbering the proposal diff uses, capped to what the prompt renders, so the
-        // context holds exactly the workouts the model can see and nothing it cannot act on.
-        let references = CoachPlanRules.references(
-            in: plan, asOf: asOf, calendar: calendar, limit: CoachPlanRules.modelReferenceLimit
-        ).map { entry in
-            CoachContext.WorkoutReference(
-                id: entry.workout.id,
-                reference: entry.reference,
-                date: entry.workout.date,
-                kind: entry.workout.blueprint.kind,
-                title: entry.workout.blueprint.title,
-                status: entry.workout.status,
-                plannedDistanceMeters: entry.workout.blueprint.plannedDistanceMeters,
-                location: entry.workout.blueprint.location
-            )
-        }
-        let resultSummaries = results
-            .sorted { $0.startedAt > $1.startedAt }
-            .prefix(8)
-            .map {
-                CoachContext.ResultSummary(
-                    id: UUID(),
-                    date: $0.startedAt,
-                    distanceMeters: $0.distanceMeters,
-                    averagePaceSecPerKm: $0.averagePaceSecPerKm,
-                    heartRateAverage: $0.heartRateAverage
-                )
-            }
-        let due = plan.workouts.filter {
-            $0.blueprint.kind.isRunning && $0.date <= calendar.startOfDay(for: asOf)
-        }
-        let completed = due.filter { $0.status == .completed }.count
-        let adherence = due.isEmpty ? 1 : Double(completed) / Double(due.count)
-        return CoachContext(
-            asOf: asOf,
-            goal: plan.goal,
-            profile: profile,
-            currentWeekStart: calendar.dateInterval(of: .weekOfYear, for: asOf)?.start ?? asOf,
-            workouts: references,
-            recentResults: Array(resultSummaries),
-            adherence: adherence
-        )
+        // One builder, shared with the evaluation harness, so the app and the harness hand the
+        // model the same view of the same plan.
+        return CoachContext.make(plan: plan, profile: profile, results: results, asOf: asOf, calendar: Calendar.current)
     }
 
     /// Compiles one high-level intent against the current snapshot. This method never mutates
