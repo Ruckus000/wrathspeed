@@ -100,7 +100,7 @@ final class AppleCoachProvider: CoachProviding {
 
         do {
             let answer = try await modelClient.respond(to: message, context: context)
-            return CoachProviderResponse(reply: answer.raw.reply, intent: answer.mapped)
+            return CoachProviderResponse(reply: answer.reply, intent: answer.mapped)
         } catch let error as CoachProviderError {
             throw error
         } catch {

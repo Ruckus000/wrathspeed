@@ -340,8 +340,14 @@ struct CoachView: View {
             }
             do {
                 let response = try await provider.respond(to: message, context: context)
-                let intent = CoachIntentRecovery.resolve(modelIntent: response.intent, message: message)
-                messages.append(CoachMessage(role: .coach, text: CoachIntentRecovery.reply(for: intent, modelReply: response.reply)))
+                // The message (and the turn before it: "I'm travelling." / "Sept 14 to 18.")
+                // has to corroborate the model's intent before anything is previewed. A demoted
+                // intent shows its own ask, never the model's text, which tends to promise the
+                // edit it did not get.
+                let priorTurns = messages.filter { $0.role == .user }.dropLast().suffix(2).map(\.text)
+                let resolution = CoachIntentRecovery.resolution(modelIntent: response.intent, message: message, priorTurns: priorTurns, context: context)
+                let intent = resolution.intent
+                messages.append(CoachMessage(role: .coach, text: CoachIntentRecovery.reply(for: intent, modelReply: response.reply, demotedAsk: resolution.demotedAsk)))
                 switch intent {
                 case .clarificationRequired, .answerOnly:
                     break
