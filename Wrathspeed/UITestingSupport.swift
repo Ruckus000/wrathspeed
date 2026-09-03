@@ -8,6 +8,7 @@ enum UITestingSupport {
     static let presentMobilityPreRunLaunchArgument = "-uiTestingPresentMobilityPreRun"
     static let seedTodayRunLaunchArgument = "-uiTestingSeedTodayRun"
     static let seedTodayStrengthLaunchArgument = "-uiTestingSeedTodayStrength"
+    static let seedFastResultsLaunchArgument = "-uiTestingSeedFastResults"
     static let seedCompletedOnboardingLaunchArgument = "-uiTestingSeedCompletedOnboarding"
     static let skipCountdownLaunchArgument = "-uiTestingSkipCountdown"
     static let presentLocationPrimerLaunchArgument = "-uiTestingPresentLocationPrimer"
@@ -111,6 +112,16 @@ enum UITestingSupport {
         return ProcessInfo.processInfo.arguments.contains(uiTestingLaunchArgument)
         #else
         return false
+        #endif
+    }
+
+    /// Completes three runs in the past week faster than target, so a UI test can reach the
+    /// FASTER PACES evidence path; a plan generated at onboarding has no results at all.
+    static var shouldSeedFastResults: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(seedFastResultsLaunchArgument)
+        #else
+        false
         #endif
     }
 

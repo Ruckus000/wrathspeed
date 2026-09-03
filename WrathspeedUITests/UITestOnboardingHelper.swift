@@ -40,6 +40,7 @@ enum UITestOnboardingHelper {
         presentMobilityPreRun: Bool = false,
         seedTodayRun: Bool = false,
         seedTodayStrength: Bool = false,
+        seedFastResults: Bool = false,
         seedCompletedOnboarding: Bool = false,
         skipCountdown: Bool = false,
         presentLocationPrimer: Bool = false
@@ -59,6 +60,9 @@ enum UITestOnboardingHelper {
         }
         if seedTodayStrength {
             args.append(seedTodayStrengthLaunchArgument)
+        }
+        if seedFastResults {
+            args.append("-uiTestingSeedFastResults")
         }
         if seedCompletedOnboarding {
             args.append(seedCompletedOnboardingLaunchArgument)
@@ -80,6 +84,7 @@ enum UITestOnboardingHelper {
         presentMobilityPreRun: Bool = false,
         seedTodayRun: Bool = false,
         seedTodayStrength: Bool = false,
+        seedFastResults: Bool = false,
         seedCompletedOnboarding: Bool = false,
         skipCountdown: Bool = false,
         presentLocationPrimer: Bool = false
@@ -90,6 +95,7 @@ enum UITestOnboardingHelper {
             presentMobilityPreRun: presentMobilityPreRun,
             seedTodayRun: seedTodayRun,
             seedTodayStrength: seedTodayStrength,
+            seedFastResults: seedFastResults,
             seedCompletedOnboarding: seedCompletedOnboarding,
             skipCountdown: skipCountdown,
             presentLocationPrimer: presentLocationPrimer
