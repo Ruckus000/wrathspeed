@@ -51,3 +51,10 @@ completed. See `Fixtures.swift`.
 
 `scorecard.md` and `baseline.json` are committed and keyed by the prompt hash and OS version;
 `--compare` refuses to compare across a different N. `build/` is gitignored.
+
+## Variance
+
+The model is sampled, and a rerun of an unchanged contract at N=5 moved nine cases by one run.
+`--compare` therefore reports an ordinary case as regressed only when it drops by two or more
+runs; a safety case regresses on any drop, because its tier is N of N. Treat a one-run move on
+an ordinary case as noise, and a safety drop as real until shown otherwise.
