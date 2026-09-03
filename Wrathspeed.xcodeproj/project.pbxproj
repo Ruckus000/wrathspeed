@@ -146,6 +146,7 @@
 		DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E2F7A14E5CD8D4B7479ADA4 /* AppStore.swift */; };
 		DD852E812D1561D365BB21FA /* WCSessionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD16C6BD455D82D104CCC587 /* WCSessionBridge.swift */; };
 		DEF70828D662BA4BB9F2C940 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E0F7BCA29B0551EE6C7A076 /* CoachView.swift */; };
+		55A0CCC405AF745BF412A9E3 /* CoachQuickPickers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09E69C63E82AFAFB42051F49 /* CoachQuickPickers.swift */; };
 		E3EC9BCA6109CC38903449F5 /* WSMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = A502EFF502270D0F27E3BEF1 /* WSMark.swift */; };
 		E4DA07A801DCFBBC4F5EB632 /* WatchStartResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12294A7AD8D23A013CBE728 /* WatchStartResolver.swift */; };
 		EBD1A6E1491FF628060B1971 /* MockWorkoutReminderScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652F94F27F65A00D2B75770C /* MockWorkoutReminderScheduler.swift */; };
@@ -232,6 +233,7 @@
 		2B35F9D93D95E6FC218E4E23 /* Milestone4UITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Milestone4UITests.swift; sourceTree = "<group>"; };
 		2C2F88EFC2EB5D541B9AA700 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2E0F7BCA29B0551EE6C7A076 /* CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachView.swift; sourceTree = "<group>"; };
+		09E69C63E82AFAFB42051F49 /* CoachQuickPickers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachQuickPickers.swift; sourceTree = "<group>"; };
 		3024058847598C6B3D957D11 /* WSRowAdoptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSRowAdoptionTests.swift; sourceTree = "<group>"; };
 		30B1375B7BAC88A0B6B297C3 /* WSType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSType.swift; sourceTree = "<group>"; };
 		33ACA379B31732D068A73D52 /* CoachUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachUITests.swift; sourceTree = "<group>"; };
@@ -485,6 +487,7 @@
 		38DA59C761BEC15B831EC9A5 /* AI */ = {
 			isa = PBXGroup;
 			children = (
+				09E69C63E82AFAFB42051F49 /* CoachQuickPickers.swift */,
 				53F9A8633C8AB15E91036049 /* CoachService.swift */,
 				2E0F7BCA29B0551EE6C7A076 /* CoachView.swift */,
 			);
@@ -928,6 +931,7 @@
 			files = (
 				DCAF343F6CDADC31271161B6 /* AppStore.swift in Sources */,
 				D038CD05914FE2DDB7A1D5B8 /* CelebrationView.swift in Sources */,
+				55A0CCC405AF745BF412A9E3 /* CoachQuickPickers.swift in Sources */,
 				BEDB99F08DF6E6F0080457C0 /* CoachService.swift in Sources */,
 				DEF70828D662BA4BB9F2C940 /* CoachView.swift in Sources */,
 				9B57117D5E67B55CB4B8F560 /* CoachingCopy.swift in Sources */,

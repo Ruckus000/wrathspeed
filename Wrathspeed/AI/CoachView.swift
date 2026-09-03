@@ -11,6 +11,7 @@ struct CoachView: View {
     @State private var messages: [CoachMessage] = []
     @State private var proposal: CoachProposal?
     @State private var showHealthSafety = false
+    @State private var activePicker: CoachQuickPicker?
     @State private var isThinking = false
     @State private var actionError: String?
 
@@ -89,6 +90,41 @@ struct CoachView: View {
         .sheet(isPresented: $showHealthSafety) {
             HealthSafetyView(backTitle: "← COACH", backAccessibilityLabel: "Back to coach")
         }
+        .sheet(item: $activePicker) { picker in
+            pickerSheet(picker)
+                .presentationDetents([.medium, .large])
+                .presentationBackground(WSColor.bgSheet)
+        }
+    }
+
+    @ViewBuilder
+    private func pickerSheet(_ picker: CoachQuickPicker) -> some View {
+        switch picker {
+        case .longRun:
+            WeekdayPickerSheet(options: store.profile.map(CoachQuickActions.longRunWeekdayOptions(profile:)) ?? []) { day in
+                deterministicOrSend(.moveLongRun(to: day), message: "Move my long run to \(day.displayName).")
+            }
+        case .treadmill:
+            WorkoutPickerSheet(
+                options: store.displayPlan.map { CoachQuickActions.indoorWorkoutOptions(plan: $0) } ?? [],
+                unit: store.unit
+            ) { workout in
+                deterministicOrSend(.moveWorkoutIndoors(workoutID: workout.id), message: "Move \(WSFormat.weekdayDate(workout.date))’s run indoors.")
+            }
+        case .travel:
+            TravelDatesSheet { dates in
+                guard let first = dates.first, let last = dates.last else { return }
+                deterministicOrSend(.reshapeForTravel(travelDates: dates), message: "I’m away \(WSFormat.monthDay(first)) to \(WSFormat.monthDay(last)).")
+            }
+        }
+    }
+
+    private func fasterPaces() {
+        input = ""
+        messages.append(CoachMessage(role: .user, text: "My recent pace is faster. Update future paces."))
+        let result = store.previewFasterPaces()
+        messages.append(CoachMessage(role: .coach, text: result.reply))
+        proposal = result.proposal
     }
 
     private var healthCaveat: some View {
@@ -124,18 +160,21 @@ struct CoachView: View {
                 quickButton(title: "I’M SORE", identifier: "coach_quick_soreness", message: "I’m sore. Adjust this week safely.") {
                     deterministicOrSend(.cutIntensity, message: "I’m sore. Adjust this week safely.")
                 }
-                quickButton(title: "TRAVEL DATES", identifier: "coach_quick_travel", message: "I’m traveling. Help reshape my plan around exact dates.") {
-                    deterministicOrSend(.reshapeForTravel(travelDates: []), message: "I’m traveling. Help reshape my plan around exact dates.")
+                // Each button supplies its own parameter from a picker and compiles the intent
+                // deterministically. The model is never in the loop for a button: it is
+                // unavailable on most devices and, where available, picked the wrong workout in
+                // every day-named request the evaluation harness ran.
+                quickButton(title: "TRAVEL DATES", identifier: "coach_quick_travel", message: "I’m traveling. Pick the dates to reshape my plan around.") {
+                    activePicker = .travel
                 }
                 quickButton(title: "FASTER PACES", identifier: "coach_quick_faster", message: "My recent pace is faster. Update future paces.") {
-                    let target = (store.profile?.vdot ?? 0) * (1 + CoachPlanRules.vdotChangeLimit)
-                    deterministicOrSend(.retargetVDOT(target: target), message: "My recent pace is faster. Update future paces.")
+                    fasterPaces()
                 }
                 quickButton(title: "MOVE LONG RUN", identifier: "coach_quick_long_run", message: "Move my long run to another available weekday.") {
-                    sendMessage("Move my long run to another available weekday.")
+                    activePicker = .longRun
                 }
-                quickButton(title: "TREADMILL", identifier: "coach_quick_treadmill", message: "Move a specific workout indoors.") {
-                    sendMessage("Move a specific workout indoors.")
+                quickButton(title: "TREADMILL", identifier: "coach_quick_treadmill", message: "Move a specific run indoors.") {
+                    activePicker = .treadmill
                 }
             }
         }
@@ -381,11 +420,11 @@ struct CoachView: View {
         if CoachIntentRecovery.resolve(modelIntent: .answerOnly, message: message) == .cutIntensity {
             deterministicFallback(intent: .cutIntensity)
         } else if normalized.contains("travel") {
-            messages.append(CoachMessage(role: .coach, text: "Tell me the exact travel start and end dates first."))
+            messages.append(CoachMessage(role: .coach, text: "Use TRAVEL DATES above to pick the days you’re away."))
         } else if normalized.contains("treadmill") || normalized.contains("indoors") || normalized.contains("weather") {
-            messages.append(CoachMessage(role: .coach, text: "Which named workout should move indoors?"))
+            messages.append(CoachMessage(role: .coach, text: "Use TREADMILL above to pick the run."))
         } else if normalized.contains("long run") {
-            messages.append(CoachMessage(role: .coach, text: "Tell me the available weekday for the long run."))
+            messages.append(CoachMessage(role: .coach, text: "Use MOVE LONG RUN above to pick the weekday."))
         } else {
             messages.append(CoachMessage(role: .coach, text: "Conversational coaching is unavailable here. Use one of the quick actions above."))
         }
@@ -394,11 +433,7 @@ struct CoachView: View {
     private func deterministicFallback(intent: CoachIntent) {
         switch intent {
         case let .reshapeForTravel(dates) where dates.isEmpty:
-            messages.append(CoachMessage(role: .coach, text: "Tell me the exact travel start and end dates first."))
-        case .moveWorkoutIndoors:
-            messages.append(CoachMessage(role: .coach, text: "Which named workout should move indoors?"))
-        case .moveLongRun:
-            messages.append(CoachMessage(role: .coach, text: "Tell me the available weekday for the long run."))
+            messages.append(CoachMessage(role: .coach, text: "Use TRAVEL DATES above to pick the days you’re away."))
         default:
             messages.append(CoachMessage(
                 role: .coach,

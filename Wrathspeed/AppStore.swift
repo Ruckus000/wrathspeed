@@ -244,6 +244,35 @@ final class AppStore {
         return CoachContext.make(plan: plan, profile: profile, results: results, asOf: asOf, calendar: Calendar.current)
     }
 
+    /// FASTER PACES needs evidence: the last three completed runs with a target pace, averaging
+    /// at least the nudge limit faster than it. With evidence this is the same retarget as
+    /// before; without, the card is blocked and says what would unlock it. Deterministic, so it
+    /// works on every device.
+    func previewFasterPaces() -> (proposal: CoachProposal, reply: String) {
+        let evaluatedAt = Date()
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        guard let plan, let profile else {
+            return (previewCoachIntent(.retargetVDOT(target: 0)), "Finish setting up your plan first.")
+        }
+        switch CoachQuickActions.fasterPacesVerdict(plan: plan, profile: profile, zones: zones, asOf: evaluatedAt, calendar: calendar) {
+        case let .evidence(evidence):
+            let percent = Int((abs(evidence.meanDeltaFraction) * 100).rounded())
+            let days = evidence.runs.map { WSFormat.weekdayDate($0.date) }.joined(separator: ", ")
+            let reply = "Your last three runs (\(days)) averaged \(percent)% faster than target. I’ll preview paces at VDOT \(String(format: "%.1f", evidence.suggestedVDOT)), within the 3% adaptation limit. Review the exact changes below before approving."
+            return (previewCoachIntent(.retargetVDOT(target: evidence.suggestedVDOT)), reply)
+        case let .fewerThanThreeRuns(count):
+            let message = "Faster paces need evidence: three completed runs at or faster than target pace. You have \(count)."
+            return (blockedCoachProposal(intent: .retargetVDOT(target: profile.vdot), plan: plan, profile: profile, evaluatedAt: evaluatedAt, calendar: calendar, message: message), message)
+        case let .notFasterThanTarget(mean):
+            let percent = Int((abs(mean) * 100).rounded())
+            let message = mean > 0
+                ? "Your last three runs averaged \(percent)% slower than target. Faster paces aren’t earned yet."
+                : "Your last three runs averaged \(percent)% faster than target; 3% faster is the bar."
+            return (blockedCoachProposal(intent: .retargetVDOT(target: profile.vdot), plan: plan, profile: profile, evaluatedAt: evaluatedAt, calendar: calendar, message: message), message)
+        }
+    }
+
     /// Compiles one high-level intent against the current snapshot. This method never mutates
     /// the store; the returned proposal is the only object the UI may submit for approval.
     func previewCoachIntent(_ intent: CoachIntent) -> CoachProposal {
@@ -836,6 +865,7 @@ final class AppStore {
             seedInProgressMobilityForUITestingIfNeeded()
             seedTodayRunForUITestingIfNeeded()
             seedTodayStrengthForUITestingIfNeeded()
+            seedFastResultsForUITestingIfNeeded()
 #endif
         } catch {
             hasOnboarded = false
@@ -1995,6 +2025,39 @@ final class AppStore {
         plan.workouts[index].blueprint.date = today
         // Pulling a future run back to today moves it past everything between, so a UI test
         // reading the plan sees the same order a real move would leave behind.
+        plan.restoreDateOrder()
+        self.plan = plan
+        persist()
+    }
+
+    /// Pulls three scheduled runs into the past week and completes them 5% faster than target,
+    /// so a UI test can reach the FASTER PACES evidence path. A plan generated at onboarding
+    /// has no past runs at all, which is why they have to be moved rather than found.
+    func seedFastResultsForUITestingIfNeeded() {
+        guard UITestingSupport.shouldSeedFastResults, var plan else { return }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let candidates = plan.workouts.indices.filter {
+            plan.workouts[$0].blueprint.kind.isRunning && plan.workouts[$0].status == .scheduled && plan.workouts[$0].date > today
+        }.prefix(3)
+        guard candidates.count == 3 else { return }
+        for (offset, index) in candidates.enumerated() {
+            guard let date = calendar.date(byAdding: .day, value: -(offset * 2 + 1), to: today) else { continue }
+            plan.workouts[index].blueprint.date = date
+            guard let target = WorkoutPaceTarget.targetPaceSecPerKm(blueprint: plan.workouts[index].blueprint, zones: zones) else { continue }
+            let distance = plan.workouts[index].blueprint.plannedDistanceMeters
+            let result = WorkoutResult(
+                workoutID: plan.workouts[index].id,
+                startedAt: date.addingTimeInterval(7 * 3600),
+                duration: distance / 1000 * target * 0.95,
+                distanceMeters: distance,
+                averagePaceSecPerKm: target * 0.95,
+                location: .outdoor
+            )
+            plan.workouts[index].status = .completed
+            plan.workouts[index].result = result
+            results.append(result)
+        }
         plan.restoreDateOrder()
         self.plan = plan
         persist()
