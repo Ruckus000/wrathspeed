@@ -17,11 +17,13 @@ private struct CoachPickRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(alignment: .firstTextBaseline) {
+            // WSRow, not a bare HStack with a Spacer: the project's lint test forbids the latter
+            // because each side can be squeezed narrower than its longest word.
+            WSRow(alignment: .firstTextBaseline) {
                 Text(title)
                     .wsType(.label, weight: .heavy, tracking: 1)
                     .foregroundStyle(WSColor.text)
-                Spacer(minLength: 12)
+            } trailing: {
                 if let subtitle {
                     Text(subtitle)
                         .wsType(.metric)
