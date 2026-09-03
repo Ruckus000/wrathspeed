@@ -1,8 +1,8 @@
 # Coach evaluation scorecard
 
-Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:46Z
+Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-03T15:38:51Z
 
-**42/51 cases met their tier.** Safety: 9/9 at N/N. Median latency 2307 ms.
+**43/51 cases met their tier.** Safety: 9/9 at N/N. Median latency 2311 ms.
 
 ## ambiguous — 4/4
 
@@ -17,15 +17,15 @@ Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:4
 
 | case | passes | tier | rule | failures | flags |
 |---|---|---|---|---|---|
-| `compound-sore-travel` | 2/5 | **MISSED** | applicable; none | INTENT expected clarificationRequired|cutIntensity|reshapeForTravel got answerOnly |  |
+| `compound-sore-travel` | 1/5 | **MISSED** | applicable; none | INTENT expected clarificationRequired|cutIntensity|reshapeForTravel got answerOnly |  |
 | `compound-travel-paces` | 5/5 | met | applicable |  |  |
-| `compound-longrun-indoors` | 5/5 | met | none; store-level |  |  |
+| `compound-longrun-indoors` | 5/5 | met | store-level |  |  |
 
 ## description — 2/3
 
 | case | passes | tier | rule | failures | flags |
 |---|---|---|---|---|---|
-| `desc-saturday-indoors` | 2/5 | **MISSED** | applicable; none | INTENT expected moveWorkoutIndoors got clarificationRequired |  |
+| `desc-saturday-indoors` | 0/5 | **MISSED** | none | INTENT expected moveWorkoutIndoors got clarificationRequired |  |
 | `desc-next-run` | 5/5 | met | none |  |  |
 | `desc-past` | 5/5 | met | none |  |  |
 
@@ -48,7 +48,7 @@ Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:4
 | `sore-slang` | 5/5 | met | applicable |  |  |
 | `travel-plain` | 5/5 | met | applicable |  |  |
 | `travel-numeric` | 0/5 | **MISSED** | none | INTENT expected reshapeForTravel got answerOnly | REFUSED |
-| `vdot-explicit` | 5/5 | met | store-level |  | UNGROUNDED_NUMBER(40) |
+| `vdot-explicit` | 4/5 | met | none; store-level | INTENT expected retargetVDOT got clarificationRequired |  |
 | `longrun-sunday` | 0/5 | **MISSED** | none | INTENT expected moveLongRun got clarificationRequired |  |
 | `longrun-saturday` | 5/5 | met | store-level |  |  |
 | `indoors-tomorrow` | 4/5 | met | applicable; none | INTENT expected moveWorkoutIndoors got clarificationRequired |  |
@@ -61,14 +61,14 @@ Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:4
 |---|---|---|---|---|---|
 | `late-sore` | 5/5 | met | applicable |  |  |
 | `late-longrun` | 5/5 | met | none |  |  |
-| `late-indoors` | 3/5 | **MISSED** | applicable; none | INTENT expected moveWorkoutIndoors got clarificationRequired |  |
+| `late-indoors` | 0/5 | **MISSED** | none | INTENT expected moveWorkoutIndoors got clarificationRequired |  |
 
 ## multiturn — 0/2
 
 | case | passes | tier | rule | failures | flags |
 |---|---|---|---|---|---|
-| `turn-travel` | 2/5 | **MISSED** | applicable; none | INTENT expected reshapeForTravel got answerOnly; INTENT expected reshapeForTravel got clarificationRequired |  |
-| `turn-longrun` | 1/5 | **MISSED** | none; store-level | INTENT expected moveLongRun got clarificationRequired |  |
+| `turn-travel` | 2/5 | **MISSED** | applicable; none | INTENT expected reshapeForTravel got clarificationRequired |  |
+| `turn-longrun` | 0/5 | **MISSED** | none | INTENT expected moveLongRun got answerOnly; INTENT expected moveLongRun got clarificationRequired |  |
 
 ## negation — 4/4
 
@@ -79,12 +79,12 @@ Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:4
 | `neg-thursday` | 5/5 | met | none |  |  |
 | `neg-nothing` | 5/5 | met | none |  |  |
 
-## relative — 4/5
+## relative — 5/5
 
 | case | passes | tier | rule | failures | flags |
 |---|---|---|---|---|---|
 | `rel-tomorrow-friday` | 5/5 | met | none |  |  |
-| `rel-weekend` | 3/5 | **MISSED** | none | INTENT expected clarificationRequired|reshapeForTravel got answerOnly |  |
+| `rel-weekend` | 4/5 | met | none | INTENT expected clarificationRequired|reshapeForTravel got answerOnly |  |
 | `rel-next-mon-wed` | 5/5 | met | none |  |  |
 | `rel-no-month` | 5/5 | met | none |  |  |
 | `rel-reversed` | 5/5 | met | none |  |  |
@@ -106,12 +106,12 @@ Prompt hash `3365241569ac` · Version 26.6.2 (Build 25G83) · 2026-09-02T17:02:4
 |---|---|---|---|---|---|
 | `vdot-900` | 5/5 | met | none; store-level |  |  |
 | `vdot-negative` | 5/5 | met | none |  |  |
-| `vdot-unknown` | 5/5 | met | none |  |  |
+| `vdot-unknown` | 4/5 | met | none | MODEL_ERROR exceededContextWindowSize(FoundationModels.LanguageModelSession.GenerationError.Context(debugDescription: "Content contains 4090 tokens, which exceeds the maximum allowed context size of 4096.", underlyingErrors: [Provided 4,090 tokens, but the maximum allowed is 4,096.], errorDescriptionOverride: nil)) |  |
 
 ## weekday — 2/2
 
 | case | passes | tier | rule | failures | flags |
 |---|---|---|---|---|---|
-| `weekday-unavailable` | 5/5 | met | none; store-level |  |  |
+| `weekday-unavailable` | 5/5 | met | store-level |  |  |
 | `weekday-same` | 5/5 | met | none; store-level |  |  |
 
