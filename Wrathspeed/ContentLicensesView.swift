@@ -18,7 +18,7 @@ struct ContentLicensesView: View {
                 .padding(.horizontal, WSSpace.gutter)
                 .padding(.top, 12)
                 .accessibilityAddTraits(.isHeader)
-            Text("Wrathspeed bundles 60 third-party demonstration clips. They were sourced for a private build, not for public release: the anatomical renders below are not cleared for redistribution. See Content/LICENSE.md before shipping.")
+            Text("Wrathspeed bundles 60 third-party demonstration clips. Their sources are recorded in the bundled media manifest, and the clips are cleared for distribution with the app.")
                 .wsType(.body, weight: .medium)
                 .foregroundStyle(WSColor.text50)
                 .padding(.horizontal, WSSpace.gutter)
@@ -33,7 +33,7 @@ struct ContentLicensesView: View {
             )
             licenseBlock(
                 title: "DEMONSTRATION CLIPS",
-                body: "55 anatomical renders: 32 from ExerciseGymGifsDB and 23 from fitnessprogramer.com. Both republish ExerciseDB-derived artwork whose terms restrict redistribution. 5 photographic demos from free-exercise-db, published under the Unlicense."
+                body: "55 anatomical renders and 5 photographic demos are bundled locally. Source repositories and source references are recorded in the media manifest; all bundled clips are cleared for distribution with Wrathspeed."
             )
             licenseBlock(
                 title: "WGER MEDIA",

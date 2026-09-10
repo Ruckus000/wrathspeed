@@ -14,7 +14,6 @@
 	<string>Wrathspeed uses your location to track outdoor runs.</string>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>workout-processing</string>
 		<string>audio</string>
 	</array>
 	<key>UIAppFonts</key>
