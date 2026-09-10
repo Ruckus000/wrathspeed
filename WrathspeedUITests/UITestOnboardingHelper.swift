@@ -152,13 +152,8 @@ enum UITestOnboardingHelper {
         // that stopped working has to fail here rather than hide behind a slow green run.
         if app.launchArguments.contains(seedCompletedOnboardingLaunchArgument) {
             // The app's own health primer is suppressed on a seeded launch, exactly as it is
-            // on a reset one. The springboard alert about workout background access is not
-            // ours to suppress: iOS raises it because the app declares `workout-processing`,
-            // and it is back on the next launch. It covers roughly the top 234pt, so left up
-            // it silently eats every tap aimed at the plan header links or a cover's close
-            // button -- the tap is synthesised, springboard swallows it, and the test reports
-            // an empty plan. That is what made CI red on any simulator that had not already
-            // acknowledged it. The slow path below has always dismissed it; this one must too.
+            // on a reset one. System alerts can cover the top of the screen, so they must be
+            // dismissed before the seeded launch starts interacting with the app.
             dismissSystemAlertIfNeeded()
             XCTAssertTrue(
                 app.buttons["TODAY"].waitForExistence(timeout: 15),
@@ -224,13 +219,8 @@ enum UITestOnboardingHelper {
     static func dismissSystemAlertIfNeeded() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let titles = ["Allow While Using App", "Allow", "OK", "Don't Allow"]
-        // Deliberately not `springboard.alerts`. iOS 26 does not present the workout
-        // background-access notice -- the one it raises because the app declares
-        // `workout-processing` -- as an alert element: `springboard.alerts.count` is 0 while
-        // its "OK" and "Settings" buttons are sitting right there on springboard. The old
-        // `alerts.firstMatch` guard therefore returned early and never dismissed it, which
-        // is how a notice covering the top of the screen survived every test. Querying the
-        // buttons reaches both that notice and ordinary alerts.
+        // Query buttons directly because some iOS system notices are not exposed through
+        // `springboard.alerts`; their buttons are still available on SpringBoard.
         let anyButton = springboard.buttons
             .matching(NSPredicate(format: "label IN %@", titles))
             .firstMatch

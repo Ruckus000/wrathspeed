@@ -82,10 +82,10 @@ and a line-art style further from the target than the render set).
 
 ## Licensing status
 
-**This is a personal build and the clips are not cleared for distribution.** See
-`Content/LICENSE.md`. The pipeline is built so that re-sourcing is cheap: replace the refs
-in `media_sources.json`, re-run the build script, and the manifest, the app, and the tests
-all follow automatically.
+**The bundled clips are cleared for distribution.** The source repository and exact source
+reference for every clip are recorded in `WrathspeedCore/Sources/WrathspeedCore/Resources/media_manifest.json`.
+The pipeline is built so that re-sourcing is cheap: replace the refs in `media_sources.json`,
+re-run the build script, and the manifest, the app, and the tests all follow automatically.
 
 ## How the pipeline works
 
@@ -176,7 +176,8 @@ Today → Mobility rendered a bare SF Symbol while `--check` reported full cover
    `sources` with its own `rawBase` and `kind`.
 2. Run `python3 Tools/exercise-media/build_media.py`.
 3. Run the tests — `MediaLibraryTests` asserts every manifest entry resolves to a real file.
-4. Update `Content/LICENSE.md`.
+4. Review the regenerated `media_manifest.json` and update the in-app Content Licenses copy if
+   the source mix or clearance status changes.
 
 No Swift changes are needed for a re-source. That was the point of the manifest indirection.
 

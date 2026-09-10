@@ -10,11 +10,12 @@
 	<string>Wrathspeed uses your location to track outdoor runs.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Wrathspeed records your outdoor route while a workout is active, including when the screen is locked.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>workout-processing</string>
 		<string>audio</string>
 		<string>location</string>
 	</array>

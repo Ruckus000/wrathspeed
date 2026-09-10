@@ -18,19 +18,20 @@ final class CoachingMVPHardeningTests: XCTestCase {
         XCTAssertTrue(project.contains("INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription"))
     }
 
-    /// Both targets run an HKWorkoutSession, and `workout-processing` is what keeps it
-    /// collecting once the app is backgrounded or the screen locks. The phone had only
-    /// `audio` and `location`, neither of which covers a treadmill run with cues off.
-    func testBothTargetsDeclareWorkoutProcessingBackgroundMode() throws {
+    /// Keep the declared background modes within the values App Store accepts for these
+    /// bundles. Workout sessions provide their own lifecycle handling; the plist must not
+    /// carry the rejected `workout-processing` value.
+    func testTargetsDeclareAppStoreValidBackgroundModes() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        for relativePath in ["Wrathspeed/Info.plist", "WrathspeedWatch/Info.plist"] {
+        let expectedModes: [String: Set<String>] = [
+            "Wrathspeed/Info.plist": ["audio", "location"],
+            "WrathspeedWatch/Info.plist": ["audio"],
+        ]
+        for (relativePath, expected) in expectedModes {
             let data = try Data(contentsOf: root.appending(path: relativePath))
             let plist = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
             let modes = try XCTUnwrap(plist["UIBackgroundModes"] as? [String], "\(relativePath) declares no UIBackgroundModes")
-            XCTAssertTrue(
-                modes.contains("workout-processing"),
-                "\(relativePath) is missing the workout-processing background mode, so its workout session stops when the app backgrounds"
-            )
+            XCTAssertEqual(Set(modes), expected, "\(relativePath) declares an unexpected background-mode set")
         }
     }
 
